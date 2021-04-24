@@ -3,10 +3,34 @@ from typing import *
 
 import numpy as np
 
+Path = str
+AxBounds = Tuple[float,float]
+BoundingBox = Dict[str,float]
+
+def BOUNDS_TEMPLATE() -> BoundingBox:
+	return {
+		'bound_min_x' : float('inf'),
+		'bound_min_y' : float('inf'),
+		'bound_max_x' : -float('inf'),
+		'bound_max_y' : -float('inf'),
+	}
+
+
 class CollisionType(Enum):
 	BASE = None
 	Box_Ax = 'Box_Ax'
 	Disc = 'Disc'
+
+
+"""
+ ######  ##        ######
+##    ## ##       ##    ##
+##       ##       ##
+##       ##        ######
+##       ##             ##
+##    ## ##       ##    ##
+ ######  ########  ######
+"""
 
 # TODO (minor): type hint to `CollisionType` doesn't have expected behavior, this is just because python enum type hints are weird
 
@@ -149,12 +173,20 @@ class CollisionObject(object):
 	def deserialize_tsv(line : str, delim = '\t'):
 		line_lst = line.split(delim)
 
+		# HACK: at some point, the C++ code was producing collision object tsv
+		# 	files with an extra tab put in, meaning there was an extra empty 
+		# 	string in every line when we split by tabs. hence, this line exists
+		# 	to deal with those files. it's safe to remove if you are only 
+		# 	dealing with freshly generated files
+		while ('' in line_lst):
+			line_lst.remove('')
+
 		# read the collision type and the list of attributes
 		coll_type : CollisionType = CollisionType[line_lst[0]]
 		attrs_lst = CollisionObject.get_attr_list(coll_type)
 
 		# check that we have the expected number of attributes
-		assert (len(line_lst) == len(attrs_lst)),f'incorrect number of attributes in line:\n\t{line}'
+		assert (len(line_lst) == len(attrs_lst)),f'incorrect number of attributes in line (expected {len(attrs_lst)}, got {len(line_lst)}):\n\t{line}\n\t{line_lst}'
 
 		# read them in
 		output : CollisionObject = CollisionObject(**{
@@ -182,13 +214,18 @@ class CollisionObject(object):
 
 
 
-def get_bounds(collobjs : List[CollisionObject]):
-	bounds = {
-		'bound_min_x' : float('inf'),
-		'bound_min_y' : float('inf'),
-		'bound_max_x' : -float('inf'),
-		'bound_max_y' : -float('inf'),
-	}
+"""
+########   #######  ##     ## ##    ## ########   ######
+##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
+##     ## ##     ## ##     ## ####  ## ##     ## ##
+########  ##     ## ##     ## ## ## ## ##     ##  ######
+##     ## ##     ## ##     ## ##  #### ##     ##       ##
+##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
+########   #######   #######  ##    ## ########   ######
+"""
+
+def get_bounds(collobjs : List[CollisionObject]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
 
 	for x in collobjs:
 		# mins
@@ -202,12 +239,62 @@ def get_bounds(collobjs : List[CollisionObject]):
 
 	return bounds
 
+def _bounds_tuples_to_bbox(bounds_x : AxBounds, bounds_y : AxBounds) -> BoundingBox:
+	return {
+		'bound_min_x' : bounds_x[0],
+		'bound_min_y' : bounds_y[0],
+		'bound_max_x' : bounds_x[1],
+		'bound_max_y' : bounds_y[1],
+	}
 
 
+def _combine_bounds(lst_bounds : List[BoundingBox]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
+
+	for x in lst_bounds:
+		# mins
+		for bd in ['bound_min_x', 'bound_min_y']:
+			if x[bd] < bounds[bd]:
+				bounds[bd] = x[bd]
+		# maxes
+		for bd in ['bound_max_x', 'bound_max_y']:
+			if x[bd] > bounds[bd]:
+				bounds[bd] = x[bd]
+	
+	return bounds
+
+
+def get_bbox_ranges(bounds : BoundingBox) -> Tuple[float,float]:
+	return (
+		bounds['bound_max_x'] - bounds['bound_min_x'],
+		bounds['bound_max_y'] - bounds['bound_min_y'],
+	)
+
+def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
+	x_range, y_range = get_bbox_ranges(bounds)
+
+	return {
+		'bound_min_x' : bounds['bound_min_x'] - x_range * pad_frac,
+		'bound_min_y' : bounds['bound_min_y'] - y_range * pad_frac,
+		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
+		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
+	}
+
+
+
+"""
+####  #######
+ ##  ##     ##
+ ##  ##     ##
+ ##  ##     ##
+ ##  ##     ##
+ ##  ##     ##
+####  #######
+"""
 
 def save_collobjs_tsv(
 		lst_data : List[CollisionObject],
-		filename : str = "../data/collision_objs.tsv",
+		filename : Path = "../data/collision_objs.tsv",
 	):
 	with open(filename, 'w') as fout:
 		fout.write('\n'.join([
@@ -216,7 +303,7 @@ def save_collobjs_tsv(
 		]))
 
 
-def read_collobjs_tsv(filename : str = "../data/collision_objs.tsv") -> List[CollisionObject]:
+def read_collobjs_tsv(filename : Path = "../data/collision_objs.tsv") -> List[CollisionObject]:
 	output : List[CollisionObject] = []
 	with open(filename, 'r') as fin:
 		for line in fin:
