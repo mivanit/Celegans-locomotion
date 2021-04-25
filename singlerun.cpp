@@ -44,6 +44,8 @@ int main (int argc, const char* argv[])
             cxxopts::value<bool>())
         ("d,duration", "sim duration in seconds", 
             cxxopts::value<double>()->default_value("100.0"))
+        ("f,foodPos", "food position (comma separated) (defaults to whatever is in params.json)", 
+            cxxopts::value<string>())
         ("s,seed", "set random initialization seed. takes priority over `rand`. seed is 0 by default.", 
             cxxopts::value<long>())
         ("h,help", "print usage")
@@ -78,7 +80,6 @@ int main (int argc, const char* argv[])
     DURATION = cmd["duration"].as<double>();;
 
 
-
     // setting up simulation
     InitializeBodyConstants();
     PRINT_DEBUG("> finished init body constants\n")
@@ -95,6 +96,27 @@ int main (int argc, const char* argv[])
         true,
         true
     );
+
+    // get food position
+    if (cmd.count("foodPos"))
+    {
+        if (params.contains("ChemoReceptors"))
+        {
+            {
+                string str_foodpos = cmd["foodPos"].as<std::string>();
+                int idx_comma = str_foodpos.find(',');
+                double foodpos_x = std::stod(str_foodpos.substr(0,idx_comma));
+                double foodpos_y = std::stod(str_foodpos.substr(idx_comma+1, std::string::npos));
+
+                params["ChemoReceptors"]["foodPos"]["x"] = foodpos_x;
+                params["ChemoReceptors"]["foodPos"]["x"] = foodpos_y;
+            }
+        }
+        else
+        {
+            throw std::runtime_error("foodPos given, but \"ChemoReceptors\" not enabled in params.json");
+        }
+    }
 
     PRINTF_DEBUG("  > collision tsv from:\t%s\n", cmd["coll"].as<std::string>().c_str())
     std::vector<CollisionObject> collObjs = load_objects(cmd["coll"].as<std::string>());

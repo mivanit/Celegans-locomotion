@@ -171,8 +171,6 @@ Worm::Worm(TVector<double> &v,double output)
 
 
 
-
-
 // json ctor
 Worm::Worm(json & params)
 {
@@ -218,11 +216,13 @@ Worm::Worm(json & params)
     if (params.find("ChemoReceptors") != params.end())
     {
         PRINT_DEBUG("  > Chemo Receptors\n")
+        VecXY vxy_foodPos(
+            params["ChemoReceptors"]["foodPos"]["x"].get<double>(), 
+            params["ChemoReceptors"]["foodPos"]["y"].get<double>()
+        );
+        PRINTF_DEBUG("    > placing food at %f, %f", vxy_foodPos.x, vxy_foodPos.y)
         chemo_re.initialize(
-            VecXY(
-                params["ChemoReceptors"]["foodPos"]["x"].get<double>(), 
-                params["ChemoReceptors"]["foodPos"]["y"].get<double>()
-            ),
+            vxy_foodPos,
             h.namesMap[params["ChemoReceptors"]["neuron"].get<string>()],
             params["ChemoReceptors"]["alpha"].get<double>(),
             params["ChemoReceptors"]["beta"].get<double>(),
