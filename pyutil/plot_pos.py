@@ -17,11 +17,11 @@ from matplotlib.collections import PatchCollection
 import pandas as pd
 import json
 
-if __name__ == '__main__':
-	sys.path.append("..")
 
-from pyutil.util import Path
-from pyutil.collision_object import (
+# sys.path.append("..")
+
+from util import Path,joinPath
+from collision_object import (
 	CollisionType,CollisionObject,
 	read_collobjs_tsv,
 	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
@@ -348,14 +348,17 @@ def _plot_collobjs(ax : Axes, collobjs : Path):
 
 
 
-def _plot_foodPos(ax : Axes, params : Path, fmt = 'bo'):
+def _plot_foodPos(ax : Axes, params : Path, fmt : str = 'x', label : str = None):
 	with open(params, 'r') as fin:
 		params_data : dict = json.load(fin)
-		if "ChemoReceptor" in params_data:
-			foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
-			foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
-	
-			ax.plot(foodpos_x, foodpos_y, fmt)
+		if "ChemoReceptors" in params_data:
+			if "DISABLED" not in params_data["ChemoReceptors"]:
+				foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
+				foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
+		
+				ax.plot(foodpos_x, foodpos_y, fmt, label = label)
+			
+				return (foodpos_x, foodpos_y)
 
 
 
@@ -543,6 +546,58 @@ class Plotters(object):
 
 		print(head_data.shape, head_data.dtype)
 		ax.plot(head_data['x'], head_data['y'])
+
+		if show:
+			plt.show()
+		
+	@staticmethod
+	def pos_multi(
+			# search in this directory
+			rootdir : Path = 'data/run/',
+			# args passed down to `_draw_setup()`
+			bodydat : Path = 'body.dat',
+			collobjs : Path = 'coll_objs.tsv',
+			params : Optional[Path] = 'params.json',
+			time_window : Tuple[OptInt,OptInt] = (None,None),
+			figsize_scalar : Optional[float] = None,
+			pad_frac : Optional[float] = None,
+			# args specific to this plotter
+			idx : int = 0,
+			show : bool = True,
+		):
+
+		multi_dirs : List[str] = os.listdir(rootdir)
+		multi_dirs = [ x for x in multi_dirs if os.path.isdir(rootdir + x) ]
+
+		default_dir : str = joinPath(rootdir, multi_dirs[0], "")
+		print(f'> using as default: {default_dir}')
+
+		fig,ax,data_default,bounds = _draw_setup(
+			rootdir = default_dir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			# params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		for food_choice in multi_dirs:
+			
+			bodydat_choice : str = joinPath(rootdir, food_choice, bodydat)
+			params_choice : str = joinPath(rootdir, food_choice, params)
+						
+			data : NDArray[(int,int), CoordsRotArr] = read_body_data(bodydat_choice)
+			head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+
+			print(bodydat_choice)
+			print(head_data.shape, head_data.dtype)
+
+			ax.plot(head_data['x'], head_data['y'], label = food_choice)
+			tup_foodpos = _plot_foodPos(ax, params_choice, label = food_choice)
+			print(tup_foodpos)
+
+		plt.legend()
 
 		if show:
 			plt.show()

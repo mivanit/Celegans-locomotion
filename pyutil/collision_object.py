@@ -4,10 +4,8 @@ from typing import *
 
 import numpy as np
 
-if __name__ == '__main__':
-	sys.path.append("..")
 
-from pyutil.util import Path
+from util import Path
 
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]

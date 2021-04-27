@@ -1,6 +1,10 @@
+import os
 from typing import *
 
 Path = str
+
+def joinPath(*args):
+	return os.path.join(*args).replace("\\", "/")
 
 SCRIPTNAME_KEY = "__main__"
 COMMAND_DANGERS = [';', 'rm', 'sudo']
