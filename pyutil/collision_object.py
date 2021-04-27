@@ -1,9 +1,14 @@
+import sys
 from enum import Enum
 from typing import *
 
 import numpy as np
 
-Path = str
+if __name__ == '__main__':
+	sys.path.append("..")
+
+from pyutil.util import Path
+
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]
 

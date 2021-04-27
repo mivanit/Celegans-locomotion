@@ -220,7 +220,7 @@ Worm::Worm(json & params)
             params["ChemoReceptors"]["foodPos"]["x"].get<double>(), 
             params["ChemoReceptors"]["foodPos"]["y"].get<double>()
         );
-        PRINTF_DEBUG("    > placing food at %f, %f", vxy_foodPos.x, vxy_foodPos.y)
+        PRINTF_DEBUG("    > placing food at %f, %f\n", vxy_foodPos.x, vxy_foodPos.y)
         chemo_re.initialize(
             vxy_foodPos,
             h.namesMap[params["ChemoReceptors"]["neuron"].get<string>()],

@@ -17,8 +17,11 @@ from matplotlib.collections import PatchCollection
 import pandas as pd
 import json
 
-from collision_object import (
-	Path,
+if __name__ == '__main__':
+	sys.path.append("..")
+
+from pyutil.util import Path
+from pyutil.collision_object import (
 	CollisionType,CollisionObject,
 	read_collobjs_tsv,
 	BoundingBox,AxBounds,BOUNDS_TEMPLATE,

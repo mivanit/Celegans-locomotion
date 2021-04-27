@@ -44,7 +44,7 @@ int main (int argc, const char* argv[])
             cxxopts::value<bool>())
         ("d,duration", "sim duration in seconds", 
             cxxopts::value<double>()->default_value("100.0"))
-        ("f,foodPos", "food position (comma separated) (defaults to whatever is in params.json)", 
+        ("f,foodPos", "food position (comma separated) (defaults to whatever is in params.json). set to \"DISABLE\" to set the scalar to zero", 
             cxxopts::value<string>())
         ("s,seed", "set random initialization seed. takes priority over `rand`. seed is 0 by default.", 
             cxxopts::value<long>())
@@ -97,19 +97,34 @@ int main (int argc, const char* argv[])
         true
     );
 
-    // get food position
+
+    // get food position and (maybe) disable chemosensation
     if (cmd.count("foodPos"))
-    {
+    { 
         if (params.contains("ChemoReceptors"))
         {
             {
                 string str_foodpos = cmd["foodPos"].as<std::string>();
-                int idx_comma = str_foodpos.find(',');
-                double foodpos_x = std::stod(str_foodpos.substr(0,idx_comma));
-                double foodpos_y = std::stod(str_foodpos.substr(idx_comma+1, std::string::npos));
+                PRINTF_DEBUG("    > loading food pos from string: %s", str_foodpos.c_str())
 
-                params["ChemoReceptors"]["foodPos"]["x"] = foodpos_x;
-                params["ChemoReceptors"]["foodPos"]["x"] = foodpos_y;
+                if (str_foodpos == "DISABLE")
+                {
+                    // if food sensation is disabled, note that in the json and disable input
+                    params["ChemoReceptors"]["stim_scalar"] = 0.0;
+                    params["ChemoReceptors"]["DISABLED"] = true;
+
+                    params["ChemoReceptors"]["foodPos"]["x"] = nan("");
+                    params["ChemoReceptors"]["foodPos"]["y"] = nan("");
+                }
+                else
+                {
+                    int idx_comma = str_foodpos.find(',');
+                    double foodpos_x = std::stod(str_foodpos.substr(0,idx_comma));
+                    double foodpos_y = std::stod(str_foodpos.substr(idx_comma+1, std::string::npos));
+
+                    params["ChemoReceptors"]["foodPos"]["x"] = foodpos_x;
+                    params["ChemoReceptors"]["foodPos"]["y"] = foodpos_y;
+                }
             }
         }
         else
@@ -117,6 +132,9 @@ int main (int argc, const char* argv[])
             throw std::runtime_error("foodPos given, but \"ChemoReceptors\" not enabled in params.json");
         }
     }
+    
+
+
 
     PRINTF_DEBUG("  > collision tsv from:\t%s\n", cmd["coll"].as<std::string>().c_str())
     std::vector<CollisionObject> collObjs = load_objects(cmd["coll"].as<std::string>());
