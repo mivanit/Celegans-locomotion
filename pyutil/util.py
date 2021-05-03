@@ -3,6 +3,36 @@ from typing import *
 
 Path = str
 
+
+def strList_to_dict(
+		in_data : Union[dict,str], 
+		keys_list : List[str], 
+		delim : str = ',',
+		type_map : Dict[str,Callable] = dict(),
+	) -> Dict[str,Any]:
+	if isinstance(in_data ,dict):
+		return in_data
+	else:
+		# split into list
+		in_lst : List[str] = in_data.split(delim)
+
+		# map to the keys
+		out_dict : Dict[str,Any] = {
+			k:v 
+			for k,v in zip(keys_list, in_lst)
+		}
+
+		# map types
+		for key,func in type_map:
+			if key in out_dict:
+				out_dict[key] = func(out_dict[key])
+		
+		return out_dict
+
+
+
+
+
 def joinPath(*args):
 	return os.path.join(*args).replace("\\", "/")
 
