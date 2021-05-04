@@ -3,6 +3,9 @@ from typing import *
 
 Path = str
 
+def mkdir(p : Path):
+	if not os.path.isdir(p):
+		os.mkdir(p)
 
 def strList_to_dict(
 		in_data : Union[dict,str], 
@@ -18,12 +21,12 @@ def strList_to_dict(
 
 		# map to the keys
 		out_dict : Dict[str,Any] = {
-			k:v 
+			k : v 
 			for k,v in zip(keys_list, in_lst)
 		}
 
 		# map types
-		for key,func in type_map:
+		for key,func in type_map.items():
 			if key in out_dict:
 				out_dict[key] = func(out_dict[key])
 		
@@ -36,7 +39,8 @@ def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
 	for i,item in enumerate(data_json):
 		if all([
 				conn_key[k] == item[k]
-				for k in conn_key
+				for k in conn_key 
+				if k is not 'NS'
 			]):
 			return i
 

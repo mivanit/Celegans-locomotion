@@ -8,7 +8,11 @@ import json
 import numpy as np
 from nptyping import NDArray
 
-from pyutil.util import Path,genCmd_singlerun, joinPath,strList_to_dict,find_conn_idx
+from pyutil.util import (
+	Path,mkdir,joinPath,
+	strList_to_dict,find_conn_idx,
+	genCmd_singlerun,
+)
 
 
 SPACE_GENERATOR_MAPPING : Dict[str,Callable] = {
@@ -43,13 +47,11 @@ class Launchers(object):
 		food_x = abs(food_x)
 
 		# make sure we dont pass the food pos further down
-		del kwargs['foodPos']
 		if 'foodPos' in kwargs:
 			raise KeyError(f'"foodPos" still specified? this should be innacessible')
 
 		# create output dir
-		if not os.path.isdir(output):
-			os.mkdir(output)
+		mkdir(output)
 
 		
 		# set up the different runs
@@ -68,8 +70,7 @@ class Launchers(object):
 			# make the output dir
 			out_path : str = output + name
 			
-			if not os.path.isdir(out_path):
-				os.mkdir(out_path)
+			mkdir(out_path)
 
 			# set up the command by passing kwargs down
 			cmd : str = genCmd_singlerun(
@@ -107,11 +108,15 @@ class Launchers(object):
 	def sweep_conn_weight(
 			output : Path = 'data/run/',
 			conn_key : Union[dict,str] = 'Head,AWA,RIM,chem',
-			conn_range : Union[dict,str] = '0.0,0.1,log',
+			conn_range : Union[dict,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			**kwargs,
 		):
 
+		# create output dir
+		mkdir(output)
+
+		# open base json
 		with open(params, 'r') as fin_json:
 			params_data : dict = json.load(fin_json)
 
@@ -120,25 +125,27 @@ class Launchers(object):
 		conn_key = strList_to_dict(
 			in_data = conn_key,
 			keys_list = ['NS', 'from', 'to', 'type'],
-			type_map = {'from' : float, 'to' : float},
 		)
 
 		conn_range = strList_to_dict(
 			in_data = conn_range,
-			keys_list = ['min', 'max', 'scale','npts'],
-			type_map = {'min' : float, 'max' : float},
+			keys_list = ['min', 'max', 'scale', 'npts'],
+			type_map = {'min' : float, 'max' : float, 'npts' : int},
 		)
+
+		print(f'>> connection to modify: {conn_key}')
+		print(f'>> range of values: {conn_range}')
 
 
 		# find the appropriate connection to modify
 		conn_idx : int = find_conn_idx(
-			params_data[conn_key['NS']['connections']],
+			params_data[conn_key['NS']]['connections'],
 			conn_key,
 		)
 
 		if conn_idx is None:
 			# if the connection doesnt exist, add it
-			params_data[conn_key['NS']['connections']].append({
+			params_data[conn_key['NS']]['connections'].append({
 				'from' : conn_key['from'],
 				'to' : conn_key['to'],
 				'type' : conn_key['type'],
@@ -147,7 +154,7 @@ class Launchers(object):
 		
 		# if the connection still doesn't exist, something has gone wrong
 		conn_idx = find_conn_idx(
-			params_data[conn_key['NS']['connections']],
+			params_data[conn_key['NS']]['connections'],
 			conn_key,
 		)
 
@@ -167,16 +174,16 @@ class Launchers(object):
 		for wgt in weight_vals:
 			print(f'> running for weight {wgt}')
 			# make dir
-			outpath : str = f"{output}{conn_key['from']}-{conn_key['to']}_{wgt}"
+			outpath : str = f"{output}{conn_key['from']}-{conn_key['to']}_{wgt}/"
 			outpath_params : str = joinPath(outpath,'params.json')
-			os.mkdir(outpath)
+			mkdir(outpath)
 
 			# set weight
-			params_data[conn_key['NS']['connections']][conn_idx] = wgt
+			params_data[conn_key['NS']]['connections'][conn_idx]['weight'] = wgt
 
 			# save modified params
 			with open(outpath_params, 'w') as fout:
-				json.dump(params_data, fout)
+				json.dump(params_data, fout, indent = '\t')
 
 			# run
 			Launchers.multi_food_run(
