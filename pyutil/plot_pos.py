@@ -484,6 +484,7 @@ def _draw_setup(
 
 	# fix the scaling
 	ax.axis('equal')
+	plt.title(rootdir)
 
 	# plot preliminaries
 	# ==============================

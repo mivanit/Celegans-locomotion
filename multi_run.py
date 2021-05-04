@@ -4,9 +4,12 @@ import os
 from typing import *
 import subprocess
 import json
+from copy import deepcopy
 
 import numpy as np
 from nptyping import NDArray
+
+from pydbg import dbg
 
 from pyutil.util import (
 	Path,mkdir,joinPath,dump_state,
@@ -143,12 +146,37 @@ class Launchers(object):
 
 
 		# find the appropriate connection to modify
-		conn_idx : int = find_conn_idx(
-			params_data[conn_key['NS']]['connections'],
-			conn_key,
-		)
+		if conn_key['to'].endswith('*'):
+			# if wildcard given, find every connection that matches
+			conn_idxs : List[int] = list()
+			
+			conn_key_temp : dict = deepcopy(conn_key)
+			
+			for nrn in params_data[conn_key['NS']]['neurons']:
+				# loop over neuron names, check if they match
+				# REVIEW: this isnt full regex, but whatever
+				dbg(nrn)
+				if nrn.startswith(conn_key['to'].split('*')[0]):
+					conn_key_temp['to'] = nrn
+					dbg(conn_key_temp)
+					cidx_temp : Optional[int] = find_conn_idx(
+						params_data[conn_key_temp['NS']]['connections'],
+						conn_key_temp,
+					)
+					dbg(cidx_temp)
+					# append to list, but only if an existing connection is found
+					# note that this behavior differs from when no wildcard is given,
+					# in that new connections will not be created
+					if cidx_temp is not None:
+						conn_idxs.append(cidx_temp)
+		else:
+			# if no wildcard specified, just get the one connection
+			conn_idxs : List[int] = [ find_conn_idx(
+				params_data[conn_key['NS']]['connections'],
+				conn_key,
+			) ]
 
-		if conn_idx is None:
+		if None in conn_idxs:
 			# if the connection doesnt exist, add it
 			params_data[conn_key['NS']]['connections'].append({
 				'from' : conn_key['from'],
@@ -157,14 +185,14 @@ class Launchers(object):
 				'weight' : float('nan'),
 			})
 		
-		# if the connection still doesn't exist, something has gone wrong
-		conn_idx = find_conn_idx(
-			params_data[conn_key['NS']]['connections'],
-			conn_key,
-		)
+			# if the connection still doesn't exist, something has gone wrong
+			conn_idxs = [ find_conn_idx(
+				params_data[conn_key['NS']]['connections'],
+				conn_key,
+			) ]
 
-		if conn_idx is None:
-			raise KeyError('couldnt find connection index -- this state should be innaccessible')
+		if (None in conn_idxs) or (len(conn_idxs) == 0):
+			raise KeyError(f'couldnt find connection index -- this state should be innaccessible.   list:  {conn_idxs}')
 
 
 		# figure out the range of values to try
@@ -174,17 +202,25 @@ class Launchers(object):
 			conn_range['npts'],
 		)
 		
+		count : int = 1
+		count_max : int = len(weight_vals)
+
+		print('> will modify connections:')
+		for cidx in conn_idxs:
+			print('\t>>  ' + str(params_data[conn_key['NS']]['connections'][cidx]))
+		input('press enter to continue...')
 
 		# run for each value of connection strength
 		for wgt in weight_vals:
-			print(f'> running for weight {wgt}')
+			print(f'> running for weight {wgt} \t ({count} / {count_max})')
 			# make dir
-			outpath : str = f"{output}{conn_key['from']}-{conn_key['to']}_{wgt:.4}/"
+			outpath : str = f"{output}{conn_key['from']}-{conn_key['to'].replace('*','x')}_{wgt:.5}/"
 			outpath_params : str = joinPath(outpath,'params.json')
 			mkdir(outpath)
 
-			# set weight
-			params_data[conn_key['NS']]['connections'][conn_idx]['weight'] = wgt
+			# set weights
+			for cidx in conn_idxs:
+				params_data[conn_key['NS']]['connections'][cidx]['weight'] = wgt
 
 			# save modified params
 			with open(outpath_params, 'w') as fout:
@@ -196,6 +232,8 @@ class Launchers(object):
 				params = outpath_params,
 				**kwargs
 			)
+
+			count += 1
 	
 
 
