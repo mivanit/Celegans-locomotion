@@ -34,13 +34,13 @@
 				"from": "INT",
 				"to": "RMDD",
 				"type": "chem",
-				"weight": 1.0
+				"weight": -12.0
 			},
 			{
 				"from": "INT",
 				"to": "RMDV",
 				"type": "chem",
-				"weight": 1.0
+				"weight": -12.0
 			},
 			{
 				"from": "SMDD",

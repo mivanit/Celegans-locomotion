@@ -42,7 +42,12 @@ class Launchers(object):
 				food_y = params_json["ChemoReceptors"]["foodPos"]["y"]
 		else:
 			# or from CLI (takes priority, if given)
-			food_x,food_y = foodPos.split(',')
+			if isinstance(foodPos, str):
+				food_x,food_y = foodPos.split(',')
+			elif isinstance(foodPos, tuple):
+				food_x,food_y = foodPos
+			else:
+				raise TypeError(f'couldnt read foodpos, expected str or tuple:   {foodPos}')
 			food_x = float(food_x)
 			food_y = float(food_y)
 
@@ -208,6 +213,8 @@ class Launchers(object):
 		print('> will modify connections:')
 		for cidx in conn_idxs:
 			print('\t>>  ' + str(params_data[conn_key['NS']]['connections'][cidx]))
+		print('> will try weights:')
+		print(f'\t>>  {weight_vals}')
 		input('press enter to continue...')
 
 		# run for each value of connection strength
