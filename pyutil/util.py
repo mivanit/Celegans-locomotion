@@ -30,7 +30,17 @@ def strList_to_dict(
 		return out_dict
 
 
+def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
+	"""finds the index of the entry matching conn_key"""
 
+	for i,item in enumerate(data_json):
+		if all([
+				conn_key[k] == item[k]
+				for k in conn_key
+			]):
+			return i
+
+	return None
 
 
 def joinPath(*args):
