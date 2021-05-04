@@ -9,7 +9,7 @@ import numpy as np
 from nptyping import NDArray
 
 from pyutil.util import (
-	Path,mkdir,joinPath,
+	Path,mkdir,joinPath,dump_state,
 	strList_to_dict,find_conn_idx,
 	genCmd_singlerun,
 )
@@ -53,6 +53,8 @@ class Launchers(object):
 		# create output dir
 		mkdir(output)
 
+		# save state
+		dump_state(locals(), output)
 		
 		# set up the different runs
 		dct_runs : Dict[str,str] = {
@@ -107,14 +109,17 @@ class Launchers(object):
 	@staticmethod
 	def sweep_conn_weight(
 			output : Path = 'data/run/',
-			conn_key : Union[dict,str] = 'Head,AWA,RIM,chem',
-			conn_range : Union[dict,str] = '0.0,1.0,lin,3',
+			conn_key : Union[dict,tuple,str] = 'Head,AWA,RIM,chem',
+			conn_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			**kwargs,
 		):
 
 		# create output dir
 		mkdir(output)
+
+		# save state
+		dump_state(locals(), output)
 
 		# open base json
 		with open(params, 'r') as fin_json:
@@ -174,7 +179,7 @@ class Launchers(object):
 		for wgt in weight_vals:
 			print(f'> running for weight {wgt}')
 			# make dir
-			outpath : str = f"{output}{conn_key['from']}-{conn_key['to']}_{wgt}/"
+			outpath : str = f"{output}{conn_key['from']}-{conn_key['to']}_{wgt:.4}/"
 			outpath_params : str = joinPath(outpath,'params.json')
 			mkdir(outpath)
 

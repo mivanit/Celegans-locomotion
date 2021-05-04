@@ -1,23 +1,38 @@
 import os
 from typing import *
 
+import json
+
 Path = str
 
 def mkdir(p : Path):
 	if not os.path.isdir(p):
 		os.mkdir(p)
 
+def joinPath(*args):
+	return os.path.join(*args).replace("\\", "/")
+
+
+def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.json'):
+	with open(joinPath(path, file), 'w') as log_out:
+		json.dump(dict_locals, log_out, indent = '\t')
+
 def strList_to_dict(
-		in_data : Union[dict,str], 
+		in_data : Union[dict,tuple,str], 
 		keys_list : List[str], 
 		delim : str = ',',
 		type_map : Dict[str,Callable] = dict(),
 	) -> Dict[str,Any]:
-	if isinstance(in_data ,dict):
+	if isinstance(in_data, dict):
 		return in_data
 	else:
-		# split into list
-		in_lst : List[str] = in_data.split(delim)
+		if isinstance(in_data, tuple):
+			in_lst = list(in_data)
+		elif isinstance(in_data, str):
+			# split into list
+			in_lst : List[str] = in_data.split(delim)
+		else:
+			raise TypeError(f'invalid type, expected one of dict,tuple,str, got: {type(in_data)} for {in_data}')
 
 		# map to the keys
 		out_dict : Dict[str,Any] = {
@@ -46,9 +61,6 @@ def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
 
 	return None
 
-
-def joinPath(*args):
-	return os.path.join(*args).replace("\\", "/")
 
 SCRIPTNAME_KEY = "__main__"
 COMMAND_DANGERS = [';', 'rm', 'sudo']
