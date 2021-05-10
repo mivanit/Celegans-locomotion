@@ -1,3 +1,11 @@
+SOURCES = $(wildcard *.cpp)
+HEADERS = $(wildcard *.h)
+
+MODULES_HEADERS = $(wildcard **/*.h)
+MODULES_SOURCES = $(wildcard **/*.cpp)
+
+COMMON_DOC_FLAGS = --report --output docs $(HEADERS) $(SOURCES) $(MODULES_HEADERS) $(MODULES_SOURCES)
+
 # GCCFLAGS = -pthread -c -O3 -flto
 # GCCFLAGS = -std=c++11 -c -O3 -flto
 GCCFLAGS = -std=c++17 -c -O3 -flto
@@ -32,5 +40,8 @@ singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules
 	g++ $(GCCFLAGS) singlerun.cpp
 clean:
 	rm *.o *.exe
-wipedat:
-	rm *.dat
+
+doc:
+	@echo "Generating documentation..."; \
+	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
+
