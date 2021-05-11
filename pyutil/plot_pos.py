@@ -589,6 +589,7 @@ class Plotters(object):
 			# args specific to this plotter
 			idx : int = 0,
 			show : bool = True,
+			food_excl : List[str] = [],
 		):
 
 		multi_dirs : List[str] = os.listdir(rootdir)
@@ -607,20 +608,25 @@ class Plotters(object):
 			pad_frac = figsize_scalar,
 		)
 
+		if isinstance(food_excl,str):
+			food_excl = food_excl.split(',')
+
 		for food_choice in multi_dirs:
+
+			if food_choice not in food_excl:
 			
-			bodydat_choice : str = joinPath(rootdir, food_choice, bodydat)
-			params_choice : str = joinPath(rootdir, food_choice, params)
-						
-			data : NDArray[(int,int), CoordsRotArr] = read_body_data(bodydat_choice)
-			head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+				bodydat_choice : str = joinPath(rootdir, food_choice, bodydat)
+				params_choice : str = joinPath(rootdir, food_choice, params)
+							
+				data : NDArray[(int,int), CoordsRotArr] = read_body_data(bodydat_choice)
+				head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
 
-			print(bodydat_choice)
-			print(head_data.shape, head_data.dtype)
+				print(bodydat_choice)
+				print(head_data.shape, head_data.dtype)
 
-			ax.plot(head_data['x'], head_data['y'], label = food_choice)
-			tup_foodpos = _plot_foodPos(ax, params_choice, label = food_choice)
-			print(tup_foodpos)
+				ax.plot(head_data['x'], head_data['y'], label = food_choice)
+				tup_foodpos = _plot_foodPos(ax, params_choice, label = food_choice)
+				print(tup_foodpos)
 
 		plt.legend()
 

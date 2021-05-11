@@ -216,25 +216,35 @@ Worm::Worm(json & params)
     if (params.find("ChemoReceptors") != params.end())
     {
         auto params_CR = params["ChemoReceptors"];
-        PRINT_DEBUG("  > Chemo Receptors\n")
-        VecXY vxy_foodPos(
-            params_CR["foodPos"]["x"].get<double>(), 
-            params_CR["foodPos"]["y"].get<double>()
-        );
-        PRINTF_DEBUG("    > placing food at %f, %f\n", vxy_foodPos.x, vxy_foodPos.y)
-        chemo_re.initialize(
-            // food position
-            vxy_foodPos,
-            // neuron to send chemosensory signal into
-            h.namesMap[params_CR["neuron"].get<string>()],
-            // chemosensory parameters
-            params_CR["alpha"].get<double>(),
-            params_CR["beta"].get<double>(),
-            params_CR["gamma"].get<double>(),
-            params_CR["stim_scalar"].get<double>(),
-            // optional minimum concentration
-            (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
-        );
+        
+        if (
+            (params_CR.find("DISABLED") != params_CR.end()) 
+            && params_CR["DISABLED"].get<bool>()
+        ){
+            PRINT_DEBUG("  > ChemoReceptors data found, but disabled\n")
+        }
+        else
+        {
+            PRINT_DEBUG("  > Chemo Receptors enabled\n")
+            VecXY vxy_foodPos(
+                params_CR["foodPos"]["x"].get<double>(), 
+                params_CR["foodPos"]["y"].get<double>()
+            );
+            PRINTF_DEBUG("    > placing food at %f, %f\n", vxy_foodPos.x, vxy_foodPos.y)
+            chemo_re.initialize(
+                // food position
+                vxy_foodPos,
+                // neuron to send chemosensory signal into
+                h.namesMap[params_CR["neuron"].get<string>()],
+                // chemosensory parameters
+                params_CR["alpha"].get<double>(),
+                params_CR["beta"].get<double>(),
+                params_CR["gamma"].get<double>(),
+                params_CR["stim_scalar"].get<double>(),
+                // optional minimum concentration
+                (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
+            );
+        }
     }
 
     // NMJ Weights
