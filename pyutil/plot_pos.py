@@ -1,3 +1,9 @@
+"""
+plots the position of a worm and environment through time
+
+contains plotters for showing head position of a single or multiple worms, the worm body at a point in time, or an animation showing the movement of the worm
+"""
+
 import os
 import sys
 from typing import *
@@ -12,7 +18,7 @@ from nptyping import NDArray,StructuredType
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.patches import Patch,Rectangle,Wedge
+from matplotlib.patches import Patch,Circle,Rectangle,Wedge
 from matplotlib.collections import PatchCollection
 
 import pandas as pd
@@ -349,7 +355,13 @@ def _plot_collobjs(ax : Axes, collobjs : Path):
 
 
 
-def _plot_foodPos(ax : Axes, params : Path, fmt : str = 'x', label : str = None):
+def _plot_foodPos(
+		ax : Axes, 
+		params : Path, 
+		fmt : str = 'x', 
+		label : str = None, 
+		maxdist_disc : bool = True,
+	):
 	with open(params, 'r') as fin:
 		params_data : dict = json.load(fin)
 		if "ChemoReceptors" in params_data:
@@ -358,6 +370,17 @@ def _plot_foodPos(ax : Axes, params : Path, fmt : str = 'x', label : str = None)
 				foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
 		
 				ax.plot(foodpos_x, foodpos_y, fmt, label = label)
+
+				if maxdist_disc:
+					if "max_distance" in params_data["ChemoReceptors"]:
+						ax.add_patch(Circle(
+							(foodpos_x, foodpos_y), 
+							radius = params_data["ChemoReceptors"]["max_distance"],
+							alpha = 0.1,
+							color = 'green',
+						))
+					else:
+						KeyError('couldnt find "max_distance"')
 			
 				return (foodpos_x, foodpos_y)
 

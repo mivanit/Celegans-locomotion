@@ -58,7 +58,7 @@ public:
     // AWA consts
     double alpha; double beta; double gamma;
     double stim_scalar;
-    double min_concentration;
+    double max_distance;
 
     // storing value of fast and slow sense
     double F_i; double S_i;
@@ -70,7 +70,7 @@ public:
         VecXY in_foodpos, 
         int in_target_nrn_idx, 
         double in_alpha, double in_beta, double in_gamma, 
-        double in_stim_scalar, double in_min_concentration
+        double in_stim_scalar, double in_max_distance
     ){
         enabled = true;
         foodpos = in_foodpos;
@@ -80,7 +80,7 @@ public:
         beta = in_beta; 
         gamma = in_gamma;
         stim_scalar = in_stim_scalar;
-        min_concentration = in_min_concentration;
+        max_distance = in_max_distance;
 
         F_im1 = 0.0;
         S_im1 = 0.0;
@@ -89,7 +89,10 @@ public:
     double get_concentration(VecXY headpos)
     {
         // TODO: make this more accurate -- corner distance, or full diffusion sim
-        return stim_scalar * exp( - pow(dist_sqrd(headpos, foodpos), 2.0) / 3.0 );
+        // set the concentration to zero if it is more than some max distance away
+        double food_dist_sqrd = dist_sqrd(headpos, foodpos);
+        bool closer_than_max_dist = pow(dist_sqrd(headpos, foodpos), 0.5) < max_distance;
+        return stim_scalar * exp( - food_dist_sqrd / 3.0 ) * closer_than_max_dist;
     }
 
 
@@ -100,11 +103,6 @@ public:
     double comp_sensory(VecXY headpos, double StepSize)
     {
         C_ixy = get_concentration(headpos);
-        // set the gradient to zero if it is under some threshold value, otherwise leave it unchanged
-        if (min_concentration < C_ixy)
-        {
-            C_ixy = 0.0;
-        }
 
         // iterate fast and slow sense
 		F_i = F_im1 + StepSize * ( (alpha * C_ixy) - (beta * F_im1) );

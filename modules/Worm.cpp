@@ -233,7 +233,7 @@ Worm::Worm(json & params)
             params_CR["gamma"].get<double>(),
             params_CR["stim_scalar"].get<double>(),
             // optional minimum concentration
-            (params_CR.find("min_concentration") != params_CR.end()) ? params_CR["min_concentration"].get<double>() : 0.0
+            (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
         );
     }
 
