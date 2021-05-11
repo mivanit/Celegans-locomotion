@@ -215,19 +215,25 @@ Worm::Worm(json & params)
     // chemosensory receptor
     if (params.find("ChemoReceptors") != params.end())
     {
+        auto params_CR = params["ChemoReceptors"];
         PRINT_DEBUG("  > Chemo Receptors\n")
         VecXY vxy_foodPos(
-            params["ChemoReceptors"]["foodPos"]["x"].get<double>(), 
-            params["ChemoReceptors"]["foodPos"]["y"].get<double>()
+            params_CR["foodPos"]["x"].get<double>(), 
+            params_CR["foodPos"]["y"].get<double>()
         );
         PRINTF_DEBUG("    > placing food at %f, %f\n", vxy_foodPos.x, vxy_foodPos.y)
         chemo_re.initialize(
+            // food position
             vxy_foodPos,
-            h.namesMap[params["ChemoReceptors"]["neuron"].get<string>()],
-            params["ChemoReceptors"]["alpha"].get<double>(),
-            params["ChemoReceptors"]["beta"].get<double>(),
-            params["ChemoReceptors"]["gamma"].get<double>(),
-            params["ChemoReceptors"]["stim_scalar"].get<double>()
+            // neuron to send chemosensory signal into
+            h.namesMap[params_CR["neuron"].get<string>()],
+            // chemosensory parameters
+            params_CR["alpha"].get<double>(),
+            params_CR["beta"].get<double>(),
+            params_CR["gamma"].get<double>(),
+            params_CR["stim_scalar"].get<double>(),
+            // optional minimum concentration
+            (params_CR.find("min_concentration") != params_CR.end()) ? params_CR["min_concentration"].get<double>() : 0.0
         );
     }
 

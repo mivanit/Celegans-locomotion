@@ -58,6 +58,7 @@ public:
     // AWA consts
     double alpha; double beta; double gamma;
     double stim_scalar;
+    double min_concentration;
 
     // storing value of fast and slow sense
     double F_i; double S_i;
@@ -65,8 +66,12 @@ public:
 
     double C_ixy; double out_AWA_stim;
 
-    void initialize(VecXY in_foodpos, int in_target_nrn_idx, double in_alpha, double in_beta, double in_gamma, double in_stim_scalar)
-    {
+    void initialize(
+        VecXY in_foodpos, 
+        int in_target_nrn_idx, 
+        double in_alpha, double in_beta, double in_gamma, 
+        double in_stim_scalar, double in_min_concentration
+    ){
         enabled = true;
         foodpos = in_foodpos;
         target_nrn_idx = in_target_nrn_idx;
@@ -75,6 +80,7 @@ public:
         beta = in_beta; 
         gamma = in_gamma;
         stim_scalar = in_stim_scalar;
+        min_concentration = in_min_concentration;
 
         F_im1 = 0.0;
         S_im1 = 0.0;
@@ -83,7 +89,7 @@ public:
     double get_concentration(VecXY headpos)
     {
         // TODO: make this more accurate -- corner distance, or full diffusion sim
-        return dist(headpos, foodpos);
+        return stim_scalar * exp( - pow(dist_sqrd(headpos, foodpos), 2.0) / 3.0 );
     }
 
 
@@ -94,7 +100,11 @@ public:
     double comp_sensory(VecXY headpos, double StepSize)
     {
         C_ixy = get_concentration(headpos);
-
+        // set the gradient to zero if it is under some threshold value, otherwise leave it unchanged
+        if (min_concentration < C_ixy)
+        {
+            C_ixy = 0.0;
+        }
 
         // iterate fast and slow sense
 		F_i = F_im1 + StepSize * ( (alpha * C_ixy) - (beta * F_im1) );
@@ -108,7 +118,7 @@ public:
 
         // PRINTF_DEBUG("\n>> C_ixy: %f, F_i: %f, S_i: %f, out_AWA_stim: %f\n", C_ixy, F_i, S_i, out_AWA_stim)
 
-        return out_AWA_stim * stim_scalar;
+        return out_AWA_stim;
     }
 };
 
