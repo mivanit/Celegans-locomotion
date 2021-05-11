@@ -28,9 +28,33 @@ class Launchers(object):
 	@staticmethod
 	def multi_food_run(
 			output : Path = 'data/run/',
-			foodPos : str = None,
+			foodPos : Optional[str] = None,
 			**kwargs,
 		):
+		"""runs multiple trials of the simulation with food on left, right, and absent
+		
+		runs each of the following:
+		```python
+		dct_runs : Dict[str,str] = {
+			'food_none/' : 'DISABLE',
+			'food_left/' : f'{-food_x},{food_y}',
+			'food_right/' : f'{food_x},{food_y}',
+		}
+		```
+		with `food_x`, `food_y` extracted from `foodPos` parameter, or `params` json file if `foodPos is None`
+		
+		### Parameters:
+		 - `output : Path`   
+		   output path, will create folders for each food position inside this directory
+		   (defaults to `'data/run/'`)
+		 - `foodPos : Optional[str]`   
+		   food position tuple
+		   (defaults to `None`)
+		
+		### Raises:
+		 - `TypeError` : if `foodPos` cant be read
+		 - `KeyError` : shouldn't ever be raised -- state *should* be inacessible
+		"""
 
 		# get food position
 		if foodPos is None:
@@ -56,7 +80,7 @@ class Launchers(object):
 
 		# make sure we dont pass the food pos further down
 		if 'foodPos' in kwargs:
-			raise KeyError(f'"foodPos" still specified? this should be innacessible')
+			raise KeyError(f'"foodPos" still specified? this should be inacessible')
 
 		# create output dir
 		mkdir(output)
@@ -120,6 +144,7 @@ class Launchers(object):
 			conn_key : Union[dict,tuple,str] = 'Head,AWA,RIM,chem',
 			conn_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
+			special_scaling_map : Optional[Dict[str,float]] = None,
 			**kwargs,
 		):
 
@@ -175,6 +200,9 @@ class Launchers(object):
 					if cidx_temp is not None:
 						conn_idxs.append(cidx_temp)
 		else:
+			if special_scaling_map is not None:
+				raise ValueError(f"`special_scaling_map` specified, but no wildcard given in neuron name:   {special_scaling_map}    {conn_key['to']}")
+
 			# if no wildcard specified, just get the one connection
 			conn_idxs : List[int] = [ find_conn_idx(
 				params_data[conn_key['NS']]['connections'],
@@ -217,6 +245,11 @@ class Launchers(object):
 		print(f'\t>>  {weight_vals}')
 		input('press enter to continue...')
 
+		# set up for scaling the weight
+		wgt_scale : float = 1.0
+		if special_scaling_map is None:
+			special_scaling_map = dict()
+		
 		# run for each value of connection strength
 		for wgt in weight_vals:
 			print(f'> running for weight {wgt} \t ({count} / {count_max})')
@@ -227,7 +260,15 @@ class Launchers(object):
 
 			# set weights
 			for cidx in conn_idxs:
-				params_data[conn_key['NS']]['connections'][cidx]['weight'] = wgt
+				# scale the weight if the neuron name is in the map
+				cidx_nrn_to : str = params_data[conn_key['NS']]['connections'][cidx]['to']
+				if cidx_nrn_to in special_scaling_map:
+					wgt_scale = special_scaling_map[cidx_nrn_to]
+				else:
+					wgt_scale = 1.0
+
+				# set the new weight
+				params_data[conn_key['NS']]['connections'][cidx]['weight'] = wgt * wgt_scale
 
 			# save modified params
 			with open(outpath_params, 'w') as fout:
@@ -241,6 +282,28 @@ class Launchers(object):
 			)
 
 			count += 1
+
+	@staticmethod
+	def sweep_hardcoded_turning_RMDx(
+			output : Path = 'data/run/',
+			conn_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
+			nrn_from : str = 'CONST',
+			params : Path = 'input/params.json',
+			scaling_map_sign_dorsal : float = 1.0,
+			**kwargs,
+		):
+
+		Launchers.sweep_conn_weight(
+			output = output,
+			conn_key = ('Head', nrn_from,'RMD*','chem'),
+			conn_range = conn_range,
+			params = params,
+			special_scaling_map = {
+				'RMDD' : scaling_map_sign_dorsal,
+				'RMDV' : - scaling_map_sign_dorsal,
+			},
+			**kwargs,
+		)
 	
 
 

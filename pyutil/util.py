@@ -18,8 +18,10 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 		# json.dump(dict_locals, log_out, indent = '\t')
 		print(dict_locals, file = log_out)
 
+
 def split_dict_arrs(in_dict : Dict[float,float]):
 	return zip(*sorted(in_dict.items()))
+
 
 def strList_to_dict(
 		in_data : Union[dict,tuple,str], 

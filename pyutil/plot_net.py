@@ -4,12 +4,17 @@ import json
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from util import Path,joinPath
 
 def plot_net(
 		params : str = "../input/params/default.json",
 		nrvsys : Union[str,List[str]] = ["Head", "VentralCord"],
+		strict_fname : bool = True,
 		show_weights : bool = True,
 	):
+	if params.endswith('/') or (strict_fname and not params.endswith('params.json')):
+		params = joinPath(params, 'params.json')
+
 	# figure out which nervous systems to plot
 	if isinstance(nrvsys, str):
 		nrvsys = nrvsys.split(',')
