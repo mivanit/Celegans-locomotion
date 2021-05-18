@@ -8,7 +8,7 @@
 		"neuron": "AWA",
 		"foodPos": {
 			"x": -0.001,
-			"y": 0.010
+			"y": 0.0065
 		}
 	},
 	"Head": {
@@ -17,19 +17,19 @@
 				"from": "AWA",
 				"to": "RIM",
 				"type": "chem",
-				"weight": 100000.0
+				"weight": 35000.0
 			},
 			{
 				"from": "RIM",
 				"to": "RMDD",
 				"type": "chem",
-				"weight": 0.0
+				"weight": 10.0
 			},
 			{
 				"from": "RIM",
 				"to": "RMDV",
 				"type": "chem",
-				"weight": 0.0
+				"weight": 10.0
 			},
 			{
 				"from": "SMDD",

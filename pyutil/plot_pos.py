@@ -661,6 +661,7 @@ class Plotters(object):
 			for p in lst_bodydat
 		]
 
+		print(lst_dirs)
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 
