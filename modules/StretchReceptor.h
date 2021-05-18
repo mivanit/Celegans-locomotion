@@ -90,6 +90,7 @@ public:
     {
         // TODO: make this more accurate -- corner distance, or full diffusion sim
         // set the concentration to zero if it is more than some max distance away
+        // OPTIMIZE: make branchless by multiplying gradient by bool
         double food_dist_sqrd = dist_sqrd(headpos, foodpos);
         if (pow(dist_sqrd(headpos, foodpos), 0.5) < max_distance)
         {

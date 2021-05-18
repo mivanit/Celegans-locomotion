@@ -534,6 +534,12 @@ def _draw_setup(
 
 class Plotters(object):
 	"""
+	plots the position of a worm and environment through time
+
+	contains plotters for showing head position of a single or multiple worms, the worm body at a point in time, or an animation showing the movement of the worm
+	"""
+
+	"""
 	##     ## ########    ###    ########
 	##     ## ##         ## ##   ##     ##
 	##     ## ##        ##   ##  ##     ##
