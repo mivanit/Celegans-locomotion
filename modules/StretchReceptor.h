@@ -57,7 +57,8 @@ public:
     bool enabled = false;
     // AWA consts
     double alpha; double beta; double gamma;
-    double stim_scalar;
+    double kappa; double lambda;
+
     double max_distance;
 
     // storing value of fast and slow sense
@@ -70,7 +71,8 @@ public:
         VecXY in_foodpos, 
         int in_target_nrn_idx, 
         double in_alpha, double in_beta, double in_gamma, 
-        double in_stim_scalar, double in_max_distance
+        double in_kappa, double in_lambda, 
+        double in_max_distance
     ){
         enabled = true;
         foodpos = in_foodpos;
@@ -79,7 +81,9 @@ public:
         alpha = in_alpha; 
         beta = in_beta; 
         gamma = in_gamma;
-        stim_scalar = in_stim_scalar;
+        kappa = in_kappa; 
+        lambda = in_lambda;
+
         max_distance = in_max_distance;
 
         F_im1 = 0.0;
@@ -98,7 +102,7 @@ public:
         }
         else
         {
-            return stim_scalar * exp( - food_dist_sqrd / 3.0 );
+            return kappa * exp( food_dist_sqrd * lambda );
         }
     }
 

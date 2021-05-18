@@ -110,7 +110,7 @@ int main (int argc, const char* argv[])
                 if (str_foodpos == "DISABLE")
                 {
                     // if food sensation is disabled, note that in the json and disable input
-                    params["ChemoReceptors"]["stim_scalar"] = 0.0;
+                    params["ChemoReceptors"]["kappa"] = 0.0;
                     params["ChemoReceptors"]["DISABLED"] = true;
 
                     params["ChemoReceptors"]["foodPos"]["x"] = nan("");

@@ -240,7 +240,8 @@ Worm::Worm(json & params)
                 params_CR["alpha"].get<double>(),
                 params_CR["beta"].get<double>(),
                 params_CR["gamma"].get<double>(),
-                params_CR["stim_scalar"].get<double>(),
+                params_CR["kappa"].get<double>(),
+                params_CR["lambda"].get<double>(),
                 // optional minimum concentration
                 (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
             );
