@@ -74,7 +74,7 @@ int main (int argc, const char* argv[])
         seed = static_cast<long>(time(NULL));
     }
     rs.SetRandomSeed(seed);
-    PRINTF_DEBUG("> set rand seed to %d\n", seed)
+    PRINTF_DEBUG("> set rand seed to %ld\n", seed)
 
     // set duration
     DURATION = cmd["duration"].as<double>();;

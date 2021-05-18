@@ -284,7 +284,7 @@ void Worm::InitializeState(RandomState &rs, double angle, std::vector<CollisionO
     t = 0.0;
     n.RandomizeCircuitState(-0.5, 0.5, rs);
     h.RandomizeCircuitState(-0.5, 0.5, rs);
-    PRINTF_DEBUG("    > body state\n      >> angle: %f, collision obj count: %d\n", angle, collObjs.size())
+    PRINTF_DEBUG("    > body state\n      >> angle: %f, collision obj count: %ld\n", angle, collObjs.size())
     b.InitializeBodyState(angle, collObjs);
     PRINT_DEBUG("    > muscle state\n")
     m.InitializeMuscleState();

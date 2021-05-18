@@ -112,7 +112,7 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
         exit(EXIT_FAILURE);
     }
 
-	PRINTF_DEBUG("    >> elements in CollObjs vec: %d\n", CollObjs.size())
+	PRINTF_DEBUG("    >> elements in CollObjs vec: %ld\n", CollObjs.size())
 
 	for (CollisionObject obj : CollObjs)
 	{
