@@ -8,8 +8,7 @@
 		},
 		"gamma": 2.0,
 		"neuron": "AWA",
-		"stim_scalar": 10.0,
-		"max_distance" : 0.005
+		"stim_scalar": 100000.0
 	},
 	"Head": {
 		"connections": [
@@ -17,7 +16,7 @@
 				"from": "AWA",
 				"to": "RIM",
 				"type": "chem",
-				"weight": -10.0
+				"weight": 100000.0
 			},
 			{
 				"from": "RIM",
@@ -113,11 +112,11 @@
 		"neurons": {
 			"AWA": {
 				"tau": 0.01,
-				"theta": 0.0
+				"theta": -10.0
 			},
 			"RIM": {
 				"tau": 0.01,
-				"theta": 0.0
+				"theta": -10.0
 			},
 			"RMDD": {
 				"tau": 0.502018,

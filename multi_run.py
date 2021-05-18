@@ -27,7 +27,7 @@ SPACE_GENERATOR_MAPPING : Dict[str,Callable] = {
 class Launchers(object):
 	@staticmethod
 	def multi_food_run(
-			output : Path = 'data/run/',
+			rootdir : Path = 'data/run/',
 			foodPos : Optional[str] = None,
 			**kwargs,
 		):
@@ -44,7 +44,7 @@ class Launchers(object):
 		with `food_x`, `food_y` extracted from `foodPos` parameter, or `params` json file if `foodPos is None`
 		
 		### Parameters:
-		 - `output : Path`   
+		 - `rootdir : Path`   
 		   output path, will create folders for each food position inside this directory
 		   (defaults to `'data/run/'`)
 		 - `foodPos : Optional[str]`   
@@ -83,10 +83,10 @@ class Launchers(object):
 			raise KeyError(f'"foodPos" still specified? this should be inacessible')
 
 		# create output dir
-		mkdir(output)
+		mkdir(rootdir)
 
 		# save state
-		dump_state(locals(), output)
+		dump_state(locals(), rootdir)
 		
 		# set up the different runs
 		dct_runs : Dict[str,str] = {
@@ -102,7 +102,7 @@ class Launchers(object):
 		for name,foodPos in dct_runs.items():
 
 			# make the output dir
-			out_path : str = output + name
+			out_path : str = joinPath(rootdir,name)
 			
 			mkdir(out_path)
 
@@ -140,19 +140,20 @@ class Launchers(object):
 
 	@staticmethod
 	def sweep_conn_weight(
-			output : Path = 'data/run/',
+			rootdir : Path = 'data/run/',
 			conn_key : Union[dict,tuple,str] = 'Head,AWA,RIM,chem',
 			conn_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			special_scaling_map : Optional[Dict[str,float]] = None,
+			ASK_CONTINUE : bool = True,
 			**kwargs,
 		):
 
 		# create output dir
-		mkdir(output)
+		mkdir(rootdir)
 
 		# save state
-		dump_state(locals(), output)
+		dump_state(locals(), rootdir)
 
 		# open base json
 		with open(params, 'r') as fin_json:
@@ -243,7 +244,9 @@ class Launchers(object):
 			print('\t>>  ' + str(params_data[conn_key['NS']]['connections'][cidx]))
 		print('> will try weights:')
 		print(f'\t>>  {weight_vals}')
-		input('press enter to continue...')
+
+		if ASK_CONTINUE:
+			input('press enter to continue...')
 
 		# set up for scaling the weight
 		wgt_scale : float = 1.0
@@ -254,7 +257,7 @@ class Launchers(object):
 		for wgt in weight_vals:
 			print(f'> running for weight {wgt} \t ({count} / {count_max})')
 			# make dir
-			outpath : str = f"{output}{conn_key['from']}-{conn_key['to'].replace('*','x')}_{wgt:.5}/"
+			outpath : str = f"{rootdir}{conn_key['from']}-{conn_key['to'].replace('*','x')}_{wgt:.5}/"
 			outpath_params : str = joinPath(outpath,'params.json')
 			mkdir(outpath)
 
@@ -276,7 +279,7 @@ class Launchers(object):
 
 			# run
 			Launchers.multi_food_run(
-				output = outpath,
+				rootdir = outpath,
 				params = outpath_params,
 				**kwargs
 			)
@@ -285,7 +288,7 @@ class Launchers(object):
 
 	@staticmethod
 	def sweep_hardcoded_turning_RMDx(
-			output : Path = 'data/run/',
+			rootdir : Path = 'data/run/',
 			conn_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			nrn_from : str = 'CONST',
 			params : Path = 'input/params.json',
@@ -294,7 +297,7 @@ class Launchers(object):
 		):
 
 		Launchers.sweep_conn_weight(
-			output = output,
+			rootdir = rootdir,
 			conn_key = ('Head', nrn_from,'RMD*','chem'),
 			conn_range = conn_range,
 			params = params,
@@ -304,6 +307,94 @@ class Launchers(object):
 			},
 			**kwargs,
 		)
+
+	@staticmethod
+	def sweep_param(
+			rootdir : Path = 'data/run/',
+			param_key : Union[tuple,str] = 'ChemoReceptors.alpha',
+			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
+			params : Path = 'input/params.json',
+			ASK_CONTINUE : bool = True,
+			**kwargs,
+		):
+
+		# create output dir
+		mkdir(rootdir)
+
+		# save state
+		dump_state(locals(), rootdir)
+
+		# open base json
+		with open(params, 'r') as fin_json:
+			params_data : dict = json.load(fin_json)
+
+		# convert input string-lists
+		# (useful as shorthand when using python-fire CLI)
+
+		# split up path to parameter by dot
+		if isinstance(param_key, str):
+			param_key = tuple(param_key.split('.'))
+
+		# convert into a dict
+		param_range = strList_to_dict(
+			in_data = param_range,
+			keys_list = ['min', 'max', 'scale', 'npts'],
+			type_map = {'min' : float, 'max' : float, 'npts' : int},
+		)
+
+		print(f'>> parameter to modify: {param_key}')
+		print(f'>> range of values: {param_range}')
+	
+		param_fin_dict : dict = params_data
+		param_fin_key : str = ''
+		try:
+			for k in param_key[:-1]:
+				param_fin_dict = param_fin_dict[k]
+			param_fin_key = param_key[-1]
+		except KeyError as ex:
+			print(f'\n{param_key} was not a valid parameter for the params file read from {params}. Be sure that the parameter you want to modify exists in the json file.\n')
+			raise ex
+			exit(1)
+
+		# figure out the range of values to try
+		param_vals : NDArray = SPACE_GENERATOR_MAPPING[param_range['scale']](
+			param_range['min'], 
+			param_range['max'], 
+			param_range['npts'],
+		)
+		
+		count : int = 1
+		count_max : int = len(param_vals)
+
+		print(f'> will modify parameter: {param_key}\n\t>>  {param_fin_dict}\t-->\t{param_fin_key}')
+		print(f'> will try {len(param_vals)} values:\n\t>>  {param_vals}')
+		if ASK_CONTINUE:
+			input('press enter to continue...')
+		
+		# run for each value of connection strength
+		for pv in param_vals:
+			print(f'> running for param val {pv} \t ({count} / {count_max})')
+
+			# make dir
+			outpath : str = f"{rootdir}{param_key}_{pv:.5}/"
+			outpath_params : str = joinPath(outpath,'params.json')
+			mkdir(outpath)
+
+			# set value
+			param_fin_dict[param_fin_key] = pv
+
+			# save modified params
+			with open(outpath_params, 'w') as fout:
+				json.dump(params_data, fout, indent = '\t')
+
+			# run
+			Launchers.multi_food_run(
+				rootdir = outpath,
+				params = outpath_params,
+				**kwargs
+			)
+
+			count += 1
 	
 
 
