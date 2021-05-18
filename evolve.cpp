@@ -173,11 +173,12 @@ double EvaluationFunctionB(TVector<double> &v, RandomState &rs)
 
     Worm w(phenotype, 0);
 
-#ifdef OUTPUT
-    w.DumpParams(paramsfile);
-#endif
+    #ifdef OUTPUT
+        w.DumpParams(paramsfile);
+    #endif
 
-    w.InitializeState(rs, 3.14159);
+    std::vector<CollisionObject> empty_objs = std::vector<CollisionObject>();
+    w.InitializeState(rs, 3.14159, empty_objs);
 
     // Transient
     for (double t = 0.0; t <= Transient; t += StepSize)

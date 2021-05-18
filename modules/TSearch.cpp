@@ -392,10 +392,13 @@ void TSearch::RandomizePopulation(void)
 
 void TSearch::UpdatePopulationStatistics(void)
 {
-	register int i;
+	// `register` keyword doesnt work in C++17
+	// register int i;
+	// register double perf;
+	int i;
+	double perf;
 	double total = 0;
 	int bestindex = 1;
-	register double perf;
 
 	// Collect various info about the current population
 	MinPerf = 1E10;
@@ -504,6 +507,9 @@ void *EvaluatePopulationRange(void *arg)
   for (int i = prs->start; i <= prs->end; i++)
     s->Perf[i] = s->EvaluateVector(s->Population[i], s->RandomStates[i]);
   pthread_exit(NULL);
+
+  // compiler expects something to be returned here
+  return nullptr;
 }
 
 
