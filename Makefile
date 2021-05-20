@@ -7,6 +7,15 @@ MODULES_SOURCES = $(wildcard **/*.cpp)
 
 COMMON_DOC_FLAGS = --report --output docs $(HEADERS) $(SOURCES) $(MODULES_HEADERS) $(MODULES_SOURCES)
 
+# detecting os
+ifeq ($(OS),Windows_NT)
+	detected_os = Windows
+	FLAG_PTHREAD = -lpthread
+else
+	detected_os = Linux
+	FLAG_PTHREAD = -pthread
+endif
+
 # for building to use with GNUprof
 PROFILE ?= 0
 ifeq ($(PROFILE), 1)
@@ -22,16 +31,16 @@ endif
 GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
 
 # building executables
-singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
-	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+singlerun: os singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
-evolve: evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "this code is very possibly broken, and will probably be replaced by a python script"
-	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
-demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+demorun: os demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "this is deprecated! dont use it!"
-	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
 # building modules
 random.o: modules/random.cpp modules/random.h modules/VectorMatrix.h
@@ -56,6 +65,12 @@ demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/M
 	g++ $(GCCFLAGS) demorun.cpp
 singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	g++ $(GCCFLAGS) singlerun.cpp
+
+# misc
+os:
+	@echo "detected os: " $(detected_os)
+	@echo "modified vars:" 
+	@echo "    FLAG_PTHREAD: " $(FLAG_PTHREAD)
 
 # cleaning up
 clean:
