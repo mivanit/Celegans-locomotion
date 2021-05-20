@@ -31,16 +31,16 @@ endif
 GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
 
 # building executables
-singlerun: os singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
-	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
+singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 
 evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "this code is very possibly broken, and will probably be replaced by a python script"
 	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
-demorun: os demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "this is deprecated! dont use it!"
-	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
+	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 
 # building modules
 random.o: modules/random.cpp modules/random.h modules/VectorMatrix.h

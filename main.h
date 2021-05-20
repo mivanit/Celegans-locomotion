@@ -5,18 +5,6 @@
 // February, 2018
 // =============================================================
 
-#include "modules/TSearch.h"
-#include "modules/VectorMatrix.h"
-#include "modules/Worm.h"
-#include "modules/util.h"
-#include "consts.h"
-
-#include <iostream>
-#include <iomanip>  // cout precision
-#include <math.h>
-#include <string>
-// #include <pthread.h>
-
 // #define EVOLVE
 // #define PRINTTOFILE
 // #define SEED
@@ -27,6 +15,23 @@
 #define ENABLE_CTOR_GENO 0
 #define ENABLE_CTOR_PHENO 0
 #define ENABLE_CTOR_JSON 1
+
+
+#if ENABLE_CTOR_GENO
+    #include "modules/TSearch.h"
+    #include <pthread.h>
+#endif
+
+#include "modules/VectorMatrix.h"
+#include "modules/Worm.h"
+#include "modules/util.h"
+#include "consts.h"
+
+#include <iostream>
+#include <iomanip>  // cout precision
+#include <math.h>
+#include <string>
+
 
 using namespace std;
 
@@ -252,19 +257,21 @@ double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<Col
 // ------------------------------------
 // Display functions
 // ------------------------------------
-void EvolutionaryRunDisplay(int Generation, double BestPerf, double AvgPerf, double PerfVar) 
-{
-    cout << Generation << " " << BestPerf << " " << AvgPerf << " " << PerfVar << endl;
-}
+#if ENABLE_CTOR_GENO
+    void EvolutionaryRunDisplay(int Generation, double BestPerf, double AvgPerf, double PerfVar) 
+    {
+        cout << Generation << " " << BestPerf << " " << AvgPerf << " " << PerfVar << endl;
+    }
 
-void ResultsDisplay(TSearch &s)
-{
-    TVector<double> bestVector;
-    ofstream BestIndividualFile;
+    void ResultsDisplay(TSearch &s)
+    {
+        TVector<double> bestVector;
+        ofstream BestIndividualFile;
 
-    bestVector = s.BestIndividual();
-    BestIndividualFile.open("best.gen.dat");
-    BestIndividualFile << setprecision(32);
-    BestIndividualFile << bestVector << endl;
-    BestIndividualFile.close();
-}
+        bestVector = s.BestIndividual();
+        BestIndividualFile.open("best.gen.dat");
+        BestIndividualFile << setprecision(32);
+        BestIndividualFile << bestVector << endl;
+        BestIndividualFile.close();
+    }
+#endif
