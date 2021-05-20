@@ -15,7 +15,7 @@
 #include <iomanip>  // cout precision
 #include <math.h>
 #include <string>
-#include <pthread.h>
+// #include <pthread.h>
 
 // #define EVOLVE
 // #define PRINTTOFILE
