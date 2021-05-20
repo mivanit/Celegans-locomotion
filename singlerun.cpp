@@ -79,11 +79,12 @@ int main (int argc, const char* argv[])
     // set duration
     DURATION = cmd["duration"].as<double>();;
 
-
     // setting up simulation
     InitializeBodyConstants();
     PRINT_DEBUG("> finished init body constants\n")
     
+
+    // loading json
     PRINT_DEBUG("> loading configs:\n")
     PRINTF_DEBUG("  > params json from:  \t%s\n", cmd["params"].as<std::string>().c_str())
     std::ifstream ifs(cmd["params"].as<std::string>());
@@ -96,6 +97,17 @@ int main (int argc, const char* argv[])
         true,
         true
     );
+
+    
+    // storing command line / extra params in json
+    params["simulation"] = {
+        {"duration", DURATION},
+        {"seed", seed},
+        {"angle", cmd["angle"].as<double>()},
+        {"src-params", cmd["params"].as<std::string>()},
+        {"src-coll", cmd["coll"].as<std::string>()},
+        {"output",  cmd["output"].as<std::string>()}
+    };
 
 
     // get food position and (maybe) disable chemosensation

@@ -79,8 +79,13 @@ singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules
 .PHONY: clean
 clean:
 	@echo "# cleaning up compiled files"
+	rm *.o *.exe $(PACKAGES_DIR)/*.gch
+
+.PHONY: clean_nogch
+clean_nogch:
+	@echo "# cleaning up compiled files, but leaving precompiled package headers"
 	rm *.o *.exe
-	rm $(PACKAGES_DIR)/*.gch
+
 
 # building documentation
 .PHONY: doc
