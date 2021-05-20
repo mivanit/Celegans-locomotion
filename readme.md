@@ -1,4 +1,13 @@
 
+# profiling
+
+build with `PROFILE=1`, run normally, and run analysis with `make prof` (simply calls gprof)
+```bash
+make singlerun PROFILE=1
+./singlerun.exe [ARGS]
+make prof
+```
+
 
 # Documentation
 

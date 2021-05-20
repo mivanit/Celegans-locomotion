@@ -66,12 +66,6 @@ demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/M
 singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	g++ $(GCCFLAGS) singlerun.cpp
 
-# misc
-os:
-	@echo "detected os: " $(detected_os)
-	@echo "modified vars:" 
-	@echo "    FLAG_PTHREAD: " $(FLAG_PTHREAD)
-
 # cleaning up
 clean:
 	rm *.o *.exe
@@ -80,4 +74,16 @@ clean:
 doc:
 	@echo "Generating documentation..."; \
 	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
+
+# misc
+os:
+	@echo "detected os: " $(detected_os)
+	@echo "modified vars:" 
+	@echo "    FLAG_PTHREAD: " $(FLAG_PTHREAD)
+
+prof:
+	@echo "> NOTE: it is expected that 'singlerun.exe' has been compiled with 'PROFILE=1'"
+	@echo ">       and run at least once, generating 'gmon.out'"
+	@echo "> Writing analysis of 'gmon.out' file to 'prof.txt':"
+	gprof singlerun.exe gmon.out > prof.txt
 
