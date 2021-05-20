@@ -5,6 +5,9 @@ HEADERS = $(wildcard *.h)
 MODULES_HEADERS = $(wildcard **/*.h)
 MODULES_SOURCES = $(wildcard **/*.cpp)
 
+PACKAGES_DIR = modules/packages
+PACKAGES_HEADERS = $(wildcard $(PACKAGES_DIR)/*.hpp)
+
 COMMON_DOC_FLAGS = --report --output docs $(HEADERS) $(SOURCES) $(MODULES_HEADERS) $(MODULES_SOURCES)
 
 # detecting os
@@ -31,14 +34,20 @@ endif
 GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
 
 # building executables
+.PHONY: singlerun
 singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+	@echo "# [DEFAULT] Compiling executable for single worm sim"
 	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
 
+.PHONY: evolve
 evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	@echo "# [DEPRECATED] Compiling genetic alg optimization"
 	@echo "this code is very possibly broken, and will probably be replaced by a python script"
 	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
+.PHONY: demorun
 demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	@echo "# [DEPRECATED] Compiling demo run"
 	@echo "this is deprecated! dont use it!"
 	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 
@@ -67,23 +76,46 @@ singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules
 	g++ $(GCCFLAGS) singlerun.cpp
 
 # cleaning up
+.PHONY: clean
 clean:
+	@echo "# cleaning up compiled files"
 	rm *.o *.exe
+	rm $(PACKAGES_DIR)/*.gch
 
 # building documentation
+.PHONY: doc
 doc:
-	@echo "Generating documentation..."; \
+	@echo "# [WIP] Generating documentation"
 	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
 
 # misc
+.PHONY: os
 os:
-	@echo "detected os: " $(detected_os)
-	@echo "modified vars:" 
+	@echo "# showing detected operating system and resulting modified flags"
+	@echo "# detected os: " $(detected_os)
+	@echo "# modified vars:" 
 	@echo "    FLAG_PTHREAD: " $(FLAG_PTHREAD)
 
+.PHONY: prof
 prof:
-	@echo "> NOTE: it is expected that 'singlerun.exe' has been compiled with 'PROFILE=1'"
-	@echo ">       and run at least once, generating 'gmon.out'"
-	@echo "> Writing analysis of 'gmon.out' file to 'prof.txt':"
+	@echo "# running profiling"
+	@echo "# NOTE: it is expected that 'singlerun.exe' has been compiled with 'PROFILE=1'"
+	@echo "#       and run at least once, generating 'gmon.out'"
+	@echo "# Writing analysis of 'gmon.out' file to 'prof.txt':"
 	gprof singlerun.exe gmon.out > prof.txt
+
+# listing targets, from stackoverflow
+# https://stackoverflow.com/questions/4219255/how-do-you-get-the-list-of-targets-in-a-makefile
+.PHONY: help
+help:
+	@echo -n "# Common make targets"
+	@echo ":"
+	@cat Makefile | sed -n '/^\.PHONY: / h; /\(^\t@*echo\|^\t:\)/ {H; x; /PHONY/ s/.PHONY: \(.*\)\n.*"\(.*\)"/    make \1\t\2/p; d; x}'| sort -k2,2 |expand -t 20
+
+.PHONY: precomp
+precomp:
+	@echo "# Precompiling .gch files"
+	$(foreach var,$(PACKAGES_HEADERS),g++ $(var);)
+
+
 
