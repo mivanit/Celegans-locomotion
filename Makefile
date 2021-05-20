@@ -1,3 +1,4 @@
+# getting all sources and headers, for building docs
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h)
 
@@ -6,18 +7,33 @@ MODULES_SOURCES = $(wildcard **/*.cpp)
 
 COMMON_DOC_FLAGS = --report --output docs $(HEADERS) $(SOURCES) $(MODULES_HEADERS) $(MODULES_SOURCES)
 
-# GCCFLAGS = -pthread -c -O3 -flto
-# GCCFLAGS = -std=c++11 -c -O3 -flto
-GCCFLAGS = -std=c++17 -c -O3 -flto
+# for building to use with GNUprof
+PROFILE ?= 0
+ifeq ($(PROFILE), 1)
+    CFLAGS = -pg
+else
+    CFLAGS = -O3
+endif
 
+# compiler flags
+## GCCFLAGS = -pthread -c -O3 -flto
+## GCCFLAGS = -std=c++11 -c -O3 -flto
+# -flto is something to do with linking
+GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
+
+# building executables
 singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
-	g++ -o singlerun singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
 
 evolve: evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
-	g++ -o evolve evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
-demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
-	g++ -o demorun demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+	@echo "this code is very possibly broken, and will probably be replaced by a python script"
+	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
 
+demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	@echo "this is deprecated! dont use it!"
+	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o -lpthread
+
+# building modules
 random.o: modules/random.cpp modules/random.h modules/VectorMatrix.h
 	g++ $(GCCFLAGS) modules/random.cpp
 TSearch.o: modules/TSearch.cpp modules/TSearch.h
@@ -41,9 +57,11 @@ demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/M
 singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	g++ $(GCCFLAGS) singlerun.cpp
 
+# cleaning up
 clean:
 	rm *.o *.exe
 
+# building documentation
 doc:
 	@echo "Generating documentation..."; \
 	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
