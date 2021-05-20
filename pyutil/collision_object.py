@@ -1,9 +1,12 @@
+import sys
 from enum import Enum
 from typing import *
 
 import numpy as np
 
-Path = str
+
+from util import Path
+
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]
 

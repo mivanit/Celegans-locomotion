@@ -3,12 +3,12 @@
 		"alpha": 4.0,
 		"beta": 15.0,
 		"foodPos": {
-			"x": -0.005,
-			"y": 0.005
+			"x": -0.001,
+			"y": 0.003
 		},
 		"gamma": 2.0,
 		"neuron": "AWA",
-		"stim_scalar": 1000.0
+		"stim_scalar": 2500.0
 	},
 	"Head": {
 		"connections": [
@@ -16,31 +16,31 @@
 				"from": "AWA",
 				"to": "RIM",
 				"type": "chem",
-				"weight": -12.0
+				"weight": -12.5
 			},
 			{
 				"from": "RIM",
 				"to": "RIM",
 				"type": "chem",
-				"weight": 6.5
+				"weight": 0.5
 			},
 			{
 				"from": "RIM",
 				"to": "INT",
 				"type": "chem",
-				"weight": -50.0
+				"weight": -300.0
 			},
 			{
 				"from": "INT",
-				"to": "SMDD",
+				"to": "RMDD",
 				"type": "chem",
-				"weight": 1.0
+				"weight": -12.0
 			},
 			{
 				"from": "INT",
-				"to": "SMDV",
+				"to": "RMDV",
 				"type": "chem",
-				"weight": -1.0
+				"weight": -12.0
 			},
 			{
 				"from": "SMDD",
@@ -128,7 +128,7 @@
 			},
 			"INT": {
 				"tau": 0.01,
-				"theta": 2.0
+				"theta": 0.7
 			},
 			"RIM": {
 				"tau": 0.01,

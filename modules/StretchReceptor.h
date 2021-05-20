@@ -57,7 +57,9 @@ public:
     bool enabled = false;
     // AWA consts
     double alpha; double beta; double gamma;
-    double stim_scalar;
+    double kappa; double lambda;
+
+    double max_distance;
 
     // storing value of fast and slow sense
     double F_i; double S_i;
@@ -65,8 +67,13 @@ public:
 
     double C_ixy; double out_AWA_stim;
 
-    void initialize(VecXY in_foodpos, int in_target_nrn_idx, double in_alpha, double in_beta, double in_gamma, double in_stim_scalar)
-    {
+    void initialize(
+        VecXY in_foodpos, 
+        int in_target_nrn_idx, 
+        double in_alpha, double in_beta, double in_gamma, 
+        double in_kappa, double in_lambda, 
+        double in_max_distance
+    ){
         enabled = true;
         foodpos = in_foodpos;
         target_nrn_idx = in_target_nrn_idx;
@@ -74,7 +81,10 @@ public:
         alpha = in_alpha; 
         beta = in_beta; 
         gamma = in_gamma;
-        stim_scalar = in_stim_scalar;
+        kappa = in_kappa; 
+        lambda = in_lambda;
+
+        max_distance = in_max_distance;
 
         F_im1 = 0.0;
         S_im1 = 0.0;
@@ -83,7 +93,17 @@ public:
     double get_concentration(VecXY headpos)
     {
         // TODO: make this more accurate -- corner distance, or full diffusion sim
-        return dist(headpos, foodpos);
+        // set the concentration to zero if it is more than some max distance away
+        // OPTIMIZE: make branchless by multiplying gradient by bool
+        double food_dist_sqrd = dist_sqrd(headpos, foodpos);
+        if (pow(dist_sqrd(headpos, foodpos), 0.5) > max_distance)
+        {
+            return 0.0;
+        }
+        else
+        {
+            return kappa * exp( food_dist_sqrd * lambda );
+        }
     }
 
 
@@ -94,7 +114,6 @@ public:
     double comp_sensory(VecXY headpos, double StepSize)
     {
         C_ixy = get_concentration(headpos);
-
 
         // iterate fast and slow sense
 		F_i = F_im1 + StepSize * ( (alpha * C_ixy) - (beta * F_im1) );
@@ -108,7 +127,7 @@ public:
 
         // PRINTF_DEBUG("\n>> C_ixy: %f, F_i: %f, S_i: %f, out_AWA_stim: %f\n", C_ixy, F_i, S_i, out_AWA_stim)
 
-        return out_AWA_stim * stim_scalar;
+        return out_AWA_stim;
     }
 };
 

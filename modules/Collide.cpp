@@ -27,6 +27,14 @@ double dist(VecXY a, VecXY b)
 	), 0.5);
 }
 
+double dist_sqrd(VecXY a, VecXY b)
+{
+	return (
+		pow(a.x - b.x, 2.0)
+		+ pow(a.y - b.y, 2.0)
+	);
+}
+
 std::vector<CollisionObject> load_objects(std::string collide_file)
 {
 	std::vector<CollisionObject> CollObjs = std::vector<CollisionObject>();
@@ -104,7 +112,7 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
         exit(EXIT_FAILURE);
     }
 
-	PRINTF_DEBUG("    >> elements in CollObjs vec: %d\n", CollObjs.size())
+	PRINTF_DEBUG("    >> elements in CollObjs vec: %ld\n", CollObjs.size())
 
 	for (CollisionObject obj : CollObjs)
 	{

@@ -1,6 +1,13 @@
+"""
+plots the position of a worm and environment through time
+
+contains plotters for showing head position of a single or multiple worms, the worm body at a point in time, or an animation showing the movement of the worm
+"""
+
 import os
 import sys
 from typing import *
+import glob
 
 from math import degrees
 
@@ -11,14 +18,17 @@ from nptyping import NDArray,StructuredType
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.patches import Patch,Rectangle,Wedge
+from matplotlib.patches import Patch,Circle,Rectangle,Wedge
 from matplotlib.collections import PatchCollection
 
 import pandas as pd
 import json
 
+
+# sys.path.append("..")
+
+from util import Path,joinPath
 from collision_object import (
-	Path,
 	CollisionType,CollisionObject,
 	read_collobjs_tsv,
 	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
@@ -345,14 +355,34 @@ def _plot_collobjs(ax : Axes, collobjs : Path):
 
 
 
-def _plot_foodPos(ax : Axes, params : Path, fmt = 'bo'):
+def _plot_foodPos(
+		ax : Axes, 
+		params : Path, 
+		fmt : str = 'x', 
+		label : str = None, 
+		maxdist_disc : bool = True,
+	):
 	with open(params, 'r') as fin:
 		params_data : dict = json.load(fin)
-		if "ChemoReceptor" in params_data:
-			foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
-			foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
-	
-			ax.plot(foodpos_x, foodpos_y, fmt)
+		if "ChemoReceptors" in params_data:
+			if "DISABLED" not in params_data["ChemoReceptors"]:
+				foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
+				foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
+		
+				ax.plot(foodpos_x, foodpos_y, fmt, label = label)
+
+				if maxdist_disc:
+					if "max_distance" in params_data["ChemoReceptors"]:
+						ax.add_patch(Circle(
+							(foodpos_x, foodpos_y), 
+							radius = params_data["ChemoReceptors"]["max_distance"],
+							alpha = 0.1,
+							color = 'green',
+						))
+					else:
+						KeyError('couldnt find "max_distance"')
+			
+				return (foodpos_x, foodpos_y)
 
 
 
@@ -478,6 +508,7 @@ def _draw_setup(
 
 	# fix the scaling
 	ax.axis('equal')
+	plt.title(rootdir)
 
 	# plot preliminaries
 	# ==============================
@@ -502,6 +533,12 @@ def _draw_setup(
 
 
 class Plotters(object):
+	"""
+	plots the position of a worm and environment through time
+
+	contains plotters for showing head position of a single or multiple worms, the worm body at a point in time, or an animation showing the movement of the worm
+	"""
+
 	"""
 	##     ## ########    ###    ########
 	##     ## ##         ## ##   ##     ##
@@ -540,6 +577,120 @@ class Plotters(object):
 
 		print(head_data.shape, head_data.dtype)
 		ax.plot(head_data['x'], head_data['y'])
+
+		if show:
+			plt.show()
+		
+	@staticmethod
+	def pos_foodmulti(
+			# search in this directory
+			rootdir : Path = 'data/run/',
+			# args passed down to `_draw_setup()`
+			bodydat : Path = 'body.dat',
+			collobjs : Path = 'coll_objs.tsv',
+			params : Optional[Path] = 'params.json',
+			time_window : Tuple[OptInt,OptInt] = (None,None),
+			figsize_scalar : Optional[float] = None,
+			pad_frac : Optional[float] = None,
+			# args specific to this plotter
+			idx : int = 0,
+			show : bool = True,
+			food_excl : List[str] = [],
+		):
+
+		multi_dirs : List[str] = os.listdir(rootdir)
+		multi_dirs = [ x for x in multi_dirs if os.path.isdir(rootdir + x) ]
+
+		default_dir : str = joinPath(rootdir, multi_dirs[0], "")
+		print(f'> using as default: {default_dir}')
+
+		fig,ax,data_default,bounds = _draw_setup(
+			rootdir = default_dir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			# params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		if isinstance(food_excl,str):
+			food_excl = food_excl.split(',')
+
+		for food_choice in multi_dirs:
+
+			if food_choice not in food_excl:
+			
+				bodydat_choice : str = joinPath(rootdir, food_choice, bodydat)
+				params_choice : str = joinPath(rootdir, food_choice, params)
+							
+				data : NDArray[(int,int), CoordsRotArr] = read_body_data(bodydat_choice)
+				head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+
+				print(bodydat_choice)
+				print(head_data.shape, head_data.dtype)
+
+				ax.plot(head_data['x'], head_data['y'], label = food_choice)
+				tup_foodpos = _plot_foodPos(ax, params_choice, label = food_choice)
+				print(tup_foodpos)
+
+		plt.legend()
+
+		if show:
+			plt.show()
+	
+	@staticmethod
+	def pos_multi(
+			# search in this directory
+			rootdir : Path = 'data/run/**/',
+			# args passed down to `_draw_setup()`
+			bodydat : Path = 'body.dat',
+			collobjs : Path = 'coll_objs.tsv',
+			params : Optional[Path] = 'params.json',
+			time_window : Tuple[OptInt,OptInt] = (None,None),
+			figsize_scalar : Optional[float] = None,
+			pad_frac : Optional[float] = None,
+			# args specific to this plotter
+			idx : int = 0,
+			show : bool = True,
+		):
+
+		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		lst_dirs : List[Path] = [ 
+			joinPath(os.path.dirname(p),'') 
+			for p in lst_bodydat
+		]
+
+		print(lst_dirs)
+		default_dir : Path = lst_dirs[0]
+		print(f'> using as default: {default_dir}')
+
+		fig,ax,data_default,bounds = _draw_setup(
+			rootdir = default_dir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			# params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		for x_dir in lst_dirs:
+			
+			x_bodydat : str = joinPath(x_dir, bodydat)
+			x_params : str = joinPath(x_dir, params)
+						
+			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
+			head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+
+			print(x_bodydat)
+			print(head_data.shape, head_data.dtype)
+
+			ax.plot(head_data['x'], head_data['y'], label = x_dir)
+			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
+			# print(tup_foodpos)
+
+		plt.legend()
 
 		if show:
 			plt.show()

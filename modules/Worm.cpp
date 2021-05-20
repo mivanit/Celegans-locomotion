@@ -171,8 +171,6 @@ Worm::Worm(TVector<double> &v,double output)
 
 
 
-
-
 // json ctor
 Worm::Worm(json & params)
 {
@@ -217,18 +215,37 @@ Worm::Worm(json & params)
     // chemosensory receptor
     if (params.find("ChemoReceptors") != params.end())
     {
-        PRINT_DEBUG("  > Chemo Receptors\n")
-        chemo_re.initialize(
-            VecXY(
-                params["ChemoReceptors"]["foodPos"]["x"].get<double>(), 
-                params["ChemoReceptors"]["foodPos"]["y"].get<double>()
-            ),
-            h.namesMap[params["ChemoReceptors"]["neuron"].get<string>()],
-            params["ChemoReceptors"]["alpha"].get<double>(),
-            params["ChemoReceptors"]["beta"].get<double>(),
-            params["ChemoReceptors"]["gamma"].get<double>(),
-            params["ChemoReceptors"]["stim_scalar"].get<double>()
-        );
+        auto params_CR = params["ChemoReceptors"];
+        
+        if (
+            (params_CR.find("DISABLED") != params_CR.end()) 
+            && params_CR["DISABLED"].get<bool>()
+        ){
+            PRINT_DEBUG("  > ChemoReceptors data found, but disabled\n")
+        }
+        else
+        {
+            PRINT_DEBUG("  > Chemo Receptors enabled\n")
+            VecXY vxy_foodPos(
+                params_CR["foodPos"]["x"].get<double>(), 
+                params_CR["foodPos"]["y"].get<double>()
+            );
+            PRINTF_DEBUG("    > placing food at %f, %f\n", vxy_foodPos.x, vxy_foodPos.y)
+            chemo_re.initialize(
+                // food position
+                vxy_foodPos,
+                // neuron to send chemosensory signal into
+                h.namesMap[params_CR["neuron"].get<string>()],
+                // chemosensory parameters
+                params_CR["alpha"].get<double>(),
+                params_CR["beta"].get<double>(),
+                params_CR["gamma"].get<double>(),
+                params_CR["kappa"].get<double>(),
+                params_CR["lambda"].get<double>(),
+                // optional minimum concentration
+                (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
+            );
+        }
     }
 
     // NMJ Weights
@@ -267,7 +284,7 @@ void Worm::InitializeState(RandomState &rs, double angle, std::vector<CollisionO
     t = 0.0;
     n.RandomizeCircuitState(-0.5, 0.5, rs);
     h.RandomizeCircuitState(-0.5, 0.5, rs);
-    PRINTF_DEBUG("    > body state\n      >> angle: %f, collision obj count: %d\n", angle, collObjs.size())
+    PRINTF_DEBUG("    > body state\n      >> angle: %f, collision obj count: %ld\n", angle, collObjs.size())
     b.InitializeBodyState(angle, collObjs);
     PRINT_DEBUG("    > muscle state\n")
     m.InitializeMuscleState();

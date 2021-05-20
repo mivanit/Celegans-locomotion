@@ -3,12 +3,12 @@
 		"alpha": 4.0,
 		"beta": 15.0,
 		"foodPos": {
-			"x": -0.005,
-			"y": 0.005
+			"x": -0.001,
+			"y": 0.003
 		},
 		"gamma": 2.0,
 		"neuron": "AWA",
-		"stim_scalar": 1000.0
+		"stim_scalar": 1500.0
 	},
 	"Head": {
 		"connections": [
@@ -16,19 +16,43 @@
 				"from": "AWA",
 				"to": "RIM",
 				"type": "chem",
-				"weight": -12.0
+				"weight": -12.5
 			},
 			{
 				"from": "RIM",
 				"to": "RIM",
 				"type": "chem",
-				"weight": 6.5
+				"weight": 0.5
 			},
 			{
 				"from": "RIM",
 				"to": "INT",
 				"type": "chem",
-				"weight": -50.0
+				"weight": -300.0
+			},
+			{
+				"from": "INT",
+				"to": "INTD",
+				"type": "chem",
+				"weight": 5.0
+			},
+			{
+				"from": "INT",
+				"to": "INTV",
+				"type": "chem",
+				"weight": 5.0
+			},
+			{
+				"from": "SMDV",
+				"to": "INTV",
+				"type": "chem",
+				"weight": 0.1
+			},
+			{
+				"from": "SMDD",
+				"to": "INTD",
+				"type": "chem",
+				"weight": 0.1
 			},
 			{
 				"from": "INT",
@@ -40,7 +64,7 @@
 				"from": "INT",
 				"to": "SMDV",
 				"type": "chem",
-				"weight": -1.0
+				"weight": 1.0
 			},
 			{
 				"from": "SMDD",
@@ -128,7 +152,15 @@
 			},
 			"INT": {
 				"tau": 0.01,
-				"theta": 2.0
+				"theta": 0.7
+			},
+			"INTV": {
+				"tau": 0.01,
+				"theta": 0.0
+			},
+			"INTD": {
+				"tau": 0.01,
+				"theta": 0.0
 			},
 			"RIM": {
 				"tau": 0.01,

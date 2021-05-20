@@ -1,14 +1,21 @@
+# basic output files
 *.o
 *.exe
 *.mp4
+gmon.out
+singlerun
+
+# data
 data/run/**
 data/coll/*.tsv
 data/collision_objs.tsv
 !data/coll/demo/**
 
+# ?? idk
 *.gch
 **/*.gch
 
+# python cache
 *.pyc
 **/*.pyc
 __pycache__/**

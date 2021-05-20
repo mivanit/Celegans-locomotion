@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 
+from util import Path,joinPath
+
 def pattern_match_names(
 		names : Optional[List[str]],
 		valid_names : List[str],
@@ -46,7 +48,7 @@ def pattern_match_names(
 
 
 def plot_act(
-		filename : str = 'data/run/act.dat', 
+		filename : str = 'data/run/act.dat',
 		names : Union[str,List[str],None] = None, 
 		strict_fname : bool = True,
 		show : bool = True,
@@ -67,7 +69,9 @@ def plot_act(
 
 	# fix filename if only dir given
 	if filename.endswith('/') or (strict_fname and not filename.endswith('act.dat')):
-		os.path.join(filename, 'act.dat')
+		filename = joinPath(filename, 'act.dat')
+	
+	print(filename)
 
 	# split names
 	if isinstance(names,str):
