@@ -1,7 +1,18 @@
 import os
 from typing import *
+from copy import deepcopy
 
 import json
+
+"""
+########     ###    ######## ##     ##
+##     ##   ## ##      ##    ##     ##
+##     ##  ##   ##     ##    ##     ##
+########  ##     ##    ##    #########
+##        #########    ##    ##     ##
+##        ##     ##    ##    ##     ##
+##        ##     ##    ##    ##     ##
+"""
 
 Path = str
 
@@ -17,6 +28,32 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 	with open(joinPath(path, file), 'w') as log_out:
 		# json.dump(dict_locals, log_out, indent = '\t')
 		print(dict_locals, file = log_out)
+
+
+"""
+########  ####  ######  ########
+##     ##  ##  ##    ##    ##
+##     ##  ##  ##          ##
+##     ##  ##  ##          ##
+##     ##  ##  ##          ##
+##     ##  ##  ##    ##    ##
+########  ####  ######     ##
+"""
+
+ParamsDict = Dict[str, Any]
+ModParamsDict = Dict[str, Any]
+
+def keylist_access_nested_dict(
+		d : Dict[str,Any], 
+		keys : List[str],
+	) -> Tuple[dict,str]:
+	
+	fin_dict : dict = d
+	for k in keys[:-1]:
+		fin_dict = fin_dict[k]
+	fin_key = keys[-1]
+
+	return (fin_dict,fin_key)
 
 
 def split_dict_arrs(in_dict : Dict[float,float]):
@@ -53,6 +90,36 @@ def strList_to_dict(
 		
 		return out_dict
 
+def dict_to_filename(
+		data : Dict[str,float], 
+		key_order : Optional[List[str]] = None,
+		short_keys : Optional[int] = None,
+	) -> str:
+
+	if key_order is None:
+		key_order = list(data.keys())
+
+	output : List[str] = []
+
+	for k in key_order:
+		# shorten the keys by splitting by dot, 
+		# and taking the first `short_keys` chars of the last bit
+		k_short : str = k.split('.')[-1][:short_keys]
+		output.append(f'{k_short}={data[k_short]:.3}')
+	
+	return '_'.join(output)
+
+
+
+"""
+ ######   #######  ##    ## ##    ##
+##    ## ##     ## ###   ## ###   ##
+##       ##     ## ####  ## ####  ##
+##       ##     ## ## ## ## ## ## ##
+##       ##     ## ##  #### ##  ####
+##    ## ##     ## ##   ### ##   ###
+ ######   #######  ##    ## ##    ##
+"""
 
 def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
 	"""finds the index of the entry matching conn_key"""
@@ -67,6 +134,56 @@ def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
 
 	return None
 
+
+def find_conn_idx_regex(
+		data_json : List[dict], 
+		conn_key : dict,
+		# special_scaling_map : Optional[Dict[str,float]] = None,
+	) -> List[int]:
+
+	if conn_key['to'].endswith('*'):
+		# if wildcard given, find every connection that matches
+		conn_idxs : List[int] = list()
+		
+		conn_key_temp : dict = deepcopy(conn_key)
+		
+		for nrn in data_json[conn_key['NS']]['neurons']:
+			# loop over neuron names, check if they match
+			# REVIEW: this isnt full regex, but whatever
+			if nrn.startswith(conn_key['to'].split('*')[0]):
+				conn_key_temp['to'] = nrn
+				cidx_temp : Optional[int] = find_conn_idx(
+					data_json[conn_key_temp['NS']]['connections'],
+					conn_key_temp,
+				)
+				# append to list, but only if an existing connection is found
+				# note that this behavior differs from when no wildcard is given,
+				# in that new connections will not be created
+				if cidx_temp is not None:
+					conn_idxs.append(cidx_temp)
+	else:
+		# if special_scaling_map is not None:
+		# 	raise ValueError(f"`special_scaling_map` specified, but no wildcard given in neuron name:   {special_scaling_map}    {conn_key['to']}")
+
+		# if no wildcard specified, just get the one connection
+		conn_idxs : List[int] = [ find_conn_idx(
+			data_json[conn_key['NS']]['connections'],
+			conn_key,
+		) ]
+	
+	return conn_idxs
+
+
+
+"""
+ ######  ##     ## ########
+##    ## ###   ### ##     ##
+##       #### #### ##     ##
+##       ## ### ## ##     ##
+##       ##     ## ##     ##
+##    ## ##     ## ##     ##
+ ######  ##     ## ########
+"""
 
 SCRIPTNAME_KEY = "__main__"
 COMMAND_DANGERS = [';', 'rm', 'sudo']
@@ -106,8 +223,8 @@ def genCmd_singlerun(
 		angle : Optional[float] = None,
 		duration : Optional[float] = None,
 		foodPos : Union[str, Tuple[float,float], None] = None,
-		rand : Optional [bool] = None,
-		seed : Optional [int] = None,
+		rand : Optional[bool] = None,
+		seed : Optional[int] = None,
 	) -> str:
 	"""gets a shell command string for launching singlerun
 	
