@@ -2,14 +2,17 @@ from typing import *
 import re
 import os
 
-import numpy as np
-from nptyping import NDArray
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 
-import pandas as pd
+import pandas as pd # type: ignore
 
-from util import Path,joinPath
+if TYPE_CHECKING:
+	from pyutil.util import Path,joinPath
+else:
+	from util import Path,joinPath
 
 def pattern_match_names(
 		names : Optional[List[str]],
@@ -112,5 +115,5 @@ def plot_act(
 
 
 if __name__ == '__main__':
-	import fire
+	import fire # type: ignore
 	fire.Fire(plot_act)

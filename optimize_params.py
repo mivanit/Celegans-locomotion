@@ -13,9 +13,15 @@ from math import dist
 
 import json
 
+if TYPE_CHECKING:
+	from mypy_extensions import Arg
+else:
+	Arg = lambda t,s : t
+
 from pyutil.util import (
-	Path,mkdir,joinPath,dump_state,
-	strList_to_dict,ParamsDict,
+	Path,mkdir,joinPath,
+	strList_to_dict,ParamsDict,ModParamsDict,
+	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
 	dict_to_filename,
@@ -83,7 +89,10 @@ def merge_params_with_mods(
 		)
 
 		# get the indecies of the connections whose weights need to be changed
-		conn_idxs : List[int | None] = find_conn_idx_regex(output, conn_key)
+		conn_idxs : List[Optional[int]] = find_conn_idx_regex(
+			params_data = output, 
+			conn_key = conn_key,
+		)
 
 		# set weights
 		for cidx in conn_idxs:
@@ -91,12 +100,22 @@ def merge_params_with_mods(
 
 	return output
 
+ExtractorFunc = Callable[
+	[
+		Arg(Path, 'datadir'),
+		Arg(ParamsDict, 'params'),
+		Arg(bool, 'ret_nan'),
+	], 
+	Any, # return type
+]
+
+ExtractorReturnType = Any
 
 def _extract_TEMPLATE(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
-	) -> Any:
+	) -> ExtractorReturnType:
 	"""template function for extraction functions
 	
 	dont actually call this function. it contains documentation for the format of functions 
@@ -112,7 +131,7 @@ def _extract_TEMPLATE(
 	   (defaults to `False`)
 	
 	### Returns:
-	 - `Any` 
+	 - `ExtractorReturnType` 
 	   can return any data about the run
 	
 	### Raises:
@@ -183,11 +202,12 @@ def evaluate_params(
 		params_mod : dict,
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
+		coll : Path = 'input/objs_empty.tsv',
 		# extract info from the final product
-		func_extract : Callable[[Path,ParamsDict,bool], Any] = _extract_finalpos,
-		# command line exclusive args
+		func_extract : ExtractorFunc = _extract_food_dist,
+		# command line args
 		rand : Optional[bool] = None,
-	) -> Any:
+	) -> ExtractorReturnType:
 	# TODO: document this
 	
 	# make dir
@@ -204,8 +224,9 @@ def evaluate_params(
 
 	# set up the command by passing kwargs down
 	cmd : str = genCmd_singlerun(
+		params = outpath_params,
 		output = outpath,
-		foodPos = foodPos,
+		coll = coll,
 		# **kwargs,
 	)
 
@@ -222,7 +243,7 @@ def evaluate_params(
 
 		
 	if p.returncode:
-		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{p.args}')
+		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(p.args)}')
 
 
 	return func_extract(

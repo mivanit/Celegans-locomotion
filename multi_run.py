@@ -6,10 +6,10 @@ import subprocess
 import json
 from copy import deepcopy
 
-import numpy as np
-from nptyping import NDArray
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
 
-from pydbg import dbg
+# from pydbg import dbg # type: ignore
 
 from pyutil.util import (
 	Path,mkdir,joinPath,dump_state,
@@ -134,7 +134,7 @@ class Launchers(object):
 			p.wait()
 			
 			if p.returncode:
-				print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{p.args}')	
+				print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{str(p.args)}')	
 			else:
 				print(f'  >>  process complete: {name}')
 
@@ -179,8 +179,8 @@ class Launchers(object):
 
 
 		# find the appropriate connection to modify
-		conn_idxs : List[int | None] = find_conn_idx_regex(
-			data_json = params_data,
+		conn_idxs : List[Optional[int]] = find_conn_idx_regex(
+			params_data = params_data,
 			conn_key = conn_key,
 			# special_scaling_map = special_scaling_map,
 		)
@@ -287,7 +287,7 @@ class Launchers(object):
 	@staticmethod
 	def sweep_param(
 			rootdir : Path = 'data/run/',
-			param_key : Union[tuple,str] = 'ChemoReceptors.alpha',
+			param_key_in : Union[tuple,str] = 'ChemoReceptors.alpha',
 			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			ASK_CONTINUE : bool = True,
@@ -308,8 +308,10 @@ class Launchers(object):
 		# (useful as shorthand when using python-fire CLI)
 
 		# split up path to parameter by dot
-		if isinstance(param_key, str):
-			param_key = tuple(param_key.split('.'))
+		if not isinstance(param_key_in, str):
+			param_key : List[str] = list(param_key_in)
+		else:
+			param_key = list(param_key_in.split('.'))
 
 		# convert into a dict
 		param_range = strList_to_dict(
@@ -374,5 +376,5 @@ class Launchers(object):
 
 
 if __name__ == "__main__":
-	import fire
+	import fire # type: ignore
 	fire.Fire(Launchers)

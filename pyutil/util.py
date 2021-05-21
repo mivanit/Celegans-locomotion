@@ -5,15 +5,13 @@ from copy import deepcopy
 import json
 
 """
-########     ###    ######## ##     ##
-##     ##   ## ##      ##    ##     ##
-##     ##  ##   ##     ##    ##     ##
-########  ##     ##    ##    #########
-##        #########    ##    ##     ##
-##        ##     ##    ##    ##     ##
-##        ##     ##    ##    ##     ##
+ #####    ##   ##### #    #
+ #    #  #  #    #   #    #
+ #    # #    #   #   ######
+ #####  ######   #   #    #
+ #      #    #   #   #    #
+ #      #    #   #   #    #
 """
-
 Path = str
 
 def mkdir(p : Path):
@@ -22,6 +20,17 @@ def mkdir(p : Path):
 
 def joinPath(*args):
 	return os.path.join(*args).replace("\\", "/")
+
+"""
+ #    # #  ####   ####
+ ##  ## # #      #    #
+ # ## # #  ####  #
+ #    # #      # #
+ #    # # #    # #    #
+ #    # #  ####   ####
+"""
+
+VecXY = Tuple[float,float]
 
 
 def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
@@ -69,11 +78,12 @@ def strList_to_dict(
 	if isinstance(in_data, dict):
 		return in_data
 	else:
+		in_lst : Optional[List[str]] = None
 		if isinstance(in_data, tuple):
 			in_lst = list(in_data)
 		elif isinstance(in_data, str):
 			# split into list
-			in_lst : List[str] = in_data.split(delim)
+			in_lst = in_data.split(delim)
 		else:
 			raise TypeError(f'invalid type, expected one of dict,tuple,str, got: {type(in_data)} for {in_data}')
 
@@ -121,10 +131,10 @@ def dict_to_filename(
  ######   #######  ##    ## ##    ##
 """
 
-def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
+def find_conn_idx(params_data : Dict[str,Any], conn_key : dict) -> Optional[int]:
 	"""finds the index of the entry matching conn_key"""
 
-	for i,item in enumerate(data_json):
+	for i,item in enumerate(params_data):
 		if all([
 				conn_key[k] == item[k]
 				for k in conn_key 
@@ -136,24 +146,26 @@ def find_conn_idx(data_json : List[dict], conn_key : dict) -> Optional[int]:
 
 
 def find_conn_idx_regex(
-		data_json : List[dict], 
+		params_data : Dict[str,Any], 
 		conn_key : dict,
 		# special_scaling_map : Optional[Dict[str,float]] = None,
-	) -> List[int]:
+	) -> List[Optional[int]]:
+
+	conn_idxs : List[Optional[int]] = [None]
 
 	if conn_key['to'].endswith('*'):
 		# if wildcard given, find every connection that matches
-		conn_idxs : List[int] = list()
+		conn_idxs = list()
 		
 		conn_key_temp : dict = deepcopy(conn_key)
 		
-		for nrn in data_json[conn_key['NS']]['neurons']:
+		for nrn in params_data[conn_key['NS']]['neurons']:
 			# loop over neuron names, check if they match
 			# REVIEW: this isnt full regex, but whatever
 			if nrn.startswith(conn_key['to'].split('*')[0]):
 				conn_key_temp['to'] = nrn
 				cidx_temp : Optional[int] = find_conn_idx(
-					data_json[conn_key_temp['NS']]['connections'],
+					params_data[conn_key_temp['NS']]['connections'],
 					conn_key_temp,
 				)
 				# append to list, but only if an existing connection is found
@@ -166,8 +178,8 @@ def find_conn_idx_regex(
 		# 	raise ValueError(f"`special_scaling_map` specified, but no wildcard given in neuron name:   {special_scaling_map}    {conn_key['to']}")
 
 		# if no wildcard specified, just get the one connection
-		conn_idxs : List[int] = [ find_conn_idx(
-			data_json[conn_key['NS']]['connections'],
+		conn_idxs = [ find_conn_idx(
+			params_data[conn_key['NS']]['connections'],
 			conn_key,
 		) ]
 	

@@ -1,10 +1,14 @@
 from typing import *
 
 import json
-import matplotlib.pyplot as plt
-import networkx as nx
 
-from util import Path,joinPath
+import matplotlib.pyplot as plt # type: ignore
+import networkx as nx # type: ignore
+
+if TYPE_CHECKING:
+	from pyutil.util import Path,joinPath
+else:
+	from util import Path,joinPath
 
 def plot_net(
 		params : str = "../input/params/default.json",
@@ -84,5 +88,5 @@ def plot_net(
 
 
 if __name__ == '__main__':
-	import fire
+	import fire # type: ignore
 	fire.Fire(plot_net)

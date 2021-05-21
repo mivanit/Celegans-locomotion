@@ -11,34 +11,45 @@ import glob
 
 from math import degrees
 
-import numpy as np
-import numpy.lib.recfunctions as rfn
-from nptyping import NDArray,StructuredType
+import numpy as np # type: ignore
+import numpy.lib.recfunctions as rfn # type: ignore
+from nptyping import NDArray,StructuredType # type: ignore
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.patches import Patch,Circle,Rectangle,Wedge
-from matplotlib.collections import PatchCollection
+import matplotlib # type: ignore 
+import matplotlib.pyplot as plt # type: ignore
+import matplotlib.animation as animation # type: ignore
+from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
+from matplotlib.collections import PatchCollection # type: ignore
 
-import pandas as pd
+import pandas as pd # type: ignore
 import json
 
 
-# sys.path.append("..")
 
-from util import Path,joinPath
-from collision_object import (
-	CollisionType,CollisionObject,
-	read_collobjs_tsv,
-	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
-	get_bounds,get_bbox_ranges,pad_BoundingBox,
-	_bounds_tuples_to_bbox,_combine_bounds,
-)
+if TYPE_CHECKING:
+	from pyutil.util import Path,joinPath
+	from pyutil.collision_object import (
+		CollisionType,CollisionObject,
+		read_collobjs_tsv,
+		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
+		get_bounds,get_bbox_ranges,pad_BoundingBox,
+		_bounds_tuples_to_bbox,_combine_bounds,
+	)
+else:
+	from util import Path,joinPath
+	from collision_object import (
+		CollisionType,CollisionObject,
+		read_collobjs_tsv,
+		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
+		get_bounds,get_bbox_ranges,pad_BoundingBox,
+		_bounds_tuples_to_bbox,_combine_bounds,
+	)
 
 # types
 # ==================================================
-Axes = TypeVar('Axes') # TODO: make this actually reference matplotlib.Axes
+# TODO: make this actually reference matplotlib.Axes
+Axes = Any
+
 CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
 CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
 OptInt = Optional[int]
@@ -89,25 +100,33 @@ def arr_bounds(
 
 def _get_fig_bounds(
 		collobjs : List[CollisionObject],
-		arrbd_x : AxBounds = None, 
-		arrbd_y : AxBounds = None,
+		arrbd_x_in : Optional[AxBounds] = None, 
+		arrbd_y_in : Optional[AxBounds] = None,
 		figsize_scalar : float = 6.0,
 	) -> NDArray[2, float]:
 
 	collobjs_bounds : Dict[str,float] = get_bounds(collobjs)
 
 	# set up the figure object
-	if arrbd_x is None:
+	if arrbd_x_in is None:
 		# arrbd_x = arr_bounds(data['x'])
-		arrbd_x = (collobjs_bounds['bound_min_x'], collobjs_bounds['bound_max_x'])
-	else:
-		arrbd_x = tuple(arrbd_x)
+		arrbd_x : AxBounds = (
+			collobjs_bounds['bound_min_x'],
+			collobjs_bounds['bound_max_x'],
+		)
 
-	if arrbd_y is None:
-		# arrbd_y = arr_bounds(data['y'])
-		arrbd_y = (collobjs_bounds['bound_min_y'], collobjs_bounds['bound_max_y'])
 	else:
-		arrbd_y = tuple(arrbd_y)
+		arrbd_x = arrbd_x_in
+
+	if arrbd_y_in is None:
+		# arrbd_y = arr_bounds(data['y'])
+		arrbd_y : AxBounds = (
+			collobjs_bounds['bound_min_y'], 
+			collobjs_bounds['bound_max_y'],
+		)
+
+	else:
+		arrbd_y = arrbd_y_in
 	
 	print('> positional bounds:\t', arrbd_x, arrbd_y)
 
@@ -197,8 +216,10 @@ def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:
 	
 	with open(objs_file, 'r') as fin:
 		for row in fin:
-			row_lst = row.strip().split()
-			row_lst = [ float(x) for x in row_lst ]
+			row_lst : List[float] = [
+				float(x) 
+				for x in row.strip().split()
+			]
 
 			blocks.append([ row_lst[0:2], row_lst[2:4] ])
 			vecs.append(row_lst[4:])
@@ -312,14 +333,14 @@ def _plot_collision_boxes(ax : Axes, blocks : list, vecs : list):
 	ax.add_collection(pc)
 
 
-def _plot_collobjs(ax : Axes, collobjs : Path):
+def _plot_collobjs(ax : Axes, collobjs : List[CollisionObject]):
 	"""reads collision objects from a tsv file and plots them on `ax`
 	
 	### Parameters:
 	 - `ax : Axes`   
 	   matplotlib axes object
-	 - `collobjs : Path`   
-	   tsv file of collision objects (the kind where first entry is collider type)
+	 - `collobjs : List[CollisionObject]`   
+	   list of collision objects (the kind where first entry is collider type)
 	"""
 	plot_objs : List[Patch] = []
 
@@ -407,7 +428,8 @@ def _draw_setup(
 		bounds : Optional[BoundingBox] = None,
 		pad_frac : Optional[float] = None,
 	) -> Tuple[
-		plt.figure, Axes, 
+		plt.figure,
+		Axes,
 		NDArray[(Any,Any), CoordsRotArr],
 		BoundingBox,
 	]:
@@ -818,8 +840,7 @@ class Plotters(object):
 
 
 if __name__ == '__main__':
-	import fire
-
+	import fire # type: ignore
 	fire.Fire(Plotters)
 
 

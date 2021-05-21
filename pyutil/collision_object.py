@@ -2,10 +2,12 @@ import sys
 from enum import Enum
 from typing import *
 
-import numpy as np
+# import numpy as np # type: ignore
 
-
-from util import Path
+if TYPE_CHECKING:
+	from pyutil.util import Path
+else:
+	from util import Path
 
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]
@@ -23,6 +25,75 @@ class CollisionType(Enum):
 	BASE = None
 	Box_Ax = 'Box_Ax'
 	Disc = 'Disc'
+
+
+
+
+"""
+########   #######  ##     ## ##    ## ########   ######
+##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
+##     ## ##     ## ##     ## ####  ## ##     ## ##
+########  ##     ## ##     ## ## ## ## ##     ##  ######
+##     ## ##     ## ##     ## ##  #### ##     ##       ##
+##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
+########   #######   #######  ##    ## ########   ######
+"""
+
+def get_bounds(collobjs : List[CollisionObject]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
+
+	for x in collobjs:
+		# mins
+		for bd in ['bound_min_x', 'bound_min_y']:
+			if x[bd] < bounds[bd]:
+				bounds[bd] = x[bd]
+		# maxes
+		for bd in ['bound_max_x', 'bound_max_y']:
+			if x[bd] > bounds[bd]:
+				bounds[bd] = x[bd]
+
+	return bounds
+
+def _bounds_tuples_to_bbox(bounds_x : AxBounds, bounds_y : AxBounds) -> BoundingBox:
+	return {
+		'bound_min_x' : bounds_x[0],
+		'bound_min_y' : bounds_y[0],
+		'bound_max_x' : bounds_x[1],
+		'bound_max_y' : bounds_y[1],
+	}
+
+
+def _combine_bounds(lst_bounds : List[BoundingBox]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
+
+	for x in lst_bounds:
+		# mins
+		for bd in ['bound_min_x', 'bound_min_y']:
+			if x[bd] < bounds[bd]:
+				bounds[bd] = x[bd]
+		# maxes
+		for bd in ['bound_max_x', 'bound_max_y']:
+			if x[bd] > bounds[bd]:
+				bounds[bd] = x[bd]
+	
+	return bounds
+
+
+def get_bbox_ranges(bounds : BoundingBox) -> Tuple[float,float]:
+	return (
+		bounds['bound_max_x'] - bounds['bound_min_x'],
+		bounds['bound_max_y'] - bounds['bound_min_y'],
+	)
+
+def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
+	x_range, y_range = get_bbox_ranges(bounds)
+
+	return {
+		'bound_min_x' : bounds['bound_min_x'] - x_range * pad_frac,
+		'bound_min_y' : bounds['bound_min_y'] - y_range * pad_frac,
+		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
+		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
+	}
 
 
 """
@@ -56,7 +127,10 @@ class CollisionObject(object):
 		]
 	}
 
-	TYPECAST : Dict[str,Callable[[str], Any]] = {
+	TYPECAST : Dict[
+		Union[str,None],
+		Callable[[str], Any],
+	] = {
 		None : float,
 		'coll_type' : lambda x : CollisionType[x] if isinstance(x,str) else x,
 	}
@@ -216,72 +290,6 @@ class CollisionObject(object):
 		)
 
 
-
-"""
-########   #######  ##     ## ##    ## ########   ######
-##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
-##     ## ##     ## ##     ## ####  ## ##     ## ##
-########  ##     ## ##     ## ## ## ## ##     ##  ######
-##     ## ##     ## ##     ## ##  #### ##     ##       ##
-##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
-########   #######   #######  ##    ## ########   ######
-"""
-
-def get_bounds(collobjs : List[CollisionObject]) -> BoundingBox:
-	bounds : BoundingBox = BOUNDS_TEMPLATE()
-
-	for x in collobjs:
-		# mins
-		for bd in ['bound_min_x', 'bound_min_y']:
-			if x[bd] < bounds[bd]:
-				bounds[bd] = x[bd]
-		# maxes
-		for bd in ['bound_max_x', 'bound_max_y']:
-			if x[bd] > bounds[bd]:
-				bounds[bd] = x[bd]
-
-	return bounds
-
-def _bounds_tuples_to_bbox(bounds_x : AxBounds, bounds_y : AxBounds) -> BoundingBox:
-	return {
-		'bound_min_x' : bounds_x[0],
-		'bound_min_y' : bounds_y[0],
-		'bound_max_x' : bounds_x[1],
-		'bound_max_y' : bounds_y[1],
-	}
-
-
-def _combine_bounds(lst_bounds : List[BoundingBox]) -> BoundingBox:
-	bounds : BoundingBox = BOUNDS_TEMPLATE()
-
-	for x in lst_bounds:
-		# mins
-		for bd in ['bound_min_x', 'bound_min_y']:
-			if x[bd] < bounds[bd]:
-				bounds[bd] = x[bd]
-		# maxes
-		for bd in ['bound_max_x', 'bound_max_y']:
-			if x[bd] > bounds[bd]:
-				bounds[bd] = x[bd]
-	
-	return bounds
-
-
-def get_bbox_ranges(bounds : BoundingBox) -> Tuple[float,float]:
-	return (
-		bounds['bound_max_x'] - bounds['bound_min_x'],
-		bounds['bound_max_y'] - bounds['bound_min_y'],
-	)
-
-def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
-	x_range, y_range = get_bbox_ranges(bounds)
-
-	return {
-		'bound_min_x' : bounds['bound_min_x'] - x_range * pad_frac,
-		'bound_min_y' : bounds['bound_min_y'] - y_range * pad_frac,
-		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
-		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
-	}
 
 
 
