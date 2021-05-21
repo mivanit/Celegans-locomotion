@@ -3,6 +3,7 @@
 *.exe
 *.mp4
 gmon.out
+prof.txt
 singlerun
 
 # data
