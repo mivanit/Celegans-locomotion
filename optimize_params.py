@@ -45,18 +45,15 @@ def merge_params_with_mods(
 
 	```python
 	params_mod = {
-		params : {
-			'Head.neurons.AWA.theta' : 2.0,
-			'ChemoReceptors.alpha' : 2.0,
-		},
-		conn : {
-			'Head,AWA,RIM,chem' : 10.0,
+			'__params__:Head.neurons.AWA.theta' : 2.0,
+			'__params__:ChemoReceptors.alpha' : 2.0,
+			'__conn__:Head,AWA,RIM,chem' : 10.0,
 		}
 	}
 	```
 
-	- `params_mod['params']` maps dot-separated keys to the nested params dict, to their desired values
-	- `params_mod['conn']` maps comma-separated connection identifiers to their desired values
+	- keys starting with `__params__` map dot-separated keys to the nested params dict, to their desired values
+	- keys starting with `__conn__` map comma-separated connection identifiers to their desired values
 	
 	### Parameters:
 	 - `params_base : ParamsDict`
@@ -197,9 +194,9 @@ def _extract_df_row(
 
 def evaluate_params(
 		# base params
-		params_base : dict,
+		params_base : ParamsDict,
 		# modified params (this is what we are optimizing)
-		params_mod : dict,
+		params_mod : ModParamsDict,
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
 		coll : Path = 'input/objs_empty.tsv',
@@ -250,4 +247,11 @@ def evaluate_params(
 		datadir = outpath,
 		params = params_joined,
 		ret_nan = bool(p.returncode),
+	)
+
+
+
+
+def gen_random_state(
+		ModParamsDict
 	)

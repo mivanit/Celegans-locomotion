@@ -10,11 +10,26 @@ if TYPE_CHECKING:
 else:
 	from util import Path,joinPath
 
+
+DEFAULT_POS : Dict[str,Tuple[float,float]] = {
+	'SMDD' : (-2.0, 4.0),
+	'SMDV' : (2.0, 4.0),
+	'RMDD' : (-2.0, 0.0),
+	'RMDV' : (2.0, 0.0),
+	'AWA' : (0.0, 12.0),
+	'RIM' : (0.0, 8.0),
+	'RIA' : (0.0, 8.0),
+	'RIA_Loop' : (0.0, 8.0),
+	'RIA_nrD' : (-1.0, 6.0),
+	'RIA_nrV' : (1.0, 6.0),
+}
+
 def plot_net(
-		params : str = "../input/params/default.json",
+		params : str,
 		nrvsys : Union[str,List[str]] = ["Head", "VentralCord"],
-		strict_fname : bool = True,
+		strict_fname : bool = False,
 		show_weights : bool = True,
+		spring_layout : bool = False,
 	):
 	if params.endswith('/') or (strict_fname and not params.endswith('params.json')):
 		params = joinPath(params, 'params.json')
@@ -56,7 +71,10 @@ def plot_net(
 	print(G.nodes())
 	print(G.edges())
 
-	pos = nx.spring_layout(G)
+	if spring_layout:
+		pos : Dict[str,Tuple[float,float]] = nx.spring_layout(G)
+	else:
+		pos = DEFAULT_POS
 
 	nx.draw_networkx_nodes(G, pos, node_size = 1500, node_color = '#E3FFB2')
 	nx.draw_networkx_labels(G, pos)
@@ -65,7 +83,7 @@ def plot_net(
 		G, pos, 
 		edgelist = edges_byType['chem'], edge_color='r', 
 		arrows = True, arrowsize = 30, 
-		connectionstyle = 'arc3,rad=0.2',
+		connectionstyle = 'arc3,rad=0.1',
 		min_target_margin  = 20, 
 	)
 
