@@ -32,10 +32,10 @@ from pyutil.plot_pos import read_body_data,CoordsRotArr
 
 
 def merge_params_with_mods(
-		# base params
-		params_base : ParamsDict,
 		# modified params (this is what we are optimizing)
 		params_mod : ModParamsDict,
+		# base params
+		params_base : ParamsDict,
 	) -> ParamsDict:
 	"""merges a params file with a special "mod" dict
 	
@@ -45,9 +45,9 @@ def merge_params_with_mods(
 
 	```python
 	params_mod = {
-			'__params__:Head.neurons.AWA.theta' : 2.0,
-			'__params__:ChemoReceptors.alpha' : 2.0,
-			'__conn__:Head,AWA,RIM,chem' : 10.0,
+			('__params__:Head.neurons.AWA.theta' : 2.0,
+			('__params__:ChemoReceptors.alpha' : 2.0,
+			('__conn__:Head,AWA,RIM,chem' : 10.0,
 		}
 	}
 	```
@@ -56,10 +56,10 @@ def merge_params_with_mods(
 	- keys starting with `__conn__` map comma-separated connection identifiers to their desired values
 	
 	### Parameters:
-	 - `params_base : ParamsDict`
-	   `params.json` style dict
 	 - `params_mod : ModParamsDict` 
 	   special dict to modify a copy of `params_base`
+	 - `params_base : ParamsDict`
+	   `params.json` style dict
 	
 	### Returns:
 	 - `ParamsDict` 
@@ -171,10 +171,10 @@ def _extract_food_dist(
 	else:
 		# get head pos
 		bodydata : CoordsRotArr = read_body_data(datadir + 'body.dat')[-1,0]
-		pos_head : Tuple[float,float] = ( bodydata['x'], bodydata['y'] )
+		pos_head : VecXY = VecXY( bodydata['x'], bodydata['y'] )
 
 		# get food pos
-		pos_food : Tuple[float,float] = (
+		pos_food : VecXY = VecXY(
 			params['ChemoReceptors']['foodPos']['x'],
 			params['ChemoReceptors']['foodPos']['y'],
 		)
@@ -193,10 +193,10 @@ def _extract_df_row(
 
 
 def evaluate_params(
-		# base params
-		params_base : ParamsDict,
 		# modified params (this is what we are optimizing)
 		params_mod : ModParamsDict,
+		# base params
+		params_base : ParamsDict,
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
 		coll : Path = 'input/objs_empty.tsv',
@@ -208,12 +208,15 @@ def evaluate_params(
 	# TODO: document this
 	
 	# make dir
-	outpath : str = f"{rootdir}{dict_to_filename(params_mod)}/"
-	outpath_params : str = joinPath(outpath,'in-params.json')
+	outpath : Path = f"{rootdir}{dict_to_filename(params_mod)}/"
+	outpath_params : Path = joinPath(outpath,'in-params.json')
 	mkdir(outpath)
 
 	# join params
-	params_joined : dict = merge_params_with_mods(params_base, params_mod)
+	params_joined : ParamsDict = merge_params_with_mods(params_base, params_mod)
+
+	# modify CLI parameters from mod
+	merge_params_with_mods(params_base, params_mod)
 
 	# save modified params
 	with open(outpath_params, 'w') as fout:
@@ -252,6 +255,4 @@ def evaluate_params(
 
 
 
-def gen_random_state(
-		ModParamsDict
-	)
+def mutate_state

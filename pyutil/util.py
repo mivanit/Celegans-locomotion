@@ -1,6 +1,9 @@
 import os
+import math
 from typing import *
 from copy import deepcopy
+# from collections import namedtuple
+# from dataclasses import dataclass
 
 import json
 
@@ -30,8 +33,13 @@ def joinPath(*args):
  #    # #  ####   ####
 """
 
-VecXY = Tuple[float,float]
-
+VecXY = NamedTuple(
+	'VecXY',
+	[
+		('x', float), 
+		('y', float),
+	],
+)
 
 def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 	with open(joinPath(path, file), 'w') as log_out:
@@ -48,9 +56,6 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 ##     ##  ##  ##    ##    ##
 ########  ####  ######     ##
 """
-
-ParamsDict = Dict[str, Any]
-ModParamsDict = Dict[str, Any]
 
 def keylist_access_nested_dict(
 		d : Dict[str,Any], 
@@ -119,6 +124,49 @@ def dict_to_filename(
 	
 	return '_'.join(output)
 
+
+"""
+
+ #    #  ####  #####     #####    ##   #####    ##   #    #  ####
+ ##  ## #    # #    #    #    #  #  #  #    #  #  #  ##  ## #
+ # ## # #    # #    #    #    # #    # #    # #    # # ## #  ####
+ #    # #    # #    #    #####  ###### #####  ###### #    #      #
+ #    # #    # #    #    #      #    # #   #  #    # #    # #    #
+ #    #  ####  #####     #      #    # #    # #    # #    #  ####
+
+"""
+
+Valid_NS = Literal['Head', 'VentralCord']
+Valid_Neurons = str
+# Valid_Neurons = Literal['Head', 'VentralCord']
+
+
+ModTypes = Literal[
+	'params',
+	'conn',
+	'CLI',
+]
+
+ModParam = NamedTuple(
+	'ModParam', 
+	[
+		('mod_type', ModTypes), 
+		('path', 'str'),
+	],
+)
+
+ParamsDict = Dict[str, Any]
+ModParamsDict = Dict[ModParam, Any]
+
+# ConnKey = NamedTuple(
+# 	'ConnKey',
+# 	[
+# 		('NS', Valid_NS),
+# 		('from', Valid_Neurons),
+# 		('to', Valid_Neurons),
+# 		('weight', float),
+# 	],
+# )
 
 
 """
