@@ -50,6 +50,18 @@ inline void set_foodPos(json & params, cxxopts::ParseResult & cmd);
 
 
 
+/*
+
+ #    #   ##   # #    #
+ ##  ##  #  #  # ##   #
+ # ## # #    # # # #  #
+ #    # ###### # #  # #
+ #    # #    # # #   ##
+ #    # #    # # #    #
+
+*/
+
+
 int main (int argc, const char* argv[])
 {
     // set output precision
@@ -108,30 +120,34 @@ int main (int argc, const char* argv[])
     PRINT_DEBUG("> read command line args\n")
     // ========================================
 
+    json simulation_params = params["simulation"];
+
     // get random seed
-    long seed = set_seed(params["simulation"], cmd);
+    long seed = set_seed(simulation_params, cmd);
     RandomState rs;
     rs.SetRandomSeed(seed);
     PRINTF_DEBUG("> set rand seed to %ld\n", seed)
 
     // set duration
-    overwrite_json_from_cmd<double>(params["simulation"], cmd, "duration");
+    overwrite_json_from_cmd<double>(simulation_params, cmd, "duration");
 
     // set food position
     set_foodPos(params, cmd);
 
     // set collision objects
-    overwrite_json_from_cmd<std::string>(params["simulation"], cmd, "coll");
+    overwrite_json_from_cmd<std::string>(simulation_params, cmd, "coll");
     
-    PRINTF_DEBUG("  > collision tsv from:\t%s\n", params["simulation"]["coll"].get<std::string>().c_str())
-    std::vector<CollisionObject> collObjs = load_objects(params["simulation"]["coll"]);
+    PRINTF_DEBUG("  > collision tsv from:\t%s\n", simulation_params["coll"].get<std::string>().c_str())
+    std::vector<CollisionObject> collObjs = load_objects(simulation_params["coll"]);
 
     // set output dir
-    overwrite_json_from_cmd<string>(params["simulation"], cmd, "output");
+    overwrite_json_from_cmd<string>(simulation_params, cmd, "output");
 
     // copy configs
-    copy_config_files(params["simulation"]["output"].get<std::string>(), params, collObjs);
+    copy_config_files(simulation_params["output"].get<std::string>(), params, collObjs);
 
+    // REVIEW: is this required? not sure
+    params["simulation"] = simulation_params;
 
     // ========================================
     // setting up simulation
@@ -183,6 +199,18 @@ inline void copy_config_files(
     ofs_params.close();
 }
 
+
+
+/*
+
+ #    # ###### #      #####  ###### #####   ####
+ #    # #      #      #    # #      #    # #
+ ###### #####  #      #    # #####  #    #  ####
+ #    # #      #      #####  #      #####       #
+ #    # #      #      #      #      #   #  #    #
+ #    # ###### ###### #      ###### #    #  ####
+
+*/
 
 /*
 gets the seed (possibly random) from the command line option, overwriting whatever is in params.json
