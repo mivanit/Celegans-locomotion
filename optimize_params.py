@@ -10,6 +10,7 @@ from typing import *
 import subprocess
 import copy
 from math import dist
+import random
 
 import json
 
@@ -19,8 +20,8 @@ else:
 	Arg = lambda t,s : t
 
 from pyutil.util import (
-	Path,mkdir,joinPath,
-	strList_to_dict,ParamsDict,ModParamsDict,
+	ModTypes, Path,mkdir,joinPath,
+	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
@@ -30,6 +31,17 @@ from pyutil.util import (
 
 from pyutil.plot_pos import read_body_data,CoordsRotArr
 
+
+"""
+
+ #    # ###### #####   ####  ######
+ ##  ## #      #    # #    # #
+ # ## # #####  #    # #      #####
+ #    # #      #####  #  ### #
+ #    # #      #   #  #    # #
+ #    # ###### #    #  ####  ######
+
+"""
 
 def merge_params_with_mods(
 		# modified params (this is what we are optimizing)
@@ -45,15 +57,15 @@ def merge_params_with_mods(
 
 	```python
 	params_mod = {
-			('__params__:Head.neurons.AWA.theta' : 2.0,
-			('__params__:ChemoReceptors.alpha' : 2.0,
-			('__conn__:Head,AWA,RIM,chem' : 10.0,
+			('params','Head.neurons.AWA.theta' : 2.0,
+			('params','ChemoReceptors.alpha' : 2.0,
+			('conn','Head,AWA,RIM,chem' : 10.0,
 		}
 	}
 	```
 
-	- keys starting with `__params__` map dot-separated keys to the nested params dict, to their desired values
-	- keys starting with `__conn__` map comma-separated connection identifiers to their desired values
+	- keys starting with `params` map dot-separated keys to the nested params dict, to their desired values
+	- keys starting with `conn` map comma-separated connection identifiers to their desired values
 	
 	### Parameters:
 	 - `params_mod : ModParamsDict` 
@@ -69,33 +81,53 @@ def merge_params_with_mods(
 	# copy the input dict
 	output : dict = copy.deepcopy(params_base)
 
-	# merge in the standard params
-	for nested_keys,val in params_mod['params'].items():
-		fin_dic,fin_key = keylist_access_nested_dict(
-			d = output, 
-			keys = nested_keys.split('.'),
-		)
-		fin_dic[fin_key] = val
+	# REVIEW: why did i even refactor this when im making everything editable through params json anyway?
+	for tup_key,val in params_mod.items():
+		# merge in the standard params
+		if tup_key.mod_type == ModTypes.params:
+			
+			nested_keys : str = tup_key.path
 
-	# merge in the connection modifiers
-	for conn_key_str,conn_wgt in params_mod['conn'].items():
-		conn_key = strList_to_dict(
-			in_data = conn_key_str,
-			keys_list = ['NS', 'from', 'to', 'type'],
-			delim = ',',
-		)
+			fin_dic,fin_key = keylist_access_nested_dict(
+				d = output, 
+				keys = nested_keys.split('.'),
+			)
+			fin_dic[fin_key] = val
 
-		# get the indecies of the connections whose weights need to be changed
-		conn_idxs : List[Optional[int]] = find_conn_idx_regex(
-			params_data = output, 
-			conn_key = conn_key,
-		)
+		elif tup_key.mod_type == ModTypes.conn:
+			# merge in the connection modifiers
+			conn_key_str : str = tup_key.path
+			conn_key = strList_to_dict(
+				in_data = conn_key_str,
+				keys_list = ['NS', 'from', 'to', 'type'],
+				delim = ',',
+			)
 
-		# set weights
-		for cidx in conn_idxs:
-			output[conn_key['NS']]['connections'][cidx]['weight'] = conn_wgt
+			# get the indecies of the connections whose weights need to be changed
+			conn_idxs : List[Optional[int]] = find_conn_idx_regex(
+				params_data = output, 
+				conn_key = conn_key,
+			)
+
+			# set weights
+			for cidx in conn_idxs:
+				output[conn_key['NS']]['connections'][cidx]['weight'] = val
+		else:
+			raise NotImplementedError(f'given key type {tup_key.mod_type} unknown')
 
 	return output
+
+
+"""
+
+ ###### #    # ##### #####    ##    ####  #####
+ #       #  #    #   #    #  #  #  #    #   #
+ #####    ##     #   #    # #    # #        #
+ #        ##     #   #####  ###### #        #
+ #       #  #    #   #   #  #    # #    #   #
+ ###### #    #   #   #    # #    #  ####    #
+
+"""
 
 ExtractorFunc = Callable[
 	[
@@ -107,6 +139,26 @@ ExtractorFunc = Callable[
 ]
 
 ExtractorReturnType = Any
+
+def _wrapper_extract(
+		proc, 
+		func_extract : ExtractorFunc, 
+		outpath : Path, 
+		params_joined : ParamsDict,
+	):	
+	# wait for command to finish
+	proc.wait()
+		
+	if proc.returncode:
+		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(proc.args)}')
+
+	return func_extract(
+		datadir = outpath,
+		params = params_joined,
+		ret_nan = bool(proc.returncode),
+	)
+
+
 
 def _extract_TEMPLATE(
 		datadir : Path,
@@ -192,14 +244,24 @@ def _extract_df_row(
 	raise NotImplementedError('please implement me :(')
 
 
-def evaluate_params(
+"""
+
+ ###### #    #   ##   #
+ #      #    #  #  #  #
+ #####  #    # #    # #
+ #      #    # ###### #
+ #       #  #  #    # #
+ ######   ##   #    # ######
+
+"""
+
+def setup_evaluate_params(
 		# modified params (this is what we are optimizing)
 		params_mod : ModParamsDict,
 		# base params
 		params_base : ParamsDict,
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
-		coll : Path = 'input/objs_empty.tsv',
 		# extract info from the final product
 		func_extract : ExtractorFunc = _extract_food_dist,
 		# command line args
@@ -226,33 +288,146 @@ def evaluate_params(
 	cmd : str = genCmd_singlerun(
 		params = outpath_params,
 		output = outpath,
-		coll = coll,
 		# **kwargs,
 	)
 
 	# run the process, write stderr and stdout to the log file
 	with open(outpath + 'log.txt', 'w') as f_log:
-		p = subprocess.Popen(
+		proc = subprocess.Popen(
 			cmd, 
 			stderr = subprocess.STDOUT,
 			stdout = f_log,
 		)
 
+	return (proc, outpath, params_joined)
+	
+def evaluate_params(
+		# modified params (this is what we are optimizing)
+		params_mod : ModParamsDict,
+		# base params
+		params_base : ParamsDict,
+		# root directory for run
+		rootdir : Path = 'data/run/anneal/',
+		# extract info from the final product
+		func_extract : ExtractorFunc = _extract_food_dist,
+		# command line args
+		rand : Optional[bool] = None,
+	) -> ExtractorReturnType:
+	
+	proc, outpath, params_joined = setup_evaluate_params(
+		params_mod = params_mod,
+		params_base = params_base,
+		rootdir= rootdir,
+	)
+
 	# wait for command to finish
-	p.wait()
-
+	proc.wait()
 		
-	if p.returncode:
-		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(p.args)}')
-
+	if proc.returncode:
+		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(proc.args)}')
 
 	return func_extract(
 		datadir = outpath,
 		params = params_joined,
-		ret_nan = bool(p.returncode),
+		ret_nan = bool(proc.returncode),
 	)
 
 
+"""
+
+  ####  ###### #    # ######
+ #    # #      ##   # #
+ #      #####  # #  # #####
+ #  ### #      #  # # #
+ #    # #      #   ## #
+  ####  ###### #    # ######
+
+"""
+
+def mutate_state(
+		params_mod : ModParamsDict,
+		ranges : ModParamsRanges,
+		sigma : float = 0.1,
+	) -> None:
+	
+	# choose a variable to mutate
+	choice_key : str = random.choice(list(params_mod.keys()))
+	choice_val : float = params_mod[choice_key]
+
+	# modify the value according to the range
+	delta_val : float = random.gauss(0, sigma)
+	params_mod[choice_key] = choice_val + delta_val
 
 
-def mutate_state
+
+def combine_genotypes(
+		pmod_A : ModParamsDict,
+		pmod_B : ModParamsDict,
+		noise_sigma : float = 0.1,
+		threshold_noise : float = 0.00001,
+	) -> ModParamsDict:
+	"""combines `pmod_A, pmod_B` into a single genotype
+	
+	when modifying an individual component of the genotypes,
+	if the difference is over `threshold_noise`,
+	then we take the average between the values 
+	and add noise using `noise_sigma` as sigma for normal distribution
+	if difference < `threshold_noise`, we just take the average
+	
+	notes:
+	- keys of `pmod_A, pmod_B` should match
+	- order of `pmod_A, pmod_B` shouldnt matter
+	
+	### Parameters:
+	 - `pmod_A : ModParamsDict`   
+	   [description]
+	 - `pmod_B : ModParamsDict`   
+	   [description]
+	 - `ranges : ModParamsRanges`   
+	   [description]
+	 - `noise_sigma : float`   
+	   [description]
+	
+	### Returns:
+	 - `ModParamsDict` 
+	   [description]
+	"""
+
+	pmod_out : ModParamsDict = dict()
+
+	# assert that keys match
+	assert all(
+		(k in pmod_B) 
+		for k in pmod_A.keys()
+	), 'keys dont match!'
+
+	for key in pmod_A.keys():
+		# set new val to average
+		val : float = (pmod_A[key] + pmod_B[key]) / 2.0
+		
+		# add noise if difference is big enough
+		val_range : float = abs(pmod_A[key] - pmod_B[key])
+		if val_range > threshold_noise:
+			val += random.gauss(0.0, val_range * noise_sigma)
+
+		# store new val
+		pmod_out[key] = val
+
+	return pmod_out
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

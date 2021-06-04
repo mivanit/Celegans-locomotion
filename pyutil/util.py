@@ -2,6 +2,7 @@ import os
 import math
 from typing import *
 from copy import deepcopy
+from enum import Enum
 # from collections import namedtuple
 # from dataclasses import dataclass
 
@@ -140,23 +141,30 @@ Valid_NS = Literal['Head', 'VentralCord']
 Valid_Neurons = str
 # Valid_Neurons = Literal['Head', 'VentralCord']
 
+class ModTypes(Enum):
+	params : str = 'params'
+	conn : str = 'conn'
+	# cli : str = 'cli'
 
-ModTypes = Literal[
-	'params',
-	'conn',
-	'CLI',
-]
+T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
+
+# ModTypes = Literal[
+# 	'params',
+# 	'conn',
+# 	'cli',
+# ]
 
 ModParam = NamedTuple(
 	'ModParam', 
 	[
-		('mod_type', ModTypes), 
+		('mod_type', T_ModTypes), 
 		('path', 'str'),
 	],
 )
 
 ParamsDict = Dict[str, Any]
-ModParamsDict = Dict[ModParam, Any]
+ModParamsDict = Dict[ModParam, float]
+ModParamsRanges = Dict[ModParam, Tuple[float,float]]
 
 # ConnKey = NamedTuple(
 # 	'ConnKey',
