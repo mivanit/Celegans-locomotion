@@ -24,10 +24,11 @@ else:
 from pyutil.util import (
 	ModParam, ModTypes, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
+	MODPARAMS_DEFAULT_RANGES,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
-	dict_hash,
+	dict_hash,load_params,
 	keylist_access_nested_dict,
 )
 
@@ -591,7 +592,8 @@ def eval_pop_fitness(
 	to_read : List[Tuple[ParamsDict, ModParamsDict, Process, Path]] = list()
 
 	# start all the required processes
-	for prm_mod,fit in PopulationFitness:
+	# TODO: fix typing here
+	for prm_mod,fit in PopulationFitness: # type: ignore
 		if fit is None:
 			proc, outpath, prm_join = setup_evaluate_params(
 				params_mod = prm_mod,
@@ -639,13 +641,13 @@ def generation_selection(
 	"""
 	# fitness : PopulationFitness = eval_pop_fitness(pop, extractorfunc)
 
-	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True)
+	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True) # type: ignore
 	fitness_thresh : float = lst_fit[new_popsize]
 
 	newpop : PopulationFitness = [
 		(prm,fit)
 		for prm,fit in pop
-		if (fit > fitness_thresh)
+		if (fit > fitness_thresh) # type: ignore
 	]
 
 	# TODO: pop/push if the element count is not quite right?
@@ -675,7 +677,7 @@ def run_generation(
 		popsize_select : int,
 		popsize_new : int,
 		# ranges : ModParamsRanges,
-		sigma : float,
+		# sigma : float,
 		extractorfunc : ExtractorFunc,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
@@ -737,16 +739,16 @@ def compute_gen_sizes(
 
 def run_genetic_algorithm(
 		# for setup
-		ranges : ModParamsRanges,
-		first_gen_size : int,
-		gen_count : int,
-		factor_cull : float,
-		factor_repro : float,
+		rootdir : Path = "data/geno_sweep/",
+		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
+		first_gen_size : int = 10,
+		gen_count : int = 5,
+		factor_cull : float = 0.45,
+		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		rootdir : Path,
-		params_base : ParamsDict,
-		sigma : float,
-		extractorfunc : ExtractorFunc,
+		params_base : ParamsDict = load_params("input/chemo_v6.json"),
+		# sigma : float = 0.1,
+		extractorfunc : ExtractorFunc = extract_food_dist,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
@@ -773,7 +775,7 @@ def run_genetic_algorithm(
 			params_base = params_base,
 			popsize_select = count_cull,
 			popsize_new = count_new,
-			sigma = sigma,
+			# sigma = sigma,
 			extractorfunc = extractorfunc,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,

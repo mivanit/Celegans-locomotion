@@ -178,6 +178,20 @@ ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
 ModParamsRanges = Dict[ModParam, RangeTuple]
 
+MODPARAMS_DEFAULT_RANGES : ModParamsRanges = {
+	ModParam("conn",   "Head,AWA,RIM,chem") : RangeTuple(-40000,40000),
+	ModParam("conn",   "Head,RIM,RMD*,chem") : RangeTuple(-100,100),
+	# ModParam("params", "ChemoReceptors.kappa") : RangeTuple(150.0, 250.0),
+	# ModParam("params", "ChemoReceptors.lambda") : RangeTuple(-300000, 400000),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+def load_params(path : Path) -> ParamsDict:
+	with open(path, 'r') as fin:
+		data : ParamsDict = json.load(fin)
+	return data
+
 # ConnKey = NamedTuple(
 # 	'ConnKey',
 # 	[
