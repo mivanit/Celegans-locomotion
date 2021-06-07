@@ -114,10 +114,11 @@ int main (int argc, const char* argv[])
         true,
         true
     );
+    params["simulation"]["src-params"] = cmd["params"].as<std::string>();
 
 
     // ========================================
-    PRINT_DEBUG("> read command line args\n")
+    PRINT_DEBUG("  > read command line args\n")
     // ========================================
 
     json simulation_params = params["simulation"];
@@ -126,23 +127,30 @@ int main (int argc, const char* argv[])
     long seed = set_seed(simulation_params, cmd);
     RandomState rs;
     rs.SetRandomSeed(seed);
-    PRINTF_DEBUG("> set rand seed to %ld\n", seed)
+    PRINTF_DEBUG("  >> set rand seed to %ld\n", seed)
 
     // set duration
     overwrite_json_from_cmd<double>(simulation_params, cmd, "duration");
     DURATION = simulation_params["duration"].get<double>();
+    PRINTF_DEBUG("  >> set duration to %f\n", DURATION)
 
     // set angle
     overwrite_json_from_cmd<double>(simulation_params, cmd, "angle");
+    PRINTF_DEBUG("  >> set angle to %f\n", params["simulation"]["angle"].get<double>())
 
     // set food position
     set_foodPos(params, cmd);
+    PRINTF_DEBUG(
+        "  >> set foodPos to %f, %f\n", 
+        params["ChemoReceptors"]["foodPos"]["x"].get<double>(),
+        params["ChemoReceptors"]["foodPos"]["y"].get<double>()
+    )
+    
 
     // set collision objects
     overwrite_json_from_cmd<std::string>(simulation_params, cmd, "coll");
-    
-    PRINTF_DEBUG("  > collision tsv from:\t%s\n", simulation_params["coll"].get<std::string>().c_str())
     std::vector<CollisionObject> collObjs = load_objects(simulation_params["coll"].get<std::string>());
+    PRINTF_DEBUG("  >> collision tsv from:\t%s\n", simulation_params["coll"].get<std::string>().c_str())
 
     // set output dir
     overwrite_json_from_cmd<string>(simulation_params, cmd, "output");

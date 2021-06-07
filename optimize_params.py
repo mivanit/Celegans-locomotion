@@ -15,6 +15,7 @@ import json
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
+from pydbg import dbg
 
 if TYPE_CHECKING:
 	from mypy_extensions import Arg
@@ -30,10 +31,9 @@ from pyutil.util import (
 	genCmd_singlerun,
 	dict_hash,load_params,
 	keylist_access_nested_dict,
+	read_body_data,CoordsRotArr,
+	prntmsg,
 )
-
-from pyutil.plot_pos import read_body_data,CoordsRotArr
-
 
 Process = Any
 Population = List[ModParamsDict]
@@ -95,7 +95,7 @@ def merge_params_with_mods(
 	# REVIEW: why did i even refactor this when im making everything editable through params json anyway?
 	for tup_key,val in params_mod.items():
 		# merge in the standard params
-		if tup_key.mod_type == ModTypes.params:
+		if tup_key.mod_type == ModTypes.params.value:
 			
 			nested_keys : str = tup_key.path
 
@@ -105,7 +105,7 @@ def merge_params_with_mods(
 			)
 			fin_dic[fin_key] = val
 
-		elif tup_key.mod_type == ModTypes.conn:
+		elif tup_key.mod_type == ModTypes.conn.value:
 			# merge in the connection modifiers
 			conn_key_str : str = tup_key.path
 			conn_key = strList_to_dict(
@@ -298,7 +298,7 @@ def setup_evaluate_params(
 	# TODO: document this
 	
 	# make dir
-	outpath : Path = f"{rootdir}{dict_hash(params_mod)}/"
+	outpath : Path = f"{rootdir}r-{dict_hash(params_mod)}/"
 	outpath_params : Path = joinPath(outpath,'in-params.json')
 	mkdir(outpath)
 
@@ -506,16 +506,23 @@ def generation_reproduction(
 		# chance_direct_progression : float = 0.2,
 	) -> PopulationFitness:
 
-	oldpop_size : int = len(pop)
+	popsize_old : int = len(pop)
 	newpop : PopulationFitness = list()
 
-	random_selection : NDArray = np.random.randint(0, oldpop_size, (popsize_new, 2))
+	dbg(len(pop))
+	dbg(popsize_old)
+	dbg(popsize_new)
+	random_selection : NDArray = np.random.randint(
+		low = 0, 
+		high = popsize_old, 
+		size = (popsize_new, 2),
+	)
 
 	n_indiv : int = 0
 	while len(newpop) < popsize_new:
 		
-		prm_A : ModParamsDict = pop[random_selection[n_indiv][0]]
-		prm_B : ModParamsDict = pop[random_selection[n_indiv][1]]
+		prm_A : ModParamsDict = pop[random_selection[n_indiv][0]][0]
+		prm_B : ModParamsDict = pop[random_selection[n_indiv][1]][0]
 		prm_comb : ModParamsDict = gene_combine(prm_A, prm_B, **gene_combine_kwargs)
 	
 		newpop.append((prm_comb, None))
@@ -584,6 +591,8 @@ def eval_pop_fitness(
 		extractorfunc : ExtractorFunc,
 	) -> PopulationFitness:
 
+	prntmsg(f'evaluating fitness of population of size {len(pop)}, storing in {rootdir}', 2)
+
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
 	
@@ -592,8 +601,7 @@ def eval_pop_fitness(
 	to_read : List[Tuple[ParamsDict, ModParamsDict, Process, Path]] = list()
 
 	# start all the required processes
-	# TODO: fix typing here
-	for prm_mod,fit in PopulationFitness: # type: ignore
+	for prm_mod,fit in pop:
 		if fit is None:
 			proc, outpath, prm_join = setup_evaluate_params(
 				params_mod = prm_mod,
@@ -641,6 +649,15 @@ def generation_selection(
 	"""
 	# fitness : PopulationFitness = eval_pop_fitness(pop, extractorfunc)
 
+	if new_popsize == len(pop):
+		return copy.deepcopy(pop)
+
+	# TODO: fix typing here
+	assert not any(
+		f is None
+		for _,f in pop
+	), "`None` fitness found when trying to run `generation_selection`"
+
 	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True) # type: ignore
 	fitness_thresh : float = lst_fit[new_popsize]
 
@@ -683,8 +700,12 @@ def run_generation(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
 
+	dbg(len(pop))
+
 	# trim old population
 	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
+
+	dbg(len(pop_trimmed))
 
 	# run reproduction
 	pop_new : PopulationFitness = generation_reproduction(
@@ -696,6 +717,8 @@ def run_generation(
 
 	# mutate
 	# TODO: implement mutation
+
+	dbg(len(pop_new))
 
 	# evaluate fitness of new individuals
 	return eval_pop_fitness(
@@ -725,7 +748,7 @@ def compute_gen_sizes(
 		factor_repro : float,
 	) -> List[Tuple[int,int]]:
 
-	output : List[Tuple[int,int]] = [(-1, first_gen_size)]
+	output : List[Tuple[int,int]] = [(first_gen_size, first_gen_size)]
 
 	for g in range(gen_count):
 		count_prev : int = output[g][1]
@@ -788,8 +811,6 @@ if __name__ == '__main__':
 	import fire # type: ignore
 	res = fire.Fire(run_genetic_algorithm)
 	print(res)
-
-
 
 
 

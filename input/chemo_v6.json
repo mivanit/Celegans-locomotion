@@ -3,7 +3,7 @@
 		"angle": 1.570795,
 		"duration": 20.0,
 		"seed": 0,
-		"src-coll": "input/collision_objs.tsv",
+		"coll": "input/collision_objs.tsv",
 		"output": "data/run/richer_params_test_1/",
 		"src-params": "input/params.json"
 	},

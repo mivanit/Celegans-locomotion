@@ -8,6 +8,9 @@ from enum import Enum
 
 import json
 
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
+
 """
  #####    ##   ##### #    #
  #    #  #  #    #   #    #
@@ -34,6 +37,9 @@ def joinPath(*args):
  #    # #  ####   ####
 """
 
+CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
+CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
+
 VecXY = NamedTuple(
 	'VecXY',
 	[
@@ -47,6 +53,9 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 		# json.dump(dict_locals, log_out, indent = '\t')
 		print(dict_locals, file = log_out)
 
+
+def prntmsg(msg : str, indent = 0):
+	print(f"{'  '*indent}> {msg}")
 
 """
 ########  ####  ######  ########
@@ -220,7 +229,7 @@ def find_conn_idx(params_data : Dict[str,Any], conn_key : dict) -> Optional[int]
 		if all([
 				conn_key[k] == item[k]
 				for k in conn_key 
-				if k is not 'NS'
+				if k != 'NS'
 			]):
 			return i
 
@@ -362,3 +371,83 @@ def genCmd_singlerun(
 
 	return cmd
 	# return cmd + f' > {output}log.txt'
+
+
+
+
+
+"""
+########  ########    ###    ########
+##     ## ##         ## ##   ##     ##
+##     ## ##        ##   ##  ##     ##
+########  ######   ##     ## ##     ##
+##   ##   ##       ######### ##     ##
+##    ##  ##       ##     ## ##     ##
+##     ## ######## ##     ## ########
+"""
+
+
+def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
+	"""reads given tsv file into a numpy array
+	
+	array is a 2-D structured array of type `CoordsRotArr`
+	with `'x', 'y', 'phi'` fields for each segment
+	so essentially 3-D, where first index is timestep, second is segment, and third/field is x/y/phi
+	
+	### Parameters:
+	- `filename : Path`   
+	filename to read
+	
+	### Returns:
+	- `NDArray[Any, CoordsRotArr]` 
+	"""
+	# read in
+	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+
+	# trim first variable (time)
+	data_raw = data_raw[:,1:]
+
+	# compute dims
+	n_tstep = data_raw.shape[0]
+	n_seg = int(data_raw.shape[1] / 3)
+
+	# allocate new array
+	# data : NDArray[(n_tstep, n_seg), CoordsRotArr] = np.full(
+	data : NDArray[(n_tstep, n_seg)] = np.full(
+		shape = (n_tstep, n_seg),
+		fill_value = np.nan,
+		dtype = CoordsRotArr,
+	)
+
+	# organize by x pos, y pos, and rotation (phi)
+	for s in range(n_seg):
+		data[:, s]['x'] = data_raw[:, s*3]
+		data[:, s]['y'] = data_raw[:, s*3 + 1]
+		data[:, s]['phi'] = data_raw[:, s*3 + 2]
+
+	return data
+
+
+def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:
+	"""reads an old blocks/vecs style collider file
+	
+	### Parameters:
+	 - `objs_file : str`   
+	
+	### Returns:
+	 - `Tuple[NDArray,NDArray]` 
+	"""
+	blocks : list = []
+	vecs : list = []
+	
+	with open(objs_file, 'r') as fin:
+		for row in fin:
+			row_lst : List[float] = [
+				float(x) 
+				for x in row.strip().split()
+			]
+
+			blocks.append([ row_lst[0:2], row_lst[2:4] ])
+			vecs.append(row_lst[4:])
+
+	return (np.array(blocks), np.array(vecs))
