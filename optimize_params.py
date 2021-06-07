@@ -11,8 +11,10 @@ import subprocess
 import copy
 from math import dist
 import random
-
 import json
+
+import numpy as np
+from nptyping import NDArray
 
 if TYPE_CHECKING:
 	from mypy_extensions import Arg
@@ -20,7 +22,7 @@ else:
 	Arg = lambda t,s : t
 
 from pyutil.util import (
-	ModTypes, Path,mkdir,joinPath,
+	ModParam, ModTypes, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
@@ -30,6 +32,12 @@ from pyutil.util import (
 )
 
 from pyutil.plot_pos import read_body_data,CoordsRotArr
+
+
+Process = Any
+Population = List[ModParamsDict]
+PopulationFitness = List[Tuple[ModParamsDict, Optional[float]]]
+
 
 
 """
@@ -129,16 +137,18 @@ def merge_params_with_mods(
 
 """
 
+ExtractorReturnType = Any
+
 ExtractorFunc = Callable[
 	[
 		Arg(Path, 'datadir'),
 		Arg(ParamsDict, 'params'),
 		Arg(bool, 'ret_nan'),
 	], 
-	Any, # return type
+	ExtractorReturnType, # return type
 ]
 
-ExtractorReturnType = Any
+
 
 def _wrapper_extract(
 		proc, 
@@ -190,7 +200,7 @@ def _extract_TEMPLATE(
 	raise NotImplementedError('this is a template function only!')
 
 
-def _extract_finalpos(
+def extract_finalpos(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
@@ -207,12 +217,12 @@ def _extract_finalpos(
 		bodydata : CoordsRotArr = read_body_data(datadir + 'body.dat')[-1,0]
 		return ( bodydata['x'], bodydata['y'] )
 
-def _extract_food_dist(
+def extract_food_dist(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
 	) -> float:
-	"""extract euclidead distance from head to food
+	"""extract euclidean distance from head to food
 	
 	### Returns:
 	 - `float` 
@@ -234,8 +244,23 @@ def _extract_food_dist(
 		# return distance
 		return dist(pos_head, pos_food)
 
+def extract_food_dist_inv(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> float:
+	"""extract inverse of euclidean distance from head to food
 
-def _extract_df_row(
+	this means that higher value ==> higher fitness
+	
+	### Returns:
+	 - `float` 
+	   1/(dist from final head position to food)
+	"""
+	return 1 / extract_food_dist(datadir, params, ret_nan)
+
+
+def extract_df_row(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
@@ -263,10 +288,10 @@ def setup_evaluate_params(
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
 		# extract info from the final product
-		func_extract : ExtractorFunc = _extract_food_dist,
+		func_extract : ExtractorFunc = extract_food_dist,
 		# command line args
 		rand : Optional[bool] = None,
-	) -> ExtractorReturnType:
+	) -> Tuple[Process, Path, ParamsDict]:
 	# TODO: document this
 	
 	# make dir
@@ -309,7 +334,7 @@ def evaluate_params(
 		# root directory for run
 		rootdir : Path = 'data/run/anneal/',
 		# extract info from the final product
-		func_extract : ExtractorFunc = _extract_food_dist,
+		func_extract : ExtractorFunc = extract_food_dist,
 		# command line args
 		rand : Optional[bool] = None,
 	) -> ExtractorReturnType:
@@ -334,19 +359,31 @@ def evaluate_params(
 
 
 """
+ ######   ######## ##    ## ########
+##    ##  ##       ###   ## ##
+##        ##       ####  ## ##
+##   #### ######   ## ## ## ######
+##    ##  ##       ##  #### ##
+##    ##  ##       ##   ### ##
+ ######   ######## ##    ## ########
+"""
 
-  ####  ###### #    # ######
- #    # #      ##   # #
- #      #####  # #  # #####
- #  ### #      #  # # #
- #    # #      #   ## #
-  ####  ###### #    # ######
+
+"""
+
+ #    # #    # #####
+ ##  ## #    #   #
+ # ## # #    #   #
+ #    # #    #   #
+ #    # #    #   #
+ #    #  ####    #
 
 """
 
 def mutate_state(
 		params_mod : ModParamsDict,
 		ranges : ModParamsRanges,
+		mutprob : float = 0.01,
 		sigma : float = 0.1,
 	) -> None:
 	
@@ -359,12 +396,52 @@ def mutate_state(
 	params_mod[choice_key] = choice_val + delta_val
 
 
+GenoCombineFunc = Callable[
+	[ModParamsDict, ModParamsDict],
+	ModParamsDict,
+]
 
-def combine_genotypes(
+
+"""
+
+  ####  #####   ####   ####   ####
+ #    # #    # #    # #      #
+ #      #    # #    #  ####   ####
+ #      #####  #    #      #      #
+ #    # #   #  #    # #    # #    #
+  ####  #    #  ####   ####   ####
+
+"""
+
+def combine_geno_select(
+		pmod_A : ModParamsDict,
+		pmod_B : ModParamsDict,
+	) -> ModParamsDict:
+	
+	# assert that keys match
+	assert all(
+		(k in pmod_B) 
+		for k in pmod_A.keys()
+	), 'keys dont match!'
+	
+	choices : List[bool] = list(np.random.choice([True,False], len(pmod_A)))
+	output : ModParamsDict = dict()
+
+	for key in pmod_A:
+		c : bool = choices.pop()
+		if c:
+			output[key] = pmod_A[key]
+		else:
+			output[key] = pmod_B[key]
+	
+	return output
+
+def combine_geno_mean_normal(
 		pmod_A : ModParamsDict,
 		pmod_B : ModParamsDict,
 		noise_sigma : float = 0.1,
 		threshold_noise : float = 0.00001,
+		# ranges : Optional[ModParamsRanges] = None,
 	) -> ModParamsDict:
 	"""combines `pmod_A, pmod_B` into a single genotype
 	
@@ -377,22 +454,23 @@ def combine_genotypes(
 	notes:
 	- keys of `pmod_A, pmod_B` should match
 	- order of `pmod_A, pmod_B` shouldnt matter
-	
+
 	### Parameters:
 	 - `pmod_A : ModParamsDict`   
-	   [description]
+	   dict of parameters being modified
 	 - `pmod_B : ModParamsDict`   
-	   [description]
-	 - `ranges : ModParamsRanges`   
-	   [description]
+	   dict of parameters being modified
 	 - `noise_sigma : float`   
-	   [description]
+	   noise added to average of every parameter is given by `noise_sigma * val_range`
+	   (defaults to `0.1`)
+	 - `threshold_noise : float`   
+	   if difference is less than this value, dont add noise (assume they are equal)
+	   (defaults to `0.00001`)
 	
 	### Returns:
 	 - `ModParamsDict` 
 	   [description]
 	"""
-
 	pmod_out : ModParamsDict = dict()
 
 	# assert that keys match
@@ -414,6 +492,297 @@ def combine_genotypes(
 		pmod_out[key] = val
 
 	return pmod_out
+
+
+
+
+def generation_reproduction(
+		pop : PopulationFitness,
+		popsize_new : int,
+		gene_combine : GenoCombineFunc = combine_geno_select,
+		gene_combine_kwargs : Dict[str,Any] = dict(),
+		# chance_direct_progression : float = 0.2,
+	) -> PopulationFitness:
+
+	oldpop_size : int = len(pop)
+	newpop : PopulationFitness = list()
+
+	random_selection : NDArray = np.random.randint(0, oldpop_size, (popsize_new, 2))
+
+	n_indiv : int = 0
+	while len(newpop) < popsize_new:
+		
+		prm_A : ModParamsDict = pop[random_selection[n_indiv][0]]
+		prm_B : ModParamsDict = pop[random_selection[n_indiv][1]]
+		prm_comb : ModParamsDict = gene_combine(prm_A, prm_B, **gene_combine_kwargs)
+	
+		newpop.append((prm_comb, None))
+
+		n_indiv += 1
+	
+	return newpop
+
+
+"""
+
+  ####  ###### #    #
+ #    # #      ##   #
+ #      #####  # #  #
+ #  ### #      #  # #
+ #    # #      #   ##
+  ####  ###### #    #
+
+"""
+
+def generate_geno_uniform(
+		ranges : ModParamsRanges,
+	) -> ModParamsDict:
+
+	raise NotImplementedError()
+
+def generate_geno_uniform_many(
+		ranges : ModParamsRanges,
+		n_genos : int,
+	) -> List[ModParamsDict]:
+
+	random_vals : Dict[ModParam, NDArray[n_genos, float]] = {
+		pr : np.random.uniform(rn.min, rn.max, size = n_genos)
+		for pr,rn in ranges.items()
+	}
+
+	return [
+		{
+			pr : random_vals[pr][i]
+			for pr in ranges.keys()
+		}		
+		for i in range(n_genos)
+	]
+	
+	
+
+
+"""
+
+ ###### #    #   ##   #
+ #      #    #  #  #  #
+ #####  #    # #    # #
+ #      #    # ###### #
+ #       #  #  #    # #
+ ######   ##   #    # ######
+
+"""
+
+def eval_pop_fitness(
+		rootdir : Path,
+		params_base : ParamsDict,
+		pop : PopulationFitness,
+		extractorfunc : ExtractorFunc,
+	) -> PopulationFitness:
+
+	# a mapping of parameters to fitness
+	output_fitness : PopulationFitness = list()
+	
+	# a list of processes that we instantiate,
+	# whose results need to be added to `output_fitness` once they terminate
+	to_read : List[Tuple[ParamsDict, ModParamsDict, Process, Path]] = list()
+
+	# start all the required processes
+	for prm_mod,fit in PopulationFitness:
+		if fit is None:
+			proc, outpath, prm_join = setup_evaluate_params(
+				params_mod = prm_mod,
+				params_base = params_base,
+				rootdir = rootdir,
+			)
+			to_read.append((prm_join, prm_mod, proc, outpath))
+		else:
+			# if fitness is known, dont recalculate
+			output_fitness.append((prm_mod, fit))
+
+	# wait for them to finish, then read fitness
+	for prm_join,prm_mod,proc,outpath in to_read:
+		proc.wait()
+
+		fit : float = extractorfunc(
+			datadir = outpath,
+			params = prm_join,
+			ret_nan = proc.returncode,
+		)
+
+		output_fitness.append((prm_mod, fit))
+
+	# return the results
+	return output_fitness
+
+"""
+
+  ####  ###### #      ######  ####  #####
+ #      #      #      #      #    #   #
+  ####  #####  #      #####  #        #
+      # #      #      #      #        #
+ #    # #      #      #      #    #   #
+  ####  ###### ###### ######  ####    #
+
+"""
+
+def generation_selection(
+		pop : PopulationFitness,
+		new_popsize : int,
+		# prob_allow_lessfit : float = 0.1,
+	) -> PopulationFitness:
+	"""
+	select a number of individals to survive to the next generation
+	"""
+	# fitness : PopulationFitness = eval_pop_fitness(pop, extractorfunc)
+	
+	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True)
+	fitness_thresh : float = lst_fit[new_popsize]
+
+	newpop : PopulationFitness = [
+		(prm,fit)
+		for prm,fit in pop
+		if fit > fitness_thresh
+	]
+
+	# TODO: pop/push if the element count is not quite right?
+
+	return newpop
+	
+
+
+
+
+
+"""
+
+ #####  #    # #    #
+ #    # #    # ##   #
+ #    # #    # # #  #
+ #####  #    # #  # #
+ #   #  #    # #   ##
+ #    #  ####  #    #
+
+"""
+
+def run_generation(
+		pop : PopulationFitness,
+		rootdir : Path,
+		params_base : ParamsDict,
+		popsize_select : int,
+		popsize_new : int,
+		# ranges : ModParamsRanges,
+		sigma : float,
+		extractorfunc : ExtractorFunc,
+		gene_combine : GenoCombineFunc = combine_geno_select,
+		gene_combine_kwargs : Dict[str,Any] = dict(),
+	) -> PopulationFitness:
+
+	# trim old population
+	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
+
+	# run reproduction
+	pop_new : PopulationFitness = generation_reproduction(
+		pop = pop_trimmed,
+		popsize_new = popsize_new,
+		gene_combine = gene_combine,
+		gene_combine_kwargs = gene_combine_kwargs,
+	)
+
+	# mutate
+	# TODO: implement mutation
+
+	# evaluate fitness of new individuals
+	return eval_pop_fitness(
+		rootdir = rootdir,
+		params_base = params_base,
+		pop = pop_new,
+		extractorfunc = extractorfunc, 
+	)
+
+
+
+"""
+
+ #####  #    # #    #
+ #    # #    # ##   #
+ #    # #    # # #  #
+ #####  #    # #  # #
+ #   #  #    # #   ##
+ #    #  ####  #    #
+
+"""
+
+def compute_gen_sizes(
+		first_gen_size : int,
+		gen_count : int,
+		factor_cull : float,
+		factor_repro : float,
+	) -> List[Tuple[int,int]]:
+
+	output : List[Tuple[int,int]] = [(-1, first_gen_size)]
+
+	for g in range(gen_count):
+		count_prev : int = output[g][1]
+		count_cull : int = int(count_prev * factor_cull)
+		count_new : int = int(count_cull * factor_repro)
+		output.append(count_cull, count_new)
+	
+	return output
+
+
+
+def run_genetic_algorithm(
+		# for setup
+		ranges : ModParamsRanges,
+		first_gen_size : int,
+		gen_count : int,
+		factor_cull : float,
+		factor_repro : float,
+		# passed to `run_generation`
+		rootdir : Path,
+		params_base : ParamsDict,
+		sigma : float,
+		extractorfunc : ExtractorFunc,
+		gene_combine : GenoCombineFunc = combine_geno_select,
+		gene_combine_kwargs : Dict[str,Any] = dict(),
+	) -> PopulationFitness:
+
+	# compute population sizes
+	pop_sizes : List[Tuple[int, int]] = compute_gen_sizes(
+		first_gen_size = first_gen_size,
+		gen_count = gen_count,
+		factor_cull = factor_cull,
+		factor_repro = factor_repro,
+	)
+
+	# generate initial population
+	pop : PopulationFitness = generate_geno_uniform_many(
+		ranges = ranges,
+		n_genos = pop_sizes[0][1],
+	)
+
+	# run each generation
+	for count_cull,count_new in pop_sizes:
+		pop = run_generation(
+			pop = pop,
+			rootdir = rootdir,
+			params_base = params_base,
+			popsize_select = count_cull,
+			popsize_new = count_new,
+			sigma = sigma,
+			extractorfunc = extractorfunc,
+			gene_combine = gene_combine,
+			gene_combine_kwargs = gene_combine_kwargs,
+		)
+
+	# return final generation
+	return pop
+
+if __name__ == '__main__':
+	import fire
+	res = fire.Fire(run_genetic_algorithm)
+	print(res)
+
 
 
 

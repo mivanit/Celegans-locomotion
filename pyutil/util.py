@@ -158,13 +158,21 @@ ModParam = NamedTuple(
 	'ModParam', 
 	[
 		('mod_type', T_ModTypes), 
-		('path', 'str'),
+		('path', str),
+	],
+)
+
+RangeTuple = NamedTuple(
+	'RangeTuple', 
+	[
+		('min', float), 
+		('max', float),
 	],
 )
 
 ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
-ModParamsRanges = Dict[ModParam, Tuple[float,float]]
+ModParamsRanges = Dict[ModParam, RangeTuple]
 
 # ConnKey = NamedTuple(
 # 	'ConnKey',
