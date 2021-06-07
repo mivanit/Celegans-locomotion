@@ -130,6 +130,10 @@ int main (int argc, const char* argv[])
 
     // set duration
     overwrite_json_from_cmd<double>(simulation_params, cmd, "duration");
+    DURATION = simulation_params["duration"].get<double>();
+
+    // set angle
+    overwrite_json_from_cmd<double>(simulation_params, cmd, "angle");
 
     // set food position
     set_foodPos(params, cmd);
@@ -138,7 +142,7 @@ int main (int argc, const char* argv[])
     overwrite_json_from_cmd<std::string>(simulation_params, cmd, "coll");
     
     PRINTF_DEBUG("  > collision tsv from:\t%s\n", simulation_params["coll"].get<std::string>().c_str())
-    std::vector<CollisionObject> collObjs = load_objects(simulation_params["coll"]);
+    std::vector<CollisionObject> collObjs = load_objects(simulation_params["coll"].get<std::string>());
 
     // set output dir
     overwrite_json_from_cmd<string>(simulation_params, cmd, "output");
