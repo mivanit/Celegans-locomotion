@@ -773,10 +773,10 @@ def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
 		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
-		first_gen_size : int = 16,
-		gen_count : int = 4,
-		factor_cull : float = 0.45,
-		factor_repro : float = 2.0,
+		first_gen_size : int = 30,
+		gen_count : int = 5,
+		factor_cull : float = 0.6,
+		factor_repro : float = 1.5,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v6.json"),
 		# sigma : float = 0.1,

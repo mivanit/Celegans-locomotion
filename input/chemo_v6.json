@@ -1,11 +1,11 @@
 {
 	"simulation": {
-		"angle": 1.570795,
+		"angle": 1.0,
 		"duration": 20.0,
 		"seed": 0,
-		"coll": "input/collision_objs.tsv",
-		"output": "data/run/richer_params_test_1/",
-		"src-params": "input/params.json"
+		"coll": "input/objs_empty.tsv",
+		"output": "data/run/NULL/",
+		"src-params": "input/chemo_v6.json"
 	},
 	"ChemoReceptors": {
 		"alpha": 4.0,
@@ -15,8 +15,8 @@
 		"lambda": -333333.3333,
 		"neuron": "AWA",
 		"foodPos": {
-			"x": -0.001,
-			"y": 0.0065
+			"x": 0.01,
+			"y": 0.00
 		}
 	},
 	"Head": {
