@@ -165,11 +165,17 @@ def _wrapper_extract(
 	if proc.returncode:
 		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(proc.args)}')
 
-	return func_extract(
+	result : ExtractorReturnType = func_extract(
 		datadir = outpath,
 		params = params_joined,
 		ret_nan = bool(proc.returncode),
 	)
+
+	with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+		print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
+		print(repr(result), file = fout_ext)
+	
+	return result
 
 
 
@@ -289,7 +295,7 @@ def setup_evaluate_params(
 		# base params
 		params_base : ParamsDict,
 		# root directory for run
-		rootdir : Path = 'data/run/anneal/',
+		rootdir : Path,
 		# extract info from the final product
 		func_extract : ExtractorFunc = extract_food_dist,
 		# command line args
@@ -298,7 +304,7 @@ def setup_evaluate_params(
 	# TODO: document this
 	
 	# make dir
-	outpath : Path = f"{rootdir}r-{dict_hash(params_mod)}/"
+	outpath : Path = f"{rootdir}h{dict_hash(params_mod)}/"
 	outpath_params : Path = joinPath(outpath,'in-params.json')
 	mkdir(outpath)
 
@@ -351,11 +357,17 @@ def evaluate_params(
 	if proc.returncode:
 		print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n        {str(proc.args)}')
 
-	return func_extract(
+	result : ExtractorReturnType = func_extract(
 		datadir = outpath,
 		params = params_joined,
 		ret_nan = bool(proc.returncode),
 	)
+
+	with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+		print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
+		print(repr(result), file = fout_ext)
+
+	return result
 
 
 """
@@ -509,9 +521,6 @@ def generation_reproduction(
 	popsize_old : int = len(pop)
 	newpop : PopulationFitness = list()
 
-	dbg(len(pop))
-	dbg(popsize_old)
-	dbg(popsize_new)
 	random_selection : NDArray = np.random.randint(
 		low = 0, 
 		high = popsize_old, 
@@ -588,10 +597,8 @@ def eval_pop_fitness(
 		rootdir : Path,
 		params_base : ParamsDict,
 		pop : PopulationFitness,
-		extractorfunc : ExtractorFunc,
+		func_extract : ExtractorFunc,
 	) -> PopulationFitness:
-
-	prntmsg(f'evaluating fitness of population of size {len(pop)}, storing in {rootdir}', 2)
 
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
@@ -612,16 +619,21 @@ def eval_pop_fitness(
 		else:
 			# if fitness is known, dont recalculate
 			output_fitness.append((prm_mod, fit))
+	prntmsg(f'initialized {len(to_read)} processes for unknown fitnesses', 2)
 
 	# wait for them to finish, then read fitness
 	for prm_join,prm_mod,proc,outpath in to_read:
 		proc.wait()
 
-		new_fit : float = extractorfunc(
+		new_fit : float = func_extract(
 			datadir = outpath,
 			params = prm_join,
 			ret_nan = proc.returncode,
 		)
+
+		with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+			print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
+			print(repr(new_fit), file = fout_ext)
 
 		output_fitness.append((prm_mod, new_fit))
 
@@ -647,7 +659,7 @@ def generation_selection(
 	"""
 	select a number of individals to survive to the next generation
 	"""
-	# fitness : PopulationFitness = eval_pop_fitness(pop, extractorfunc)
+	# fitness : PopulationFitness = eval_pop_fitness(pop, func_extract)
 
 	if new_popsize == len(pop):
 		return copy.deepcopy(pop)
@@ -695,17 +707,16 @@ def run_generation(
 		popsize_new : int,
 		# ranges : ModParamsRanges,
 		# sigma : float,
-		extractorfunc : ExtractorFunc,
+		func_extract : ExtractorFunc,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
+		n_gen : int = -1,
 	) -> PopulationFitness:
 
-	dbg(len(pop))
+	# prntmsg(f' fitness of population of size {len(pop)}, storing in {rootdir}', 2)
 
 	# trim old population
 	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
-
-	dbg(len(pop_trimmed))
 
 	# run reproduction
 	pop_new : PopulationFitness = generation_reproduction(
@@ -718,14 +729,12 @@ def run_generation(
 	# mutate
 	# TODO: implement mutation
 
-	dbg(len(pop_new))
-
 	# evaluate fitness of new individuals
 	return eval_pop_fitness(
-		rootdir = rootdir,
+		rootdir = rootdir + f'g{n_gen}_',
 		params_base = params_base,
 		pop = pop_new,
-		extractorfunc = extractorfunc, 
+		func_extract = func_extract, 
 	)
 
 
@@ -764,14 +773,14 @@ def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
 		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
-		first_gen_size : int = 10,
-		gen_count : int = 5,
+		first_gen_size : int = 16,
+		gen_count : int = 4,
 		factor_cull : float = 0.45,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v6.json"),
 		# sigma : float = 0.1,
-		extractorfunc : ExtractorFunc = extract_food_dist,
+		func_extract : ExtractorFunc = extract_food_dist,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
@@ -783,15 +792,21 @@ def run_genetic_algorithm(
 		factor_cull = factor_cull,
 		factor_repro = factor_repro,
 	)
+	prntmsg(f'computed population sizes for generations: \n\t{pop_sizes}')
 
 	# generate initial population
 	pop : PopulationFitness = generate_geno_uniform_many(
 		ranges = ranges,
 		n_genos = pop_sizes[0][1],
 	)
+	prntmsg(f'generated initial population with {len(pop)} individuals')
 
+	prntmsg(f'running generations')
 	# run each generation
-	for count_cull,count_new in pop_sizes:
+	for i,counts in enumerate(pop_sizes):
+		count_cull,count_new = counts
+		prntmsg(f'running generation {i} / {gen_count}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
+
 		pop = run_generation(
 			pop = pop,
 			rootdir = rootdir,
@@ -799,9 +814,10 @@ def run_genetic_algorithm(
 			popsize_select = count_cull,
 			popsize_new = count_new,
 			# sigma = sigma,
-			extractorfunc = extractorfunc,
+			func_extract = func_extract,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,
+			n_gen = i,
 		)
 
 	# return final generation

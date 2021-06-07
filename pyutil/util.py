@@ -28,6 +28,12 @@ def mkdir(p : Path):
 def joinPath(*args):
 	return os.path.join(*args).replace("\\", "/")
 
+# def joinPath(*args):
+# 	output : Path = '/'.join(args).replace("\\", "/")
+# 	while '//' in output:
+# 		output.replace("//", "/")	
+# 	return output
+
 """
  #    # #  ####   ####
  ##  ## # #      #    #

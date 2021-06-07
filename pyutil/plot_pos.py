@@ -10,6 +10,7 @@ from typing import *
 import glob
 
 from math import degrees
+import json
 
 import numpy as np # type: ignore
 import numpy.lib.recfunctions as rfn # type: ignore
@@ -22,8 +23,7 @@ from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
 import pandas as pd # type: ignore
-import json
-
+from pydbg import dbg
 
 
 if TYPE_CHECKING:
@@ -502,7 +502,7 @@ class Plotters(object):
 	@staticmethod
 	def pos(
 			# args passed down to `_draw_setup()`
-			rootdir : Path = 'data/run/',
+			rootdir : Path,
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
 			params : Optional[Path] = 'params.json',
@@ -535,7 +535,7 @@ class Plotters(object):
 	@staticmethod
 	def pos_foodmulti(
 			# search in this directory
-			rootdir : Path = 'data/run/',
+			rootdir : Path,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -592,8 +592,9 @@ class Plotters(object):
 	
 	@staticmethod
 	def pos_multi(
+			*args,
 			# search in this directory
-			rootdir : Path = 'data/run/**/',
+			rootdir : Path,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -605,7 +606,9 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 		):
-
+		
+		dbg(rootdir)
+		dbg(joinPath(rootdir,bodydat))
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
 		lst_dirs : List[Path] = [ 
 			joinPath(os.path.dirname(p),'') 

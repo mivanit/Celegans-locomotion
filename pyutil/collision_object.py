@@ -28,74 +28,6 @@ class CollisionType(Enum):
 
 
 
-
-"""
-########   #######  ##     ## ##    ## ########   ######
-##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
-##     ## ##     ## ##     ## ####  ## ##     ## ##
-########  ##     ## ##     ## ## ## ## ##     ##  ######
-##     ## ##     ## ##     ## ##  #### ##     ##       ##
-##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
-########   #######   #######  ##    ## ########   ######
-"""
-
-def get_bounds(collobjs : List[CollisionObject]) -> BoundingBox:
-	bounds : BoundingBox = BOUNDS_TEMPLATE()
-
-	for x in collobjs:
-		# mins
-		for bd in ['bound_min_x', 'bound_min_y']:
-			if x[bd] < bounds[bd]:
-				bounds[bd] = x[bd]
-		# maxes
-		for bd in ['bound_max_x', 'bound_max_y']:
-			if x[bd] > bounds[bd]:
-				bounds[bd] = x[bd]
-
-	return bounds
-
-def _bounds_tuples_to_bbox(bounds_x : AxBounds, bounds_y : AxBounds) -> BoundingBox:
-	return {
-		'bound_min_x' : bounds_x[0],
-		'bound_min_y' : bounds_y[0],
-		'bound_max_x' : bounds_x[1],
-		'bound_max_y' : bounds_y[1],
-	}
-
-
-def _combine_bounds(lst_bounds : List[BoundingBox]) -> BoundingBox:
-	bounds : BoundingBox = BOUNDS_TEMPLATE()
-
-	for x in lst_bounds:
-		# mins
-		for bd in ['bound_min_x', 'bound_min_y']:
-			if x[bd] < bounds[bd]:
-				bounds[bd] = x[bd]
-		# maxes
-		for bd in ['bound_max_x', 'bound_max_y']:
-			if x[bd] > bounds[bd]:
-				bounds[bd] = x[bd]
-	
-	return bounds
-
-
-def get_bbox_ranges(bounds : BoundingBox) -> Tuple[float,float]:
-	return (
-		bounds['bound_max_x'] - bounds['bound_min_x'],
-		bounds['bound_max_y'] - bounds['bound_min_y'],
-	)
-
-def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
-	x_range, y_range = get_bbox_ranges(bounds)
-
-	return {
-		'bound_min_x' : bounds['bound_min_x'] - x_range * pad_frac,
-		'bound_min_y' : bounds['bound_min_y'] - y_range * pad_frac,
-		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
-		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
-	}
-
-
 """
  ######  ##        ######
 ##    ## ##       ##    ##
@@ -288,6 +220,76 @@ class CollisionObject(object):
 			fvec_x = fvec[0], 
 			fvec_y = fvec[1],
 		)
+
+
+
+
+"""
+########   #######  ##     ## ##    ## ########   ######
+##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
+##     ## ##     ## ##     ## ####  ## ##     ## ##
+########  ##     ## ##     ## ## ## ## ##     ##  ######
+##     ## ##     ## ##     ## ##  #### ##     ##       ##
+##     ## ##     ## ##     ## ##   ### ##     ## ##    ##
+########   #######   #######  ##    ## ########   ######
+"""
+
+def get_bounds(collobjs : List[CollisionObject]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
+
+	for x in collobjs:
+		# mins
+		for bd in ['bound_min_x', 'bound_min_y']:
+			if x[bd] < bounds[bd]:
+				bounds[bd] = x[bd]
+		# maxes
+		for bd in ['bound_max_x', 'bound_max_y']:
+			if x[bd] > bounds[bd]:
+				bounds[bd] = x[bd]
+
+	return bounds
+
+def _bounds_tuples_to_bbox(bounds_x : AxBounds, bounds_y : AxBounds) -> BoundingBox:
+	return {
+		'bound_min_x' : bounds_x[0],
+		'bound_min_y' : bounds_y[0],
+		'bound_max_x' : bounds_x[1],
+		'bound_max_y' : bounds_y[1],
+	}
+
+
+def _combine_bounds(lst_bounds : List[BoundingBox]) -> BoundingBox:
+	bounds : BoundingBox = BOUNDS_TEMPLATE()
+
+	for x in lst_bounds:
+		# mins
+		for bd in ['bound_min_x', 'bound_min_y']:
+			if x[bd] < bounds[bd]:
+				bounds[bd] = x[bd]
+		# maxes
+		for bd in ['bound_max_x', 'bound_max_y']:
+			if x[bd] > bounds[bd]:
+				bounds[bd] = x[bd]
+	
+	return bounds
+
+
+def get_bbox_ranges(bounds : BoundingBox) -> Tuple[float,float]:
+	return (
+		bounds['bound_max_x'] - bounds['bound_min_x'],
+		bounds['bound_max_y'] - bounds['bound_min_y'],
+	)
+
+def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
+	x_range, y_range = get_bbox_ranges(bounds)
+
+	return {
+		'bound_min_x' : bounds['bound_min_x'] - x_range * pad_frac,
+		'bound_min_y' : bounds['bound_min_y'] - y_range * pad_frac,
+		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
+		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
+	}
+
 
 
 
