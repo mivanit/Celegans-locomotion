@@ -13,8 +13,8 @@ from math import dist
 import random
 import json
 
-import numpy as np
-from nptyping import NDArray
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
 
 if TYPE_CHECKING:
 	from mypy_extensions import Arg
@@ -27,7 +27,7 @@ from pyutil.util import (
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
-	dict_to_filename,
+	dict_hash,
 	keylist_access_nested_dict,
 )
 
@@ -36,7 +36,9 @@ from pyutil.plot_pos import read_body_data,CoordsRotArr
 
 Process = Any
 Population = List[ModParamsDict]
-PopulationFitness = List[Tuple[ModParamsDict, Optional[float]]]
+PopulationFitness = List[
+	Tuple[ModParamsDict, Optional[float]]
+]
 
 
 
@@ -52,10 +54,10 @@ PopulationFitness = List[Tuple[ModParamsDict, Optional[float]]]
 """
 
 def merge_params_with_mods(
-		# modified params (this is what we are optimizing)
-		params_mod : ModParamsDict,
 		# base params
 		params_base : ParamsDict,
+		# modified params (this is what we are optimizing)
+		params_mod : ModParamsDict,
 	) -> ParamsDict:
 	"""merges a params file with a special "mod" dict
 	
@@ -295,15 +297,12 @@ def setup_evaluate_params(
 	# TODO: document this
 	
 	# make dir
-	outpath : Path = f"{rootdir}{dict_to_filename(params_mod)}/"
+	outpath : Path = f"{rootdir}{dict_hash(params_mod)}/"
 	outpath_params : Path = joinPath(outpath,'in-params.json')
 	mkdir(outpath)
 
 	# join params
 	params_joined : ParamsDict = merge_params_with_mods(params_base, params_mod)
-
-	# modify CLI parameters from mod
-	merge_params_with_mods(params_base, params_mod)
 
 	# save modified params
 	with open(outpath_params, 'w') as fout:
@@ -342,7 +341,7 @@ def evaluate_params(
 	proc, outpath, params_joined = setup_evaluate_params(
 		params_mod = params_mod,
 		params_base = params_base,
-		rootdir= rootdir,
+		rootdir = rootdir,
 	)
 
 	# wait for command to finish
@@ -388,7 +387,7 @@ def mutate_state(
 	) -> None:
 	
 	# choose a variable to mutate
-	choice_key : str = random.choice(list(params_mod.keys()))
+	choice_key : ModParam = random.choice(list(params_mod.keys()))
 	choice_val : float = params_mod[choice_key]
 
 	# modify the value according to the range
@@ -396,10 +395,12 @@ def mutate_state(
 	params_mod[choice_key] = choice_val + delta_val
 
 
-GenoCombineFunc = Callable[
-	[ModParamsDict, ModParamsDict],
-	ModParamsDict,
-]
+# TODO: review this function type
+GenoCombineFunc = Callable
+# GenoCombineFunc = Callable[
+# 	[ModParamsDict, ModParamsDict],
+# 	ModParamsDict,
+# ]
 
 
 """
@@ -543,7 +544,7 @@ def generate_geno_uniform(
 def generate_geno_uniform_many(
 		ranges : ModParamsRanges,
 		n_genos : int,
-	) -> List[ModParamsDict]:
+	) -> PopulationFitness:
 
 	random_vals : Dict[ModParam, NDArray[n_genos, float]] = {
 		pr : np.random.uniform(rn.min, rn.max, size = n_genos)
@@ -551,10 +552,13 @@ def generate_geno_uniform_many(
 	}
 
 	return [
-		{
-			pr : random_vals[pr][i]
-			for pr in ranges.keys()
-		}		
+		(
+			{
+				pr : random_vals[pr][i]
+				for pr in ranges.keys()
+			},
+			None,
+		)	
 		for i in range(n_genos)
 	]
 	
@@ -603,13 +607,13 @@ def eval_pop_fitness(
 	for prm_join,prm_mod,proc,outpath in to_read:
 		proc.wait()
 
-		fit : float = extractorfunc(
+		new_fit : float = extractorfunc(
 			datadir = outpath,
 			params = prm_join,
 			ret_nan = proc.returncode,
 		)
 
-		output_fitness.append((prm_mod, fit))
+		output_fitness.append((prm_mod, new_fit))
 
 	# return the results
 	return output_fitness
@@ -634,14 +638,14 @@ def generation_selection(
 	select a number of individals to survive to the next generation
 	"""
 	# fitness : PopulationFitness = eval_pop_fitness(pop, extractorfunc)
-	
+
 	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True)
 	fitness_thresh : float = lst_fit[new_popsize]
 
 	newpop : PopulationFitness = [
 		(prm,fit)
 		for prm,fit in pop
-		if fit > fitness_thresh
+		if (fit > fitness_thresh)
 	]
 
 	# TODO: pop/push if the element count is not quite right?
@@ -725,7 +729,7 @@ def compute_gen_sizes(
 		count_prev : int = output[g][1]
 		count_cull : int = int(count_prev * factor_cull)
 		count_new : int = int(count_cull * factor_repro)
-		output.append(count_cull, count_new)
+		output.append((count_cull, count_new))
 	
 	return output
 
@@ -779,7 +783,7 @@ def run_genetic_algorithm(
 	return pop
 
 if __name__ == '__main__':
-	import fire
+	import fire # type: ignore
 	res = fire.Fire(run_genetic_algorithm)
 	print(res)
 

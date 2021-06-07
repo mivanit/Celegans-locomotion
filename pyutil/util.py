@@ -125,6 +125,9 @@ def dict_to_filename(
 	
 	return '_'.join(output)
 
+def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
+	return hash(tuple(data.items())) % hash_len_mod
+
 
 """
 
@@ -146,7 +149,8 @@ class ModTypes(Enum):
 	conn : str = 'conn'
 	# cli : str = 'cli'
 
-T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
+# T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
+T_ModTypes = Literal['params', 'conn']
 
 # ModTypes = Literal[
 # 	'params',
