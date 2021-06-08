@@ -2,10 +2,12 @@ import sys
 from enum import Enum
 from typing import *
 
-import numpy as np
+# import numpy as np # type: ignore
 
-
-from util import Path
+if TYPE_CHECKING:
+	from pyutil.util import Path
+else:
+	from util import Path
 
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]
@@ -23,6 +25,7 @@ class CollisionType(Enum):
 	BASE = None
 	Box_Ax = 'Box_Ax'
 	Disc = 'Disc'
+
 
 
 """
@@ -56,7 +59,10 @@ class CollisionObject(object):
 		]
 	}
 
-	TYPECAST : Dict[str,Callable[[str], Any]] = {
+	TYPECAST : Dict[
+		Union[str,None],
+		Callable[[str], Any],
+	] = {
 		None : float,
 		'coll_type' : lambda x : CollisionType[x] if isinstance(x,str) else x,
 	}
@@ -217,6 +223,7 @@ class CollisionObject(object):
 
 
 
+
 """
 ########   #######  ##     ## ##    ## ########   ######
 ##     ## ##     ## ##     ## ###   ## ##     ## ##    ##
@@ -282,6 +289,9 @@ def pad_BoundingBox(bounds : BoundingBox, pad_frac : float) -> BoundingBox:
 		'bound_max_x' : bounds['bound_max_x'] + x_range * pad_frac,
 		'bound_max_y' : bounds['bound_max_y'] + y_range * pad_frac,
 	}
+
+
+
 
 
 

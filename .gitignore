@@ -9,8 +9,11 @@ singlerun
 # data
 data/run/**
 data/coll/*.tsv
+data/prof/**/*.dat
+!data/prof/**/prof.txt
 data/collision_objs.tsv
 !data/coll/demo/**
+data/geno_sweep/
 
 # ?? idk
 *.gch

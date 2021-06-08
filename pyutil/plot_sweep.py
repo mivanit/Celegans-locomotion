@@ -2,13 +2,18 @@ from typing import *
 import re
 import os
 
-import numpy as np
-from nptyping import NDArray
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 
-from util import Path,joinPath,split_dict_arrs
-from plot_pos import read_body_data,CoordsArr,CoordsRotArr
+
+if TYPE_CHECKING:
+	from pyutil.util import Path,joinPath,split_dict_arrs
+	from pyutil.plot_pos import read_body_data,CoordsArr,CoordsRotArr
+else:
+	from util import Path,joinPath,split_dict_arrs
+	from plot_pos import read_body_data,CoordsArr,CoordsRotArr
 
 
 
@@ -31,7 +36,7 @@ class SweepPlotters(object):
 		# get all the directories, loop over them
 		lst_wgt_dirs : List[Path] = os.listdir(rootdir)
 		# filter out only the directories
-		lst_wgt_dirs : List[Path] = list(filter(lambda p : os.path.isdir(joinPath(rootdir, p)), lst_wgt_dirs))
+		lst_wgt_dirs = list(filter(lambda p : os.path.isdir(joinPath(rootdir, p)), lst_wgt_dirs))
 		
 		count : int = 1
 		count_max : int = len(lst_wgt_dirs)
@@ -84,7 +89,7 @@ class SweepPlotters(object):
 		# get all the directories, loop over them
 		lst_wgt_dirs : List[Path] = os.listdir(rootdir)
 		# filter out only the directories
-		lst_wgt_dirs : List[Path] = list(filter(lambda p : os.path.isdir(joinPath(rootdir, p)), lst_wgt_dirs))
+		lst_wgt_dirs = list(filter(lambda p : os.path.isdir(joinPath(rootdir, p)), lst_wgt_dirs))
 		
 		count : int = 1
 		count_max : int = len(lst_wgt_dirs)
@@ -122,5 +127,5 @@ class SweepPlotters(object):
 
 
 if __name__ == '__main__':
-	import fire
+	import fire # type: ignore
 	fire.Fire(SweepPlotters)

@@ -79,12 +79,12 @@ singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules
 .PHONY: clean
 clean:
 	@echo "# cleaning up compiled files"
-	rm *.o *.exe $(PACKAGES_DIR)/*.gch
+	-rm *.o *.exe $(PACKAGES_DIR)/*.gch
 
 .PHONY: clean_nogch
 clean_nogch:
 	@echo "# cleaning up compiled files, but leaving precompiled package headers"
-	rm *.o *.exe
+	-rm *.o *.exe
 
 
 # building documentation
@@ -92,6 +92,15 @@ clean_nogch:
 doc:
 	@echo "# [WIP] Generating documentation"
 	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
+
+# python stuff
+.PHONY: mypy
+mypy:
+	@echo "# run python static type checker"
+	
+	-mypy *.py
+	-mypy pyutil/*.py
+
 
 # misc
 .PHONY: os

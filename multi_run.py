@@ -6,15 +6,17 @@ import subprocess
 import json
 from copy import deepcopy
 
-import numpy as np
-from nptyping import NDArray
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
 
-from pydbg import dbg
+# from pydbg import dbg # type: ignore
 
 from pyutil.util import (
 	Path,mkdir,joinPath,dump_state,
-	strList_to_dict,find_conn_idx,
+	strList_to_dict,
+	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
+	keylist_access_nested_dict,
 )
 
 
@@ -28,7 +30,7 @@ class Launchers(object):
 	@staticmethod
 	def multi_food_run(
 			rootdir : Path = 'data/run/',
-			foodPos : Optional[str] = None,
+			foodPos : Union[None,str,Tuple[float,float]] = None,
 			**kwargs,
 		):
 		"""runs multiple trials of the simulation with food on left, right, and absent
@@ -132,7 +134,7 @@ class Launchers(object):
 			p.wait()
 			
 			if p.returncode:
-				print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{p.args}')	
+				print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{str(p.args)}')	
 			else:
 				print(f'  >>  process complete: {name}')
 
@@ -177,40 +179,14 @@ class Launchers(object):
 
 
 		# find the appropriate connection to modify
-		if conn_key['to'].endswith('*'):
-			# if wildcard given, find every connection that matches
-			conn_idxs : List[int] = list()
-			
-			conn_key_temp : dict = deepcopy(conn_key)
-			
-			for nrn in params_data[conn_key['NS']]['neurons']:
-				# loop over neuron names, check if they match
-				# REVIEW: this isnt full regex, but whatever
-				dbg(nrn)
-				if nrn.startswith(conn_key['to'].split('*')[0]):
-					conn_key_temp['to'] = nrn
-					dbg(conn_key_temp)
-					cidx_temp : Optional[int] = find_conn_idx(
-						params_data[conn_key_temp['NS']]['connections'],
-						conn_key_temp,
-					)
-					dbg(cidx_temp)
-					# append to list, but only if an existing connection is found
-					# note that this behavior differs from when no wildcard is given,
-					# in that new connections will not be created
-					if cidx_temp is not None:
-						conn_idxs.append(cidx_temp)
-		else:
-			if special_scaling_map is not None:
-				raise ValueError(f"`special_scaling_map` specified, but no wildcard given in neuron name:   {special_scaling_map}    {conn_key['to']}")
-
-			# if no wildcard specified, just get the one connection
-			conn_idxs : List[int] = [ find_conn_idx(
-				params_data[conn_key['NS']]['connections'],
-				conn_key,
-			) ]
+		conn_idxs : List[Optional[int]] = find_conn_idx_regex(
+			params_data = params_data,
+			conn_key = conn_key,
+			# special_scaling_map = special_scaling_map,
+		)
 
 		if None in conn_idxs:
+			# REVIEW: this is probably not good behavior
 			# if the connection doesnt exist, add it
 			params_data[conn_key['NS']]['connections'].append({
 				'from' : conn_key['from'],
@@ -258,7 +234,7 @@ class Launchers(object):
 			print(f'> running for weight {wgt} \t ({count} / {count_max})')
 			# make dir
 			outpath : str = f"{rootdir}{conn_key['from']}-{conn_key['to'].replace('*','x')}_{wgt:.5}/"
-			outpath_params : str = joinPath(outpath,'params.json')
+			outpath_params : str = joinPath(outpath,'in-params.json')
 			mkdir(outpath)
 
 			# set weights
@@ -311,7 +287,7 @@ class Launchers(object):
 	@staticmethod
 	def sweep_param(
 			rootdir : Path = 'data/run/',
-			param_key : Union[tuple,str] = 'ChemoReceptors.alpha',
+			param_key_in : Union[tuple,str] = 'ChemoReceptors.alpha',
 			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			ASK_CONTINUE : bool = True,
@@ -332,8 +308,10 @@ class Launchers(object):
 		# (useful as shorthand when using python-fire CLI)
 
 		# split up path to parameter by dot
-		if isinstance(param_key, str):
-			param_key = tuple(param_key.split('.'))
+		if not isinstance(param_key_in, str):
+			param_key : List[str] = list(param_key_in)
+		else:
+			param_key = list(param_key_in.split('.'))
 
 		# convert into a dict
 		param_range = strList_to_dict(
@@ -348,9 +326,7 @@ class Launchers(object):
 		param_fin_dict : dict = params_data
 		param_fin_key : str = ''
 		try:
-			for k in param_key[:-1]:
-				param_fin_dict = param_fin_dict[k]
-			param_fin_key = param_key[-1]
+			param_fin_dict,param_fin_key = keylist_access_nested_dict(params_data, param_key)
 		except KeyError as ex:
 			print(f'\n{param_key} was not a valid parameter for the params file read from {params}. Be sure that the parameter you want to modify exists in the json file.\n')
 			raise ex
@@ -377,7 +353,7 @@ class Launchers(object):
 
 			# make dir
 			outpath : str = f"{rootdir}{param_key}_{pv:.5}/"
-			outpath_params : str = joinPath(outpath,'params.json')
+			outpath_params : str = joinPath(outpath,'in-params.json')
 			mkdir(outpath)
 
 			# set value
@@ -400,5 +376,5 @@ class Launchers(object):
 
 
 if __name__ == "__main__":
-	import fire
+	import fire # type: ignore
 	fire.Fire(Launchers)

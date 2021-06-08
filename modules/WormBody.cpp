@@ -161,6 +161,7 @@ void WormBody::UpdateKinematics(int start, int end)
     double dp_D_x[N_rods],dp_D_y[N_rods],dp_V_x[N_rods],dp_V_y[N_rods];
 
     // Update rod endpoint positions and velocities
+    #pragma omp parallel
     for (int i = start2; i < end2; i++) {
         int i3 = 3*i;
         
@@ -184,6 +185,7 @@ void WormBody::UpdateKinematics(int start, int end)
     }
     
     // Update element lengths, directions and velocities
+    #pragma omp parallel 
     for (int i = start2; i < end2 - 1; i++) {
         int i1 = i+1;
         double D_x, D_y, V_x, V_y;

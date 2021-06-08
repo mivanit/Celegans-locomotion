@@ -222,5 +222,5 @@ class process_yaml(object):
 
 
 if __name__ == '__main__':
-	import fire
+	import fire # type: ignore
 	fire.Fire(process_yaml)

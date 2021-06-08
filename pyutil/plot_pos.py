@@ -10,37 +10,56 @@ from typing import *
 import glob
 
 from math import degrees
-
-import numpy as np
-import numpy.lib.recfunctions as rfn
-from nptyping import NDArray,StructuredType
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.patches import Patch,Circle,Rectangle,Wedge
-from matplotlib.collections import PatchCollection
-
-import pandas as pd
 import json
 
+import numpy as np # type: ignore
+import numpy.lib.recfunctions as rfn # type: ignore
+from nptyping import NDArray,StructuredType # type: ignore
 
-# sys.path.append("..")
+import matplotlib # type: ignore 
+import matplotlib.pyplot as plt # type: ignore
+import matplotlib.animation as animation # type: ignore
+from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
+from matplotlib.collections import PatchCollection # type: ignore
 
-from util import Path,joinPath
-from collision_object import (
-	CollisionType,CollisionObject,
-	read_collobjs_tsv,
-	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
-	get_bounds,get_bbox_ranges,pad_BoundingBox,
-	_bounds_tuples_to_bbox,_combine_bounds,
-)
+import pandas as pd # type: ignore
+from pydbg import dbg # type: ignore
+
+
+if TYPE_CHECKING:
+	from pyutil.util import (
+		Path,joinPath,
+		CoordsArr,CoordsRotArr,
+		read_body_data,read_coll_objs_file,
+		get_last_dir_name,
+	)
+	from pyutil.collision_object import (
+		CollisionType,CollisionObject,
+		read_collobjs_tsv,
+		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
+		get_bounds,get_bbox_ranges,pad_BoundingBox,
+		_bounds_tuples_to_bbox,_combine_bounds,
+	)
+else:
+	from util import (
+		Path,joinPath,
+		CoordsArr,CoordsRotArr,
+		read_body_data,read_coll_objs_file,
+		get_last_dir_name,
+	)
+	from collision_object import (
+		CollisionType,CollisionObject,
+		read_collobjs_tsv,
+		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
+		get_bounds,get_bbox_ranges,pad_BoundingBox,
+		_bounds_tuples_to_bbox,_combine_bounds,
+	)
 
 # types
 # ==================================================
-Axes = TypeVar('Axes') # TODO: make this actually reference matplotlib.Axes
-CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
-CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
+# TODO: make this actually reference matplotlib.Axes
+Axes = Any
+
 OptInt = Optional[int]
 
 WORM_RADIUS = 80e-6
@@ -89,25 +108,33 @@ def arr_bounds(
 
 def _get_fig_bounds(
 		collobjs : List[CollisionObject],
-		arrbd_x : AxBounds = None, 
-		arrbd_y : AxBounds = None,
+		arrbd_x_in : Optional[AxBounds] = None, 
+		arrbd_y_in : Optional[AxBounds] = None,
 		figsize_scalar : float = 6.0,
 	) -> NDArray[2, float]:
 
 	collobjs_bounds : Dict[str,float] = get_bounds(collobjs)
 
 	# set up the figure object
-	if arrbd_x is None:
+	if arrbd_x_in is None:
 		# arrbd_x = arr_bounds(data['x'])
-		arrbd_x = (collobjs_bounds['bound_min_x'], collobjs_bounds['bound_max_x'])
-	else:
-		arrbd_x = tuple(arrbd_x)
+		arrbd_x : AxBounds = (
+			collobjs_bounds['bound_min_x'],
+			collobjs_bounds['bound_max_x'],
+		)
 
-	if arrbd_y is None:
-		# arrbd_y = arr_bounds(data['y'])
-		arrbd_y = (collobjs_bounds['bound_min_y'], collobjs_bounds['bound_max_y'])
 	else:
-		arrbd_y = tuple(arrbd_y)
+		arrbd_x = arrbd_x_in
+
+	if arrbd_y_in is None:
+		# arrbd_y = arr_bounds(data['y'])
+		arrbd_y : AxBounds = (
+			collobjs_bounds['bound_min_y'], 
+			collobjs_bounds['bound_max_y'],
+		)
+
+	else:
+		arrbd_y = arrbd_y_in
 	
 	print('> positional bounds:\t', arrbd_x, arrbd_y)
 
@@ -129,81 +156,6 @@ def _get_fig_bounds_box(
 	figsize : NDArray[2, float] = np.array(list(get_bbox_ranges(bounds)))
 
 	return figsize * figsize_scalar / max(figsize)
-
-
-"""
-########  ########    ###    ########
-##     ## ##         ## ##   ##     ##
-##     ## ##        ##   ##  ##     ##
-########  ######   ##     ## ##     ##
-##   ##   ##       ######### ##     ##
-##    ##  ##       ##     ## ##     ##
-##     ## ######## ##     ## ########
-"""
-
-
-def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
-	"""reads given tsv file into a numpy array
-	
-	array is a 2-D structured array of type `CoordsRotArr`
-	with `'x', 'y', 'phi'` fields for each segment
-	so essentially 3-D, where first index is timestep, second is segment, and third/field is x/y/phi
-	
-	### Parameters:
-	- `filename : Path`   
-	filename to read
-	
-	### Returns:
-	- `NDArray[Any, CoordsRotArr]` 
-	"""
-	# read in
-	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
-
-	# trim first variable (time)
-	data_raw = data_raw[:,1:]
-
-	# compute dims
-	n_tstep = data_raw.shape[0]
-	n_seg = int(data_raw.shape[1] / 3)
-
-	# allocate new array
-	# data : NDArray[(n_tstep, n_seg), CoordsRotArr] = np.full(
-	data : NDArray[(n_tstep, n_seg)] = np.full(
-		shape = (n_tstep, n_seg),
-		fill_value = np.nan,
-		dtype = CoordsRotArr,
-	)
-
-	# organize by x pos, y pos, and rotation (phi)
-	for s in range(n_seg):
-		data[:, s]['x'] = data_raw[:, s*3]
-		data[:, s]['y'] = data_raw[:, s*3 + 1]
-		data[:, s]['phi'] = data_raw[:, s*3 + 2]
-
-	return data
-
-
-def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:
-	"""reads an old blocks/vecs style collider file
-	
-	### Parameters:
-	 - `objs_file : str`   
-	
-	### Returns:
-	 - `Tuple[NDArray,NDArray]` 
-	"""
-	blocks : list = []
-	vecs : list = []
-	
-	with open(objs_file, 'r') as fin:
-		for row in fin:
-			row_lst = row.strip().split()
-			row_lst = [ float(x) for x in row_lst ]
-
-			blocks.append([ row_lst[0:2], row_lst[2:4] ])
-			vecs.append(row_lst[4:])
-
-	return (np.array(blocks), np.array(vecs))
 
 
 # 	data : NDArray[Any, CoordsRotArr],
@@ -312,14 +264,14 @@ def _plot_collision_boxes(ax : Axes, blocks : list, vecs : list):
 	ax.add_collection(pc)
 
 
-def _plot_collobjs(ax : Axes, collobjs : Path):
+def _plot_collobjs(ax : Axes, collobjs : List[CollisionObject]):
 	"""reads collision objects from a tsv file and plots them on `ax`
 	
 	### Parameters:
 	 - `ax : Axes`   
 	   matplotlib axes object
-	 - `collobjs : Path`   
-	   tsv file of collision objects (the kind where first entry is collider type)
+	 - `collobjs : List[CollisionObject]`   
+	   list of collision objects (the kind where first entry is collider type)
 	"""
 	plot_objs : List[Patch] = []
 
@@ -407,7 +359,8 @@ def _draw_setup(
 		bounds : Optional[BoundingBox] = None,
 		pad_frac : Optional[float] = None,
 	) -> Tuple[
-		plt.figure, Axes, 
+		plt.figure,
+		Axes,
 		NDArray[(Any,Any), CoordsRotArr],
 		BoundingBox,
 	]:
@@ -551,7 +504,7 @@ class Plotters(object):
 	@staticmethod
 	def pos(
 			# args passed down to `_draw_setup()`
-			rootdir : Path = 'data/run/',
+			rootdir : Path,
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
 			params : Optional[Path] = 'params.json',
@@ -584,7 +537,7 @@ class Plotters(object):
 	@staticmethod
 	def pos_foodmulti(
 			# search in this directory
-			rootdir : Path = 'data/run/',
+			rootdir : Path,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -641,8 +594,9 @@ class Plotters(object):
 	
 	@staticmethod
 	def pos_multi(
+			*args,
 			# search in this directory
-			rootdir : Path = 'data/run/**/',
+			rootdir : Path,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -653,8 +607,11 @@ class Plotters(object):
 			# args specific to this plotter
 			idx : int = 0,
 			show : bool = True,
+			only_final : bool = False,
 		):
-
+		
+		dbg(rootdir)
+		dbg(joinPath(rootdir,bodydat))
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
 		lst_dirs : List[Path] = [ 
 			joinPath(os.path.dirname(p),'') 
@@ -681,14 +638,86 @@ class Plotters(object):
 			x_params : str = joinPath(x_dir, params)
 						
 			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
-			head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+			
+			head_data : NDArray[Any, CoordsRotArr] = data[-1,idx]
+			if not only_final:
+				head_data = data[:,idx]
 
 			print(x_bodydat)
 			print(head_data.shape, head_data.dtype)
 
-			ax.plot(head_data['x'], head_data['y'], label = x_dir)
+			if only_final:
+				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
+			else:
+				ax.plot(head_data['x'], head_data['y'], label = x_dir)
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
+
+		plt.legend()
+
+		if show:
+			plt.show()
+	
+	@staticmethod
+	def pos_gener(
+			*args,
+			# search in this directory
+			rootdir : Path,
+			# args passed down to `_draw_setup()`
+			bodydat : Path = 'body.dat',
+			collobjs : Path = 'coll_objs.tsv',
+			params : Optional[Path] = 'params.json',
+			time_window : Tuple[OptInt,OptInt] = (None,None),
+			figsize_scalar : Optional[float] = None,
+			pad_frac : Optional[float] = None,
+			# args specific to this plotter
+			idx : int = 0,
+			show : bool = True,
+			max_gen : int = 5,
+		):
+
+		# setup
+		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		lst_dirs : List[Path] = [ 
+			joinPath(os.path.dirname(p),'') 
+			for p in lst_bodydat
+		]
+
+		default_dir : Path = lst_dirs[0]
+
+		fig,ax,data_default,bounds = _draw_setup(
+			rootdir = default_dir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			# params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		for n_gen in range(max_gen):
+			# filter by generation
+			lst_dirs_gen : List[Path] = [
+				p
+				for p in lst_dirs
+				if get_last_dir_name(p).startswith(f'g{n_gen}_')
+			]
+
+			print(f'  > for gen {n_gen} found {len(lst_dirs_gen)} dirs')
+
+			head_data_x : List[float] = list()
+			head_data_y : List[float] = list()
+
+			for x_dir in lst_dirs_gen:
+				
+				x_bodydat : str = joinPath(x_dir, bodydat)
+				x_params : str = joinPath(x_dir, params)
+							
+				data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
+				head_data_x.append(data[-1,idx]['x'])
+				head_data_y.append(data[-1,idx]['y'])
+
+			ax.plot(head_data_x, head_data_y, 'o', label = f'generation {n_gen}')
 
 		plt.legend()
 
@@ -818,8 +847,7 @@ class Plotters(object):
 
 
 if __name__ == '__main__':
-	import fire
-
+	import fire # type: ignore
 	fire.Fire(Plotters)
 
 
