@@ -84,4 +84,4 @@ ranges_chemo_v7_2 : ModParamsRanges = {
 	# ModParam("conn",   "") : RangeTuple(,),
 }
 
-DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v7_1
+DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v7_2
