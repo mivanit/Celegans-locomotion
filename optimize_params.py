@@ -25,7 +25,7 @@ else:
 from pyutil.util import (
 	ModParam, ModTypes, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
-	MODPARAMS_DEFAULT_RANGES,
+	RangeTuple, # MODPARAMS_DEFAULT_RANGES,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
@@ -619,7 +619,13 @@ def eval_pop_fitness(
 		else:
 			# if fitness is known, dont recalculate
 			output_fitness.append((prm_mod, fit))
-	prntmsg(f'initialized {len(to_read)} processes for unknown fitnesses', 2)
+
+	lst_ids : List[Path] = sorted([
+		p.rstrip('/').split('/')[-1]
+		for _,_,_,p in to_read
+	])
+
+	prntmsg(f'initialized {len(to_read)} processes for unknown fitnesses:\n\t{" ".join(lst_ids)}\n', 2)
 
 	# wait for them to finish, then read fitness
 	for prm_join,prm_mod,proc,outpath in to_read:
@@ -651,6 +657,25 @@ def eval_pop_fitness(
 
 """
 
+def fitness_distr(lst_fit : List[float]) -> Dict[str,float]:
+	"""gets max, median, mean, and minimum fitness (assumes `lst_fit` is sorted)
+	
+	### Parameters:
+	 - `lst_fit : List[float]`
+	"""
+	# TODO: not the real median here, oops
+	return {
+		'max' : lst_fit[0],
+		'median' : lst_fit[len(lst_fit) // 2],
+		'mean' : sum(lst_fit) / len(lst_fit),
+		'min' : lst_fit[-1],
+	}
+
+def str_fitness_distr(lst_fit : List[float]) -> str:
+	data : Dict[str,float] = fitness_distr(lst_fit)
+	return ' '.join(f'{k}:{v:.6}' for k,v in data.items())
+	
+
 def generation_selection(
 		pop : PopulationFitness,
 		new_popsize : int,
@@ -673,11 +698,15 @@ def generation_selection(
 	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True) # type: ignore
 	fitness_thresh : float = lst_fit[new_popsize]
 
+	prntmsg(f'fitness distribution: {str_fitness_distr(lst_fit)}', 2)
+	prntmsg(f'trimming with fitness threshold: {fitness_thresh}', 2)
+
 	newpop : PopulationFitness = [
 		(prm,fit)
 		for prm,fit in pop
 		if (fit > fitness_thresh) # type: ignore
 	]
+	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in pop], reverse=True))}', 2)
 
 	# TODO: pop/push if the element count is not quite right?
 
@@ -768,15 +797,27 @@ def compute_gen_sizes(
 	return output
 
 
+MODPARAMS_DEFAULT_RANGES : ModParamsRanges = {
+	ModParam("conn",   "Head,AWA,RIM,chem") : RangeTuple(-40000,40000),
+	ModParam("conn",   "Head,RIM,RMD*,chem") : RangeTuple(-1000,1000),
+	ModParam("params", "ChemoReceptors.kappa") : RangeTuple(0.0, 1000.0),
+	ModParam("params", "ChemoReceptors.lambda") : RangeTuple(-100000, -1000000),
+	ModParam("params", "Head.neurons.AWA.tau") : RangeTuple(0.0, 0.5),
+	ModParam("params", "Head.neurons.AWA.theta") : RangeTuple(-10.0, 10.0),
+	ModParam("params", "Head.neurons.RIM.tau") : RangeTuple(0.0, 0.5),
+	ModParam("params", "Head.neurons.RIM.theta") : RangeTuple(-10.0, 10.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
 
 def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
 		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
-		first_gen_size : int = 30,
-		gen_count : int = 5,
-		factor_cull : float = 0.6,
-		factor_repro : float = 1.5,
+		first_gen_size : int = 50,
+		gen_count : int = 10,
+		factor_cull : float = 0.33,
+		factor_repro : float = 3.0,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v6.json"),
 		# sigma : float = 0.1,
@@ -821,12 +862,16 @@ def run_genetic_algorithm(
 		)
 
 	# return final generation
+	with open(joinPath(rootdir, '.runinfo'), 'w+') as info_fout:
+		print('# info for run', file = info_fout)
+		print(locals(), file = info_fout)
+		print('\n\n', file = info_fout)
+	
 	return pop
 
 if __name__ == '__main__':
 	import fire # type: ignore
-	res = fire.Fire(run_genetic_algorithm)
-	print(res)
+	fire.Fire(run_genetic_algorithm)
 
 
 

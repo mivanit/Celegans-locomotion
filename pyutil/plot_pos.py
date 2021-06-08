@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 		Path,joinPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
+		get_last_dir_name,
 	)
 	from pyutil.collision_object import (
 		CollisionType,CollisionObject,
@@ -44,6 +45,7 @@ else:
 		Path,joinPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
+		get_last_dir_name,
 	)
 	from collision_object import (
 		CollisionType,CollisionObject,
@@ -605,6 +607,7 @@ class Plotters(object):
 			# args specific to this plotter
 			idx : int = 0,
 			show : bool = True,
+			only_final : bool = False,
 		):
 		
 		dbg(rootdir)
@@ -635,14 +638,87 @@ class Plotters(object):
 			x_params : str = joinPath(x_dir, params)
 						
 			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
-			head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+			
+			if only_final:
+				head_data : NDArray[1, CoordsRotArr] = data[-1,idx]
+			else:
+				head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
 
 			print(x_bodydat)
 			print(head_data.shape, head_data.dtype)
 
-			ax.plot(head_data['x'], head_data['y'], label = x_dir)
+			if only_final:
+				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
+			else:
+				ax.plot(head_data['x'], head_data['y'], label = x_dir)
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
+
+		plt.legend()
+
+		if show:
+			plt.show()
+	
+	@staticmethod
+	def pos_gener(
+			*args,
+			# search in this directory
+			rootdir : Path,
+			# args passed down to `_draw_setup()`
+			bodydat : Path = 'body.dat',
+			collobjs : Path = 'coll_objs.tsv',
+			params : Optional[Path] = 'params.json',
+			time_window : Tuple[OptInt,OptInt] = (None,None),
+			figsize_scalar : Optional[float] = None,
+			pad_frac : Optional[float] = None,
+			# args specific to this plotter
+			idx : int = 0,
+			show : bool = True,
+			max_gen : int = 5,
+		):
+
+		# setup
+		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		lst_dirs : List[Path] = [ 
+			joinPath(os.path.dirname(p),'') 
+			for p in lst_bodydat
+		]
+
+		default_dir : Path = lst_dirs[0]
+
+		fig,ax,data_default,bounds = _draw_setup(
+			rootdir = default_dir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			# params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		for n_gen in range(max_gen):
+			# filter by generation
+			lst_dirs_gen : List[Path] = [
+				p
+				for p in lst_dirs
+				if get_last_dir_name(p).startswith(f'g{n_gen}_')
+			]
+
+			print(f'  > for gen {n_gen} found {len(lst_dirs_gen)} dirs')
+
+			head_data_x : List[float] = list()
+			head_data_y : List[float] = list()
+
+			for x_dir in lst_dirs_gen:
+				
+				x_bodydat : str = joinPath(x_dir, bodydat)
+				x_params : str = joinPath(x_dir, params)
+							
+				data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
+				head_data_x.append(data[-1,idx]['x'])
+				head_data_y.append(data[-1,idx]['y'])
+
+			ax.plot(head_data_x, head_data_y, 'o', label = f'generation {n_gen}')
 
 		plt.legend()
 

@@ -1,6 +1,6 @@
 {
 	"simulation": {
-		"angle": 1.0,
+		"angle": 0.5,
 		"duration": 20.0,
 		"seed": 0,
 		"coll": "input/objs_empty.tsv",
