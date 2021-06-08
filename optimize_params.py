@@ -825,8 +825,8 @@ def run_genetic_algorithm(
 		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
 		first_gen_size : int = 100,
 		gen_count : int = 20,
-		factor_cull : float = 0.33,
-		factor_repro : float = 3.0,
+		factor_cull : float = 0.49,
+		factor_repro : float = 2.0,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v6.json"),
 		sigma : float = 0.05,
