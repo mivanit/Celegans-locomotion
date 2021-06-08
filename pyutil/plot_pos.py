@@ -23,7 +23,7 @@ from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
 import pandas as pd # type: ignore
-from pydbg import dbg
+from pydbg import dbg # type: ignore
 
 
 if TYPE_CHECKING:
@@ -639,10 +639,9 @@ class Plotters(object):
 						
 			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
 			
-			if only_final:
-				head_data : NDArray[1, CoordsRotArr] = data[-1,idx]
-			else:
-				head_data : NDArray[data.shape[0], CoordsRotArr] = data[:,idx]
+			head_data : NDArray[Any, CoordsRotArr] = data[-1,idx]
+			if not only_final:
+				head_data = data[:,idx]
 
 			print(x_bodydat)
 			print(head_data.shape, head_data.dtype)

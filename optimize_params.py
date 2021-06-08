@@ -15,7 +15,7 @@ import json
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
-from pydbg import dbg
+from pydbg import dbg # type: ignore
 
 if TYPE_CHECKING:
 	from mypy_extensions import Arg
@@ -38,7 +38,7 @@ from pyutil.util import (
 Process = Any
 Population = List[ModParamsDict]
 PopulationFitness = List[
-	Tuple[ModParamsDict, Optional[float]]
+	Tuple[ModParamsDict, float]
 ]
 
 
@@ -395,18 +395,19 @@ def evaluate_params(
 def mutate_state(
 		params_mod : ModParamsDict,
 		ranges : ModParamsRanges,
-		mutprob : float = 0.01,
-		sigma : float = 0.1,
-	) -> None:
+		mutprob : float,
+		sigma : float,
+	) -> ModParamsDict:
 	
-	# choose a variable to mutate
-	choice_key : ModParam = random.choice(list(params_mod.keys()))
-	choice_val : float = params_mod[choice_key]
+	params_new : ModParamsDict = copy.deepcopy(params_mod)
 
-	# modify the value according to the range
-	delta_val : float = random.gauss(0, sigma)
-	params_mod[choice_key] = choice_val + delta_val
+	# each variable might be mutated
+	for key,val in params_new.items():
+		if random.random() < mutprob:
+			delta_val : float = random.gauss(0, sigma)
+			params_new[key] = val + delta_val
 
+	return params_new
 
 # TODO: review this function type
 GenoCombineFunc = Callable
@@ -516,14 +517,15 @@ def generation_reproduction(
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		# chance_direct_progression : float = 0.2,
-	) -> PopulationFitness:
+	) -> Population:
 
 	popsize_old : int = len(pop)
-	newpop : PopulationFitness = list()
+	newpop : Population = list()
 
+	# TODO: for some reason, `popsize_old` sometimes is less than or equal to zero. the max() is just a hack, since i dont know what causes the issue in the first place
 	random_selection : NDArray = np.random.randint(
 		low = 0, 
-		high = popsize_old, 
+		high = max(1,popsize_old), 
 		size = (popsize_new, 2),
 	)
 
@@ -534,7 +536,7 @@ def generation_reproduction(
 		prm_B : ModParamsDict = pop[random_selection[n_indiv][1]][0]
 		prm_comb : ModParamsDict = gene_combine(prm_A, prm_B, **gene_combine_kwargs)
 	
-		newpop.append((prm_comb, None))
+		newpop.append(prm_comb)
 
 		n_indiv += 1
 	
@@ -574,7 +576,7 @@ def generate_geno_uniform_many(
 				pr : random_vals[pr][i]
 				for pr in ranges.keys()
 			},
-			None,
+			float('nan'),
 		)	
 		for i in range(n_genos)
 	]
@@ -594,9 +596,9 @@ def generate_geno_uniform_many(
 """
 
 def eval_pop_fitness(
+		pop : Population,
 		rootdir : Path,
 		params_base : ParamsDict,
-		pop : PopulationFitness,
 		func_extract : ExtractorFunc,
 	) -> PopulationFitness:
 
@@ -608,17 +610,13 @@ def eval_pop_fitness(
 	to_read : List[Tuple[ParamsDict, ModParamsDict, Process, Path]] = list()
 
 	# start all the required processes
-	for prm_mod,fit in pop:
-		if fit is None:
-			proc, outpath, prm_join = setup_evaluate_params(
-				params_mod = prm_mod,
-				params_base = params_base,
-				rootdir = rootdir,
-			)
-			to_read.append((prm_join, prm_mod, proc, outpath))
-		else:
-			# if fitness is known, dont recalculate
-			output_fitness.append((prm_mod, fit))
+	for prm_mod in pop:
+		proc, outpath, prm_join = setup_evaluate_params(
+			params_mod = prm_mod,
+			params_base = params_base,
+			rootdir = rootdir,
+		)
+		to_read.append((prm_join, prm_mod, proc, outpath))
 
 	lst_ids : List[Path] = sorted([
 		p.rstrip('/').split('/')[-1]
@@ -661,7 +659,7 @@ def fitness_distr(lst_fit : List[float]) -> Dict[str,float]:
 	"""gets max, median, mean, and minimum fitness (assumes `lst_fit` is sorted)
 	
 	### Parameters:
-	 - `lst_fit : List[float]`
+	 - `lst_fit : List[Optional[float]]`
 	"""
 	# TODO: not the real median here, oops
 	return {
@@ -672,8 +670,10 @@ def fitness_distr(lst_fit : List[float]) -> Dict[str,float]:
 	}
 
 def str_fitness_distr(lst_fit : List[float]) -> str:
-	data : Dict[str,float] = fitness_distr(lst_fit)
-	return ' '.join(f'{k}:{v:.6}' for k,v in data.items())
+	return ', '.join(
+		f'{k} = {v:.6}'
+		for k,v in fitness_distr(lst_fit).items()
+	)
 	
 
 def generation_selection(
@@ -695,7 +695,7 @@ def generation_selection(
 		for _,f in pop
 	), "`None` fitness found when trying to run `generation_selection`"
 
-	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True) # type: ignore
+	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True)
 	fitness_thresh : float = lst_fit[new_popsize]
 
 	prntmsg(f'fitness distribution: {str_fitness_distr(lst_fit)}', 2)
@@ -704,7 +704,7 @@ def generation_selection(
 	newpop : PopulationFitness = [
 		(prm,fit)
 		for prm,fit in pop
-		if (fit > fitness_thresh) # type: ignore
+		if (fit > fitness_thresh)
 	]
 	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in pop], reverse=True))}', 2)
 
@@ -734,8 +734,9 @@ def run_generation(
 		params_base : ParamsDict,
 		popsize_select : int,
 		popsize_new : int,
-		# ranges : ModParamsRanges,
-		# sigma : float,
+		ranges : ModParamsRanges,
+		sigma : float,
+		mutprob : float,
 		func_extract : ExtractorFunc,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
@@ -748,7 +749,7 @@ def run_generation(
 	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
 
 	# run reproduction
-	pop_new : PopulationFitness = generation_reproduction(
+	pop_mated : Population = generation_reproduction(
 		pop = pop_trimmed,
 		popsize_new = popsize_new,
 		gene_combine = gene_combine,
@@ -756,13 +757,21 @@ def run_generation(
 	)
 
 	# mutate
-	# TODO: implement mutation
+	pop_mutated : Population = [
+		mutate_state(
+			params_mod = prm,
+			ranges = ranges,
+			mutprob = mutprob,
+			sigma = sigma,
+		)
+		for prm in pop_mated
+	]
 
 	# evaluate fitness of new individuals
 	return eval_pop_fitness(
+		pop = pop_mutated,
 		rootdir = rootdir + f'g{n_gen}_',
 		params_base = params_base,
-		pop = pop_new,
 		func_extract = func_extract, 
 	)
 
@@ -814,14 +823,15 @@ def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
 		ranges : ModParamsRanges = MODPARAMS_DEFAULT_RANGES,
-		first_gen_size : int = 50,
-		gen_count : int = 10,
+		first_gen_size : int = 100,
+		gen_count : int = 20,
 		factor_cull : float = 0.33,
 		factor_repro : float = 3.0,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v6.json"),
-		# sigma : float = 0.1,
-		func_extract : ExtractorFunc = extract_food_dist,
+		sigma : float = 0.05,
+		mutprob : float = 0.05,
+		func_extract : ExtractorFunc = extract_food_dist_inv,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
@@ -854,7 +864,9 @@ def run_genetic_algorithm(
 			params_base = params_base,
 			popsize_select = count_cull,
 			popsize_new = count_new,
-			# sigma = sigma,
+			ranges = ranges,
+			sigma = sigma,
+			mutprob = mutprob,
 			func_extract = func_extract,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,
