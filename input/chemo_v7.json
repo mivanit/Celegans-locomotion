@@ -1,0 +1,356 @@
+{
+	"simulation": {
+		"angle": 0.5,
+		"duration": 20.0,
+		"seed": 0,
+		"coll": "input/objs_empty.tsv",
+		"output": "data/run/NULL/",
+		"src-params": "input/chemo_v6.json"
+	},
+	"ChemoReceptors": {
+		"alpha": 4.0,
+		"beta": 15.0,
+		"gamma": 2.0,
+		"kappa": 200.0,
+		"lambda": -333333.3333,
+		"neuron": "AWA",
+		"foodPos": {
+			"x": 0.01,
+			"y": 0.00
+		}
+	},
+	"Head": {
+		"connections": [
+			{
+				"from": "AWA",
+				"to": "AIY",
+				"type": "chem",
+				"weight": -12.5
+			},
+			{
+				"from": "AIY",
+				"to": "AIY",
+				"type": "chem",
+				"weight": 0.5
+			},
+			{
+				"from": "AIY",
+				"to": "RIA",
+				"type": "chem",
+				"weight": -300.0
+			},
+			{
+				"from": "RIA",
+				"to": "RMDD",
+				"type": "chem",
+				"weight": -12.0
+			},
+			{
+				"from": "RIA",
+				"to": "RMDV",
+				"type": "chem",
+				"weight": -12.0
+			},
+			{
+				"from": "SMDD",
+				"to": "SMDD",
+				"type": "chem",
+				"weight": -14.9121
+			},
+			{
+				"from": "SMDV",
+				"to": "SMDV",
+				"type": "chem",
+				"weight": -14.9121
+			},
+			{
+				"from": "RMDD",
+				"to": "RMDD",
+				"type": "chem",
+				"weight": 6.62512
+			},
+			{
+				"from": "RMDV",
+				"to": "RMDV",
+				"type": "chem",
+				"weight": 6.62512
+			},
+			{
+				"from": "SMDD",
+				"to": "SMDV",
+				"type": "chem",
+				"weight": -11.2755
+			},
+			{
+				"from": "SMDV",
+				"to": "SMDD",
+				"type": "chem",
+				"weight": -11.2755
+			},
+			{
+				"from": "SMDD",
+				"to": "RMDV",
+				"type": "chem",
+				"weight": 14.9933
+			},
+			{
+				"from": "SMDV",
+				"to": "RMDD",
+				"type": "chem",
+				"weight": 14.9933
+			},
+			{
+				"from": "RMDD",
+				"to": "RMDV",
+				"type": "chem",
+				"weight": -11.6075
+			},
+			{
+				"from": "RMDV",
+				"to": "RMDD",
+				"type": "chem",
+				"weight": -11.6075
+			},
+			{
+				"from": "SMDD",
+				"to": "RMDD",
+				"type": "ele",
+				"weight": 0.0199558
+			},
+			{
+				"from": "SMDV",
+				"to": "RMDV",
+				"type": "ele",
+				"weight": 0.0199558
+			},
+			{
+				"from": "RMDV",
+				"to": "RMDD",
+				"type": "ele",
+				"weight": 1.51095
+			}
+		],
+		"neurons": {
+			"AWA": {
+				"tau": 0.005,
+				"theta": 0.5
+			},
+			"AIY": {
+				"tau": 0.01,
+				"theta": 3.5
+			},
+			"RIA": {
+				"tau": 0.01,
+				"theta": 0.7
+			},
+			"RMDD": {
+				"tau": 0.502018,
+				"theta": -3.65014
+			},
+			"RMDV": {
+				"tau": 0.502018,
+				"theta": -3.65014
+			},
+			"SMDD": {
+				"tau": 0.500646,
+				"theta": 6.27095
+			},
+			"SMDV": {
+				"tau": 0.500646,
+				"theta": 6.27095
+			}
+		}
+	},
+	"NMJ": {
+		"DB": 1.0,
+		"DD": -0.00105857,
+		"RMDD": 1.0,
+		"RMDV": 1.0,
+		"SMDD": 0.000371977,
+		"SMDV": 0.000371977,
+		"VBA": 1.0,
+		"VBP": 1.0,
+		"VDA": -0.00105857,
+		"VDP": -0.00105857
+	},
+	"StretchReceptors": {
+		"Head_gain": -120.535,
+		"VC_gain": -165.138
+	},
+	"VentralCord": {
+		"connections": [
+			{
+				"from": "DB",
+				"to": "DB",
+				"type": "chem",
+				"weight": -14.9544
+			},
+			{
+				"from": "VBA",
+				"to": "VBA",
+				"type": "chem",
+				"weight": -14.9544
+			},
+			{
+				"from": "VBP",
+				"to": "VBP",
+				"type": "chem",
+				"weight": -14.9544
+			},
+			{
+				"from": "DD",
+				"to": "DD",
+				"type": "chem",
+				"weight": 1.13632
+			},
+			{
+				"from": "VDA",
+				"to": "VDA",
+				"type": "chem",
+				"weight": 1.13632
+			},
+			{
+				"from": "VDP",
+				"to": "VDP",
+				"type": "chem",
+				"weight": 1.13632
+			},
+			{
+				"from": "DB",
+				"to": "DD",
+				"type": "chem",
+				"weight": -9.79669
+			},
+			{
+				"from": "VBA",
+				"to": "VDA",
+				"type": "chem",
+				"weight": -9.79669
+			},
+			{
+				"from": "VBP",
+				"to": "VDP",
+				"type": "chem",
+				"weight": -9.79669
+			},
+			{
+				"from": "DB",
+				"to": "VDA",
+				"type": "chem",
+				"weight": 12.3531
+			},
+			{
+				"from": "DB",
+				"to": "VDP",
+				"type": "chem",
+				"weight": 12.3531
+			},
+			{
+				"from": "VBA",
+				"to": "DD",
+				"type": "chem",
+				"weight": 6.17657
+			},
+			{
+				"from": "VBP",
+				"to": "DD",
+				"type": "chem",
+				"weight": 6.17657
+			},
+			{
+				"from": "DD",
+				"to": "VDA",
+				"type": "chem",
+				"weight": 1.66374
+			},
+			{
+				"from": "DD",
+				"to": "VDA",
+				"type": "chem",
+				"weight": 1.66374
+			},
+			{
+				"from": "DD",
+				"to": "VDA",
+				"type": "ele",
+				"weight": 1.46108
+			},
+			{
+				"from": "DD",
+				"to": "VDP",
+				"type": "ele",
+				"weight": 1.46108
+			},
+			{
+				"from": "VDA",
+				"to": "VDP",
+				"type": "ele",
+				"weight": 0.994941
+			},
+			{
+				"from": "VBA",
+				"to": "VBP",
+				"type": "ele",
+				"weight": 0.569164
+			}
+		],
+		"connections_fwd": [
+			{
+				"from": "DB",
+				"to": "DB",
+				"type": "ele",
+				"weight": 0.569164
+			},
+			{
+				"from": "VBP",
+				"to": "VBA",
+				"type": "ele",
+				"weight": 0.569164
+			},
+			{
+				"from": "DD",
+				"to": "DD",
+				"type": "ele",
+				"weight": 0.994941
+			},
+			{
+				"from": "VDP",
+				"to": "VDA",
+				"type": "ele",
+				"weight": 0.994941
+			},
+			{
+				"from": "VBP",
+				"to": "DB",
+				"type": "ele",
+				"weight": 1.10313
+			}
+		],
+		"neurons": {
+			"DB": {
+				"tau": 0.502865,
+				"theta": 4.80699
+			},
+			"DD": {
+				"tau": 1.67861,
+				"theta": -2.94785
+			},
+			"VBA": {
+				"tau": 0.502865,
+				"theta": 4.80699
+			},
+			"VBP": {
+				"tau": 0.502865,
+				"theta": 4.80699
+			},
+			"VDA": {
+				"tau": 1.67861,
+				"theta": -2.94785
+			},
+			"VDP": {
+				"tau": 1.67861,
+				"theta": -2.94785
+			}
+		}
+	}
+}
