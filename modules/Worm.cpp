@@ -11,6 +11,8 @@
 #define HEADSR
 #define VNCSR
 
+const double OSCILLATION_PERIOD_FACTOR = 2 * PI / 2.56;
+
 int nn(int neuronNumber, int unitNumber)
 {
     return neuronNumber+((unitNumber-1)*N_neuronsperunit);
@@ -292,6 +294,22 @@ void Worm::InitializeState(RandomState &rs, double angle, std::vector<CollisionO
 
 void Worm::HeadStep(double StepSize, double output)
 {
+    // forced input current
+	{
+		// dorsal
+		double inp_d = h.NeuronExternalInput(4);
+		h.SetNeuronExternalInput(
+            4,
+            inp_d + 0.3 * cos(t * OSCILLATION_PERIOD_FACTOR + 3.933)
+        );
+		// ventral
+        double inp_v = h.NeuronExternalInput(5);
+		h.SetNeuronExternalInput(
+            5, 
+            inp_v + 0.3 * cos(t * OSCILLATION_PERIOD_FACTOR + 5.21)
+        );
+	}
+
     // Update Nervous System
     h.EulerStep(StepSize);
 
