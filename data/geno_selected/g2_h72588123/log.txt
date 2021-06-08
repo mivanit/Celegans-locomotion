@@ -1,0 +1,50 @@
+> loading configs:
+  > params json from:  	data/geno_sweep/g2_h72588123/in-params.json
+  > read command line args
+  >> set rand seed to 0
+  >> set duration to 20.000000
+  >> set angle to 0.500000
+  >> set foodPos to {"x":0.01,"y":0.0}
+  >> collision tsv from:	input/objs_empty.tsv
+> creating output dir: data/geno_sweep/g2_h72588123/
+  > copying collision objects to:	data/geno_sweep/g2_h72588123/coll_objs.tsv
+    >> elements in CollObjs vec: 1
+  > copying params json to:      	data/geno_sweep/g2_h72588123/params.json
+> finished init body constants
+> creating worm object:
+  > muscles
+  > Head NS
+    > circuit init
+      >>  size: 6, max_CHEM: 4, max_ELE: 2
+    > loading neurons
+    > adding synapses
+  > VentralCord NS
+    > circuit init
+      >>  size: 36, max_CHEM: 4, max_ELE: 5, unit_size: 6
+    > initializing 6 units
+  > updating neuron indecies
+  > Stretch Receptors
+  > Chemo Receptors enabled
+    > placing food at 0.010000, 0.000000
+  > NMJ params
+  > NMJ gain (?)
+  > Worm object ctor done!
+> running evaluation:
+  > opening output files in data/geno_sweep/g2_h72588123/
+  > initializing arrays
+  > dumping worm params (NOT WORKING)
+  > initializing worm state
+    > circuit state
+    > body state
+      >> angle: 0.500000, collision obj count: 1
+    > muscle state
+  > transient
+  > xt/yt init (?)
+  > starting time loop:
+
+    >>  time:	0.000000	/	20.000000    >>  time:	1.000000	/	20.000000    >>  time:	2.000000	/	20.000000    >>  time:	3.010000	/	20.000000    >>  time:	4.010000	/	20.000000    >>  time:	5.010000	/	20.000000    >>  time:	6.010000	/	20.000000    >>  time:	7.010000	/	20.000000    >>  time:	8.010000	/	20.000000    >>  time:	9.010000	/	20.000000    >>  time:	10.010000	/	20.000000    >>  time:	11.010000	/	20.000000    >>  time:	12.010000	/	20.000000    >>  time:	13.010000	/	20.000000    >>  time:	14.010000	/	20.000000    >>  time:	15.010000	/	20.000000    >>  time:	16.010000	/	20.000000    >>  time:	17.010000	/	20.000000    >>  time:	18.000000	/	20.000000    >>  time:	19.000000	/	20.000000
+
+  > finished time loop!
+  > closing files, saving to data/geno_sweep/g2_h72588123/
+    >>  fitness: 0.177532, BBCfit: 0.022000, distance: 0.003906, speed: 0.000195
+> finished!

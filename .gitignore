@@ -14,6 +14,7 @@ data/prof/**/*.dat
 data/collision_objs.tsv
 !data/coll/demo/**
 data/geno_sweep/
+data/geno_selected/**/*.dat
 
 # ?? idk
 *.gch

@@ -1,0 +1,2 @@
+# extracted using extract_food_dist_inv:
+156.19457204056047
