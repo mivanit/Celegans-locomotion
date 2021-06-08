@@ -392,6 +392,19 @@ def evaluate_params(
 
 """
 
+def get_pop_ranges(pop : Population) -> ModParamsRanges:
+	keys : List[ModParam] = list(pop[-1].keys())
+	# OPTIMIZE: this uses two loops (because its just a view over the list) when it could be using just one
+	output : ModParamsRanges = {
+		key : RangeTuple(
+			min(p[key] for p in pop),
+			max(p[key] for p in pop),
+		)
+		for key in keys
+	}
+
+	return output
+
 def mutate_state(
 		params_mod : ModParamsDict,
 		ranges : ModParamsRanges,
@@ -757,6 +770,10 @@ def run_generation(
 	)
 
 	# mutate
+	# we pass the ranges of the *current population*, otherwise sigma will be too big and cause huge mutations later on when the model begins to converge
+	
+	ranges_pop_mated : ModParamsRanges = get_pop_ranges(pop_mated)
+
 	pop_mutated : Population = [
 		mutate_state(
 			params_mod = prm,
