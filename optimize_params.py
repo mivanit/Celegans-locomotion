@@ -706,7 +706,7 @@ def generation_selection(
 		for prm,fit in pop
 		if (fit > fitness_thresh)
 	]
-	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in pop], reverse=True))}', 2)
+	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
 
 	# TODO: pop/push if the element count is not quite right?
 
