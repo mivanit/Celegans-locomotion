@@ -171,7 +171,7 @@ def _wrapper_extract(
 		ret_nan = bool(proc.returncode),
 	)
 
-	with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+	with open(joinPath(outpath, 'extracted.txt'), 'a') as fout_ext:
 		print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
 		print(repr(result), file = fout_ext)
 	
@@ -323,7 +323,7 @@ def setup_evaluate_params(
 	).split(' ')
 
 	# run the process, write stderr and stdout to the log file
-	with open(outpath + 'log.txt', 'w') as f_log:
+	with open(outpath + 'log.txt', 'a') as f_log:
 		proc = subprocess.Popen(
 			cmd, 
 			stderr = subprocess.STDOUT,
@@ -363,7 +363,7 @@ def evaluate_params(
 		ret_nan = bool(proc.returncode),
 	)
 
-	with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+	with open(joinPath(outpath, 'extracted.txt'), 'a') as fout_ext:
 		print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
 		print(repr(result), file = fout_ext)
 
@@ -635,7 +635,7 @@ def eval_pop_fitness(
 			ret_nan = proc.returncode,
 		)
 
-		with open(joinPath(outpath, 'extracted.txt'), 'w+') as fout_ext:
+		with open(joinPath(outpath, 'extracted.txt'), 'a') as fout_ext:
 			print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
 			print(repr(new_fit), file = fout_ext)
 
@@ -836,6 +836,11 @@ def run_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
 
+	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
+		print('# info for run', file = info_fout)
+		print(locals(), file = info_fout)
+		print('\n\n', file = info_fout)
+
 	# compute population sizes
 	pop_sizes : List[Tuple[int, int]] = compute_gen_sizes(
 		first_gen_size = first_gen_size,
@@ -874,8 +879,8 @@ def run_genetic_algorithm(
 		)
 
 	# return final generation
-	with open(joinPath(rootdir, '.runinfo'), 'w+') as info_fout:
-		print('# info for run', file = info_fout)
+	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
+		print('## after run completion', file = info_fout)
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
 	
