@@ -844,6 +844,7 @@ def run_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 	) -> PopulationFitness:
 
+	mkdir(rootdir)
 	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
 		print('# info for run', file = info_fout)
 		print(locals(), file = info_fout)
