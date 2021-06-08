@@ -316,11 +316,11 @@ def setup_evaluate_params(
 		json.dump(params_joined, fout, indent = '\t')
 
 	# set up the command by passing kwargs down
-	cmd : str = genCmd_singlerun(
+	cmd : List[str] = genCmd_singlerun(
 		params = outpath_params,
 		output = outpath,
 		# **kwargs,
-	)
+	).split(' ')
 
 	# run the process, write stderr and stdout to the log file
 	with open(outpath + 'log.txt', 'w') as f_log:
