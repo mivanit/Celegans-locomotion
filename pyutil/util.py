@@ -28,8 +28,8 @@ def mkdir(p : Path):
 def joinPath(*args):
 	return os.path.join(*args).replace("\\", "/")
 
-def get_last_dir_name(p : Path) -> Path:
-	return p.rstrip('/').split('/')[-1]
+def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
+	return p.strip('/').split('/')[i_from_last]
 
 # def joinPath(*args):
 # 	output : Path = '/'.join(args).replace("\\", "/")

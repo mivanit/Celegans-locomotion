@@ -213,7 +213,7 @@ def _wrapper_extract(
 
 def _wrap_multi_extract(
 		func_extract : ExtractorFunc,
-		calc_mean : Callable[[List[float]], float] = lambda x : sum(x)/len(x),
+		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 	) -> MultiExtractorFunc:
 
 	def _func_extract_MULTI(
@@ -692,6 +692,7 @@ def eval_pop_fitness(
 		params_base : ParamsDict,
 		func_extract : ExtractorFunc,
 		eval_runs : List[ModParamsDict] = [ dict() ],
+		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 	) -> PopulationFitness:
 
 	# wrap the extractor func for multiple runs
@@ -751,7 +752,7 @@ def eval_pop_fitness(
 		p.rstrip('/').split('/')[-1]
 		for _,_,_,p in to_read
 	])
-	prntmsg(f'initialized {len(to_read)} processes for unknown fitnesses:\n\t{" ".join(lst_ids)}\n', 2)
+	prntmsg(f'initialized {sum(len(x[2]) for x in to_read)} processes for {len(to_read)} individuals with unknown fitnesses:\n\t{" ".join(lst_ids)}\n', 2)
 
 	# wait for them to finish, then read fitness
 	for prm_join,prm_mod,lst_proc,outpath in to_read:
@@ -871,6 +872,7 @@ def run_generation(
 		mutprob : float,
 		func_extract : ExtractorFunc,
 		eval_runs: List[ModParamsDict],
+		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		n_gen : int = -1,
@@ -892,7 +894,7 @@ def run_generation(
 	# mutate
 	# we pass the ranges of the *current population*, otherwise sigma will be too big and cause huge mutations later on when the model begins to converge
 	
-	ranges_pop_mated : ModParamsRanges = get_pop_ranges(pop_mated)
+	ranges_pop_mated : ModParamsRanges = get_pop_ranges(pop_trimmed)
 
 	pop_mutated : Population = [
 		mutate_state(
@@ -911,6 +913,7 @@ def run_generation(
 		params_base = params_base,
 		func_extract = func_extract, 
 		eval_runs = eval_runs,
+		calc_mean = calc_mean,
 	)
 
 
@@ -944,10 +947,11 @@ def run_genetic_algorithm(
 		factor_cull : float = 0.8,
 		factor_repro : float = 1.25,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v7.json"),
+		params_base : ParamsDict = load_params("input/chemo_v9.json"),
 		sigma : float = 2.0,
-		mutprob : float = 0.1,
+		mutprob : float = 0.3,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
+		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 		func_extract : ExtractorFunc = extract_food_dist_inv,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
@@ -994,6 +998,7 @@ def run_genetic_algorithm(
 			sigma = sigma,
 			mutprob = mutprob,
 			eval_runs = eval_runs,
+			calc_mean = calc_mean,
 			func_extract = func_extract,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,

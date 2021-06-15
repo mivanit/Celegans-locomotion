@@ -700,7 +700,7 @@ class Plotters(object):
 			lst_dirs_gen : List[Path] = [
 				p
 				for p in lst_dirs
-				if get_last_dir_name(p).startswith(f'g{n_gen}_')
+				if get_last_dir_name(p,-3) == f'gen_{n_gen}'
 			]
 
 			print(f'  > for gen {n_gen} found {len(lst_dirs_gen)} dirs')

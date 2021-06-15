@@ -84,7 +84,59 @@ ranges_chemo_v7_2 : ModParamsRanges = {
 	# ModParam("conn",   "") : RangeTuple(,),
 }
 
-DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v7_2
+ranges_chemo_v8_1 : ModParamsRanges = {
+	# conns
+	ModParam("conn",   "Head,AWA,AIY,chem") : RangeTuple(-30.0, 10.0),
+	ModParam("conn",   "Head,AIY,AIY,chem") : RangeTuple(-0.1, 0.1),
+	ModParam("conn",   "Head,AIY,RIA,chem") : RangeTuple(-20.0, 20.0),
+	ModParam("conn",   "Head,RIA,RMD*,chem") : RangeTuple(-10.0, 10.0),
+	# chemo params
+	ModParam("params", "ChemoReceptors.kappa") : RangeTuple(150.0, 300.0),
+	ModParam("params", "ChemoReceptors.lambda") : RangeTuple(-50000, -10000.0),
+	# neuron params
+	ModParam("params", "Head.neurons.AWA.theta") : RangeTuple(-1.0, 1.0),
+	ModParam("params", "Head.neurons.AIY.theta") : RangeTuple(-5.0, 5.0),
+	ModParam("params", "Head.neurons.RIA.theta") : RangeTuple(-5.0, 5.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+ranges_chemo_v8_2 : ModParamsRanges = {
+	# conns
+	ModParam("conn",   "Head,AWA,AIY,chem") : RangeTuple(-50.0, 10.0),
+	ModParam("conn",   "Head,AIY,AIY,chem") : RangeTuple(-0.05, 0.05),
+	ModParam("conn",   "Head,AIY,RIA,chem") : RangeTuple(-20.0, 20.0),
+	ModParam("conn",   "Head,RIA,RMD*,chem") : RangeTuple(-10.0, 10.0),
+	# chemo params
+	ModParam("params", "ChemoReceptors.kappa") : RangeTuple(150.0, 300.0),
+	ModParam("params", "ChemoReceptors.lambda") : RangeTuple(-50000, -10000.0),
+	# neuron params
+	ModParam("params", "Head.neurons.AWA.theta") : RangeTuple(-1.0, 1.0),
+	ModParam("params", "Head.neurons.AIY.theta") : RangeTuple(-5.0, 5.0),
+	ModParam("params", "Head.neurons.RIA.theta") : RangeTuple(-5.0, 5.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+
+ranges_chemo_v9_1 : ModParamsRanges = {
+	# conns
+	ModParam("conn",   "Head,AWA,AIY,chem") : RangeTuple(-50.0, -10.0),
+	ModParam("conn",   "Head,AIY,AIY,chem") : RangeTuple(-0.05, 0.05),
+	ModParam("conn",   "Head,AIY,RIA,chem") : RangeTuple(-40.0, 20.0),
+	ModParam("conn",   "Head,RIA,RMD*,chem") : RangeTuple(-15.0, 10.0),
+	# chemo params
+	ModParam("params", "ChemoReceptors.kappa") : RangeTuple(200.0, 250.0),
+	ModParam("params", "ChemoReceptors.lambda") : RangeTuple(-60000, -40000.0),
+	# neuron params
+	ModParam("params", "Head.neurons.AWA.theta") : RangeTuple(-1.0, 0.0),
+	ModParam("params", "Head.neurons.AIY.theta") : RangeTuple(0.0, 5.0),
+	ModParam("params", "Head.neurons.RIA.theta") : RangeTuple(-5.0, 0.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v9_1
 
 
 
