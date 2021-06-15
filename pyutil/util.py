@@ -201,6 +201,32 @@ def load_params(path : Path) -> ParamsDict:
 		data : ParamsDict = json.load(fin)
 	return data
 
+
+def modprmdict_to_filename(
+		data : ModParamsDict,
+		key_order : Optional[List[ModParam]] = None,
+		short_keys : Optional[int] = None,
+	):
+	
+	if key_order is None:
+		key_order = list(data.keys())
+
+	output : List[str] = []
+
+	for k in key_order:
+		k_write : str = str(k)
+		
+		# UGLY: this whole bit
+		if k.mod_type == ModTypes.conn.value:
+			_,str_from,str_to,_ = k.path.split(',')
+			k_write = f"{str_from}-{str_to}".replace('*','x')
+		elif k.mod_type == ModTypes.params.value:
+			k_write = k.split('.')[-1][:short_keys]
+		
+		output.append(f'{k_write}={data[k]:.3}')
+	
+	return '_'.join(output)
+
 # ConnKey = NamedTuple(
 # 	'ConnKey',
 # 	[

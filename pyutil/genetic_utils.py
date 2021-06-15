@@ -6,9 +6,11 @@
 	- dont print anything except the final position to stdout
 """
 
+from posixpath import join
 from typing import *
 import subprocess
 import copy
+import os
 from math import dist
 import random
 import json
@@ -29,7 +31,7 @@ from pyutil.util import (
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
-	dict_hash,load_params,
+	dict_hash,load_params,dict_to_filename,modprmdict_to_filename,
 	keylist_access_nested_dict,
 	read_body_data,CoordsRotArr,
 	prntmsg,
@@ -132,6 +134,25 @@ def merge_params_with_mods(
 	return output
 
 
+
+def jointo_nan_eval_runs(eval_runs : List[ModParamsDict]) -> ModParamsDict:
+	"""
+	create a `ModParamsDict` that maps every key from `eval_runs` to float('nan')
+	
+	useful for then merging into params
+	"""
+	joined_nans : ModParamsDict = dict()
+
+	for x in eval_runs:
+		for k in x.keys():
+			joined_nans[k] = float('nan')
+
+	return joined_nans
+
+	
+
+
+
 """
 
  ###### #    # ##### #####    ##    ####  #####
@@ -152,6 +173,15 @@ ExtractorFunc = Callable[
 		Arg(bool, 'ret_nan'),
 	], 
 	ExtractorReturnType, # return type
+]
+
+MultiExtractorFunc = Callable[
+	[
+		Arg(Path, 'datadir'),
+		Arg(ParamsDict, 'params'),
+		Arg(bool, 'ret_nan'),
+	], 
+	float, # return type
 ]
 
 
@@ -180,6 +210,43 @@ def _wrapper_extract(
 	
 	return result
 
+
+def _wrap_multi_extract(
+		func_extract : ExtractorFunc,
+		calc_mean : Callable[[List[float]], float] = lambda x : sum(x)/len(x),
+	) -> MultiExtractorFunc:
+
+	def _func_extract_MULTI(
+			datadir : Path,
+			params : ParamsDict,
+			ret_nan : bool = False,
+		) -> float:
+
+		# TODO: ret_nan is not actually doing the correct thing here, although its probably unimportant. current implementation does not allow for just one of several processes failing
+
+		lst_extracted : List[float] = list()
+
+		for p in os.listdir(datadir):
+			p_joined : Path = joinPath(datadir,p)
+			if os.path.isdir(p_joined):
+				lst_extracted.append(func_extract(
+					datadir = p_joined,
+					params = params,
+					ret_nan = ret_nan,
+				))
+
+		return calc_mean(lst_extracted)
+
+	# add metadata
+	_func_extract_MULTI.__name__ = func_extract.__name__
+	_func_extract_MULTI.__doc__ = f"""
+		{_wrap_multi_extract.__doc__} 
+		#### docstring of wrapped function:
+		```markdown
+		{func_extract.__doc__}
+		```
+	"""
+	return _func_extract_MULTI
 
 
 def _extract_TEMPLATE(
@@ -226,7 +293,7 @@ def extract_finalpos(
 	if ret_nan:
 		return ( float('nan'), float('nan') )	
 	else: 
-		bodydata : CoordsRotArr = read_body_data(datadir + 'body.dat')[-1,0]
+		bodydata : CoordsRotArr = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
 		return ( bodydata['x'], bodydata['y'] )
 
 def extract_food_dist(
@@ -244,7 +311,7 @@ def extract_food_dist(
 		return float('nan')
 	else:
 		# get head pos
-		bodydata : CoordsRotArr = read_body_data(datadir + 'body.dat')[-1,0]
+		bodydata : CoordsRotArr = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
 		pos_head : VecXY = VecXY( bodydata['x'], bodydata['y'] )
 
 		# get food pos
@@ -307,9 +374,9 @@ def setup_evaluate_params(
 	# TODO: document this
 	
 	# make dir
-	outpath : Path = f"{rootdir}h{dict_hash(params_mod)}/"
-	outpath_params : Path = joinPath(outpath,'in-params.json')
+	outpath : Path = f"{rootdir}{modprmdict_to_filename(params_mod)}/"
 	mkdir(outpath)
+	outpath_params : Path = joinPath(outpath,'in-params.json')
 
 	# join params
 	params_joined : ParamsDict = merge_params_with_mods(params_base, params_mod)
@@ -616,45 +683,85 @@ def eval_pop_fitness(
 		rootdir : Path,
 		params_base : ParamsDict,
 		func_extract : ExtractorFunc,
+		eval_runs : List[ModParamsDict] = [ dict() ],
 	) -> PopulationFitness:
+
+	# wrap the extractor func for multiple runs
+	func_extract_multi : MultiExtractorFunc = _wrap_multi_extract(func_extract)
 
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
 	
 	# a list of processes that we instantiate,
 	# whose results need to be added to `output_fitness` once they terminate
-	to_read : List[Tuple[ParamsDict, ModParamsDict, Process, Path]] = list()
+	to_read : List[Tuple[
+		ParamsDict,
+		ModParamsDict,
+		List[Process],
+		Path,
+	]] = list()
 
 	# start all the required processes
 	for prm_mod in pop:
-		proc, outpath, prm_join = setup_evaluate_params(
-			params_mod = prm_mod,
-			params_base = params_base,
-			rootdir = rootdir,
-		)
-		to_read.append((prm_join, prm_mod, proc, outpath))
+		# for storing the running processes
+		proc_temp : List[Process] = list()
 
+		# create a folder
+		outpath : Path = joinPath(rootdir, f"h{dict_hash(prm_mod)}")
+		mkdir(outpath)
+
+		# evaluate separately for every `eval_runs` option
+		for er_v in eval_runs:
+			
+			# note that `er_v` takes priority
+			proc, _, _ = setup_evaluate_params(
+				params_mod = {**prm_mod, **er_v},
+				params_base = params_base,
+				rootdir = outpath,
+			)
+
+			# store the process away, to be waited for later
+			proc_temp.append(proc)
+		
+		# parameter dict, with parameters that are modified with `eval_runs` set to NaN
+		params_join_naned : ParamsDict = merge_params_with_mods(
+			merge_params_with_mods(params_base, prm_mod),
+			jointo_nan_eval_runs(eval_runs)
+		)
+
+		# store everything away for later
+		to_read.append((
+			params_join_naned, 
+			prm_mod, 
+			proc_temp, 
+			outpath,
+		))
+
+	# get the list of runs
 	lst_ids : List[Path] = sorted([
 		p.rstrip('/').split('/')[-1]
 		for _,_,_,p in to_read
 	])
-
 	prntmsg(f'initialized {len(to_read)} processes for unknown fitnesses:\n\t{" ".join(lst_ids)}\n', 2)
 
 	# wait for them to finish, then read fitness
-	for prm_join,prm_mod,proc,outpath in to_read:
-		proc.wait()
+	for prm_join,prm_mod,lst_proc,outpath in to_read:
+		# OPTIMIZE: each process could be read as it finishes -- this is not perfectly efficient
+		for p in lst_proc:
+			p.wait()
 
-		new_fit : float = func_extract(
+		new_fit : float = func_extract_multi(
 			datadir = outpath,
 			params = prm_join,
-			ret_nan = proc.returncode,
+			ret_nan = any(p.returncode != 0 for p in lst_proc),
 		)
 
+		# save extracted fitness to a file
 		with open(joinPath(outpath, 'extracted.txt'), 'a') as fout_ext:
-			print(f'# extracted using {func_extract.__name__}:', file = fout_ext)
+			print(f'# extracted using {func_extract_multi.__name__}:', file = fout_ext)
 			print(repr(new_fit), file = fout_ext)
 
+		# throw it in the list
 		output_fitness.append((prm_mod, new_fit))
 
 	# return the results
