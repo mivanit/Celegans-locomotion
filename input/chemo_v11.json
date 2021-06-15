@@ -1,23 +1,15 @@
 {
-	"simulation": {
-		"angle": 0.5,
-		"duration": 20.0,
-		"seed": 0,
-		"coll": "input/objs_empty.tsv",
-		"output": "data/run/NULL/",
-		"src-params": "input/chemo_v9.json"
-	},
 	"ChemoReceptors": {
 		"alpha": 4.0,
 		"beta": 15.0,
-		"gamma": 2.0,
-		"kappa": 233.42994224288958,
-		"lambda": -49384.319365842246,
-		"neuron": "AWA",
 		"foodPos": {
 			"x": 0.005,
 			"y": 0.0003
-		}
+		},
+		"gamma": 2.0,
+		"kappa": 239.11437443770498,
+		"lambda": -56287.01843948554,
+		"neuron": "AWA"
 	},
 	"Head": {
 		"connections": [
@@ -25,31 +17,55 @@
 				"from": "AWA",
 				"to": "AIY",
 				"type": "chem",
-				"weight": -27.173242014667622
+				"weight": -14.297285656613852
 			},
 			{
 				"from": "AIY",
 				"to": "AIY",
 				"type": "chem",
-				"weight": 0.01860865662797373
+				"weight": -4.861494010843031
 			},
 			{
 				"from": "AIY",
 				"to": "RIA",
 				"type": "chem",
-				"weight": -8.21284420127178
+				"weight": -10.334111512343437
 			},
 			{
 				"from": "RIA",
 				"to": "RMDD",
 				"type": "chem",
-				"weight": -5.961803682639932
+				"weight": -5.804800164126303
 			},
 			{
 				"from": "RIA",
 				"to": "RMDV",
 				"type": "chem",
-				"weight": -5.961803682639932
+				"weight": -5.804800164126303
+			},
+			{
+				"from": "SMDD",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0262607186147652
+			},
+			{
+				"from": "SMDV",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0262607186147652
+			},
+			{
+				"from": "RMDD",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0262607186147652
+			},
+			{
+				"from": "RMDV",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0262607186147652
 			},
 			{
 				"from": "SMDD",
@@ -131,17 +147,17 @@
 			}
 		],
 		"neurons": {
-			"AWA": {
-				"tau": 0.005,
-				"theta": -0.6079024989268276
-			},
 			"AIY": {
 				"tau": 0.01,
-				"theta": 3.203449858917155
+				"theta": 3.1420978922767286
+			},
+			"AWA": {
+				"tau": 0.005,
+				"theta": -0.11618443891304886
 			},
 			"RIA": {
 				"tau": 0.01,
-				"theta": -2.475613734376009
+				"theta": -1.1713047514757284
 			},
 			"RMDD": {
 				"tau": 0.502018,
@@ -352,5 +368,13 @@
 				"theta": -2.94785
 			}
 		}
+	},
+	"simulation": {
+		"angle": 0.5,
+		"coll": "input/objs_empty.tsv",
+		"duration": 20.0,
+		"output": "data/run/NULL/",
+		"seed": 0,
+		"src-params": "input/chemo_v9.json"
 	}
 }

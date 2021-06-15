@@ -11,7 +11,7 @@ from typing import *
 import subprocess
 import copy
 import os
-from math import dist
+from math import dist,isnan
 import random
 import json
 
@@ -27,7 +27,7 @@ else:
 from pyutil.util import (
 	ModParam, ModTypes, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
-	RangeTuple,
+	RangeTuple,norm_prob,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
@@ -228,12 +228,11 @@ def _wrap_multi_extract(
 
 		for p in os.listdir(datadir):
 			p_joined : Path = joinPath(datadir,p)
-			if os.path.isdir(p_joined):
-				lst_extracted.append(func_extract(
-					datadir = p_joined,
-					params = params,
-					ret_nan = ret_nan,
-				))
+			lst_extracted.append(func_extract(
+				datadir = p_joined,
+				params = params,
+				ret_nan = ret_nan,
+			))
 
 		return calc_mean(lst_extracted)
 
@@ -614,22 +613,31 @@ def generation_reproduction(
 	newpop : Population = list()
 
 	# TODO: for some reason, `popsize_old` sometimes is less than or equal to zero. the max() is just a hack, since i dont know what causes the issue in the first place
-	random_selection : NDArray = np.random.randint(
-		low = 0, 
-		high = max(1,popsize_old), 
-		size = (popsize_new, 2),
+	# random_selection : NDArray = np.random.randint(
+	# 	low = 0, 
+	# 	high = max(1,popsize_old), 
+	# 	size = (popsize_new, 2),
+	# )
+
+	random_selection : NDArray = np.random.choice(
+		[ x[0] for x in pop ], 
+		size = (popsize_new, 2), 
+		p = norm_prob(np.array([
+			x[1]
+			if not isnan(x[1])
+			else 0.0
+			for x in pop
+		])),
 	)
 
-	n_indiv : int = 0
-	while len(newpop) < popsize_new:
-		
-		prm_A : ModParamsDict = pop[random_selection[n_indiv][0]][0]
-		prm_B : ModParamsDict = pop[random_selection[n_indiv][1]][0]
-		prm_comb : ModParamsDict = gene_combine(prm_A, prm_B, **gene_combine_kwargs)
+	for pair_params in random_selection:		
+		prm_comb : ModParamsDict = gene_combine(
+			pair_params[0], 
+			pair_params[1], 
+			**gene_combine_kwargs,
+		)
 	
 		newpop.append(prm_comb)
-
-		n_indiv += 1
 	
 	return newpop
 
@@ -894,7 +902,10 @@ def run_generation(
 	# mutate
 	# we pass the ranges of the *current population*, otherwise sigma will be too big and cause huge mutations later on when the model begins to converge
 	
-	ranges_pop_mated : ModParamsRanges = get_pop_ranges(pop_trimmed)
+	ranges_pop_mated : ModParamsRanges = get_pop_ranges([
+		xa
+		for xa,xb in pop_trimmed
+	])
 
 	pop_mutated : Population = [
 		mutate_state(
@@ -947,7 +958,7 @@ def run_genetic_algorithm(
 		factor_cull : float = 0.8,
 		factor_repro : float = 1.25,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v9.json"),
+		params_base : ParamsDict = load_params("input/chemo_v12.json"),
 		sigma : float = 2.0,
 		mutprob : float = 0.3,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,

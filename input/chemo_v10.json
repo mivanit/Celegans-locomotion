@@ -53,6 +53,18 @@
 			},
 			{
 				"from": "SMDD",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0
+			},
+			{
+				"from": "SMDV",
+				"to": "RIA",
+				"type": "chem",
+				"weight": 0.0
+			},
+			{
+				"from": "SMDD",
 				"to": "SMDD",
 				"type": "chem",
 				"weight": -14.9121

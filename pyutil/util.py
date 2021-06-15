@@ -66,6 +66,14 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 def prntmsg(msg : str, indent = 0):
 	print(f"{'  '*indent}> {msg}")
 
+
+def norm_prob(arr : NDArray) -> NDArray:
+	sum_arr : float = np.sum(arr)
+	if sum_arr > 0:
+		return arr / sum_arr
+	else:
+		return np.ones(arr.shape, dtype = arr.dtype) / len(arr)
+
 """
 ########  ####  ######  ########
 ##     ##  ##  ##    ##    ##
@@ -281,6 +289,26 @@ def find_conn_idx_regex(
 			# REVIEW: this isnt full regex, but whatever
 			if nrn.startswith(conn_key['to'].split('*')[0]):
 				conn_key_temp['to'] = nrn
+				cidx_temp : Optional[int] = find_conn_idx(
+					params_data[conn_key_temp['NS']]['connections'],
+					conn_key_temp,
+				)
+				# append to list, but only if an existing connection is found
+				# note that this behavior differs from when no wildcard is given,
+				# in that new connections will not be created
+				if cidx_temp is not None:
+					conn_idxs.append(cidx_temp)
+	elif conn_key['from'].endswith('*'):
+		# if wildcard given, find every connection that matches
+		conn_idxs = list()
+		
+		conn_key_temp : dict = deepcopy(conn_key)
+		
+		for nrn in params_data[conn_key['NS']]['neurons']:
+			# loop over neuron names, check if they match
+			# REVIEW: this isnt full regex, but whatever
+			if nrn.startswith(conn_key['from'].split('*')[0]):
+				conn_key_temp['from'] = nrn
 				cidx_temp : Optional[int] = find_conn_idx(
 					params_data[conn_key_temp['NS']]['connections'],
 					conn_key_temp,
