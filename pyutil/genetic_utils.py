@@ -37,7 +37,7 @@ from pyutil.util import (
 	prntmsg,
 )
 
-from pyutil.modparams_ranges import DEFAULT_RANGES
+from pyutil.genetic_ranges import DEFAULT_RANGES,DEFAULT_EVALRUNS
 
 
 Process = Any
@@ -370,18 +370,26 @@ def setup_evaluate_params(
 		func_extract : ExtractorFunc = extract_food_dist,
 		# command line args
 		rand : Optional[bool] = None,
+		out_name : Optional[Path] = None,
 	) -> Tuple[Process, Path, ParamsDict]:
 	# TODO: document this
 	
 	# make dir
-	outpath : Path = f"{rootdir}{modprmdict_to_filename(params_mod)}/"
+	if out_name is None:
+		outpath : Path = joinPath(rootdir, dict_hash(params_mod))
+	else:
+		outpath = joinPath(rootdir, out_name)
+	
+	if not outpath.endswith('/'):
+		outpath = outpath + '/'
+	
 	mkdir(outpath)
-	outpath_params : Path = joinPath(outpath,'in-params.json')
 
 	# join params
 	params_joined : ParamsDict = merge_params_with_mods(params_base, params_mod)
 
 	# save modified params
+	outpath_params : Path = joinPath(outpath,'in-params.json')
 	with open(outpath_params, 'w') as fout:
 		json.dump(params_joined, fout, indent = '\t')
 
@@ -718,6 +726,7 @@ def eval_pop_fitness(
 				params_mod = {**prm_mod, **er_v},
 				params_base = params_base,
 				rootdir = outpath,
+				out_name = modprmdict_to_filename(er_v),
 			)
 
 			# store the process away, to be waited for later
@@ -861,6 +870,7 @@ def run_generation(
 		sigma : float,
 		mutprob : float,
 		func_extract : ExtractorFunc,
+		eval_runs: List[ModParamsDict],
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		n_gen : int = -1,
@@ -887,7 +897,7 @@ def run_generation(
 	pop_mutated : Population = [
 		mutate_state(
 			params_mod = prm,
-			ranges = ranges,
+			ranges = ranges_pop_mated,
 			mutprob = mutprob,
 			sigma = sigma,
 		)
@@ -897,9 +907,10 @@ def run_generation(
 	# evaluate fitness of new individuals
 	return eval_pop_fitness(
 		pop = pop_mutated,
-		rootdir = rootdir + f'g{n_gen}_',
+		rootdir = rootdir,
 		params_base = params_base,
 		func_extract = func_extract, 
+		eval_runs = eval_runs,
 	)
 
 
@@ -936,6 +947,7 @@ def run_genetic_algorithm(
 		params_base : ParamsDict = load_params("input/chemo_v7.json"),
 		sigma : float = 2.0,
 		mutprob : float = 0.1,
+		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
 		func_extract : ExtractorFunc = extract_food_dist_inv,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
@@ -968,16 +980,20 @@ def run_genetic_algorithm(
 	for i,counts in enumerate(pop_sizes):
 		count_cull,count_new = counts
 		prntmsg(f'running generation {i} / {gen_count}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
+		
+		generation_dir : Path = joinPath(rootdir, f"gen_{i}/")
+		mkdir(generation_dir)
 
 		pop = run_generation(
 			pop = pop,
-			rootdir = rootdir,
+			rootdir = generation_dir,
 			params_base = params_base,
 			popsize_select = count_cull,
 			popsize_new = count_new,
 			ranges = ranges,
 			sigma = sigma,
 			mutprob = mutprob,
+			eval_runs = eval_runs,
 			func_extract = func_extract,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,

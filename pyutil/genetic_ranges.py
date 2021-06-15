@@ -85,3 +85,18 @@ ranges_chemo_v7_2 : ModParamsRanges = {
 }
 
 DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v7_2
+
+
+
+
+
+
+
+
+
+
+
+DEFAULT_EVALRUNS : List[ModParamsDict] = [
+	{ ModParam("params",   "simulation.angle") : 0.5 },
+	{ ModParam("params",   "simulation.angle") : -0.5 },
+]

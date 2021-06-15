@@ -221,7 +221,7 @@ def modprmdict_to_filename(
 			_,str_from,str_to,_ = k.path.split(',')
 			k_write = f"{str_from}-{str_to}".replace('*','x')
 		elif k.mod_type == ModTypes.params.value:
-			k_write = k.split('.')[-1][:short_keys]
+			k_write = k.path.split('.')[-1][:short_keys]
 		
 		output.append(f'{k_write}={data[k]:.3}')
 	
