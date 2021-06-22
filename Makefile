@@ -28,6 +28,7 @@ else
 endif
 
 # compiler flags
+CC = G++
 ## GCCFLAGS = -pthread -c -O3 -flto
 ## GCCFLAGS = -std=c++11 -c -O3 -flto
 # -flto is something to do with linking
@@ -37,49 +38,54 @@ GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
 .PHONY: singlerun
 singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
 	@echo "# [DEFAULT] Compiling executable for single worm sim"
-	g++ $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+	$(CC) $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
 
 .PHONY: evolve
 evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "# [DEPRECATED] Compiling genetic alg optimization"
 	@echo "this code is very possibly broken, and will probably be replaced by a python script"
-	g++ $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
+	$(CC) $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
 .PHONY: demorun
 demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "# [DEPRECATED] Compiling demo run"
 	@echo "this is deprecated! dont use it!"
-	g++ $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	$(CC) $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 
 # building modules
 random.o: modules/random.cpp modules/random.h modules/VectorMatrix.h
-	g++ $(GCCFLAGS) modules/random.cpp
+	$(CC) $(GCCFLAGS) modules/random.cpp
 TSearch.o: modules/TSearch.cpp modules/TSearch.h
-	g++ $(GCCFLAGS) modules/TSearch.cpp
+	$(CC) $(GCCFLAGS) modules/TSearch.cpp
 Worm.o: modules/Worm.cpp modules/Worm.h
-	g++ $(GCCFLAGS) modules/Worm.cpp
+	$(CC) $(GCCFLAGS) modules/Worm.cpp
 Collide.o: modules/Collide.cpp modules/Collide.h
-	g++ $(GCCFLAGS) modules/Collide.cpp
+	$(CC) $(GCCFLAGS) modules/Collide.cpp
 WormBody.o: modules/WormBody.cpp modules/WormBody.h modules/Collide.h
-	g++ $(GCCFLAGS) modules/WormBody.cpp
+	$(CC) $(GCCFLAGS) modules/WormBody.cpp
 NervousSystem.o: modules/NervousSystem.cpp modules/NervousSystem.h modules/VectorMatrix.h modules/random.h
-	g++ $(GCCFLAGS) modules/NervousSystem.cpp
+	$(CC) $(GCCFLAGS) modules/NervousSystem.cpp
 StretchReceptor.o: modules/StretchReceptor.cpp modules/StretchReceptor.h
-	g++ $(GCCFLAGS) modules/StretchReceptor.cpp
+	$(CC) $(GCCFLAGS) modules/StretchReceptor.cpp
 Muscles.o: modules/Muscles.cpp modules/Muscles.h modules/VectorMatrix.h modules/random.h
-	g++ $(GCCFLAGS) modules/Muscles.cpp
+	$(CC) $(GCCFLAGS) modules/Muscles.cpp
 evolve.o: evolve.cpp modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	g++ $(GCCFLAGS) evolve.cpp
+	$(CC) $(GCCFLAGS) evolve.cpp
 demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	g++ $(GCCFLAGS) demorun.cpp
+	$(CC) $(GCCFLAGS) demorun.cpp
 singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	g++ $(GCCFLAGS) singlerun.cpp
+	$(CC) $(GCCFLAGS) singlerun.cpp
 
 # cleaning up
 .PHONY: clean
 clean:
 	@echo "# cleaning up compiled files"
 	-rm *.o *.exe $(PACKAGES_DIR)/*.gch
+
+.PHONY: cleanob
+cleanob:
+	@echo "# cleaning up object files only"
+	-rm *.o
 
 .PHONY: clean_nogch
 clean_nogch:
@@ -129,7 +135,7 @@ help:
 .PHONY: precomp
 precomp:
 	@echo "# Precompiling .gch files"
-	$(foreach var,$(PACKAGES_HEADERS),g++ $(var);)
+	$(foreach var,$(PACKAGES_HEADERS),$(CC) $(var);)
 
 
 
