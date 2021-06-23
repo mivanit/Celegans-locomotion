@@ -282,8 +282,8 @@ def generation_reproduction(
 
 
 	# choose `popsize_new` pairs of individuals, with probability weighted by their fitness
-	random_selection : list = np.random.choice(
-		[ key for key,_ in pop ], 
+	random_selection : NDArray = np.random.choice(
+		np.array([ key for key,_ in pop ]), 
 		size = (popsize_new, 2), 
 		p = norm_prob(np.array([
 			fit - min_fitness
@@ -401,7 +401,7 @@ def eval_pop_fitness(
 	) -> PopulationFitness:
 
 	# wrap the extractor func for multiple runs
-	func_extract_multi : MultiExtractorFunc = _wrap_multi_extract(func_extract)
+	func_extract_multi : MultiExtractorFunc = wrap_multi_extract(func_extract)
 
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
@@ -686,6 +686,22 @@ def compute_gen_sizes(
 		output.append((count_cull, count_new))
 	
 	return output
+
+
+"""
+
+ #       ####    ##   #####
+ #      #    #  #  #  #    #
+ #      #    # #    # #    #
+ #      #    # ###### #    #
+ #      #    # #    # #    #
+ ######  ####  #    # #####
+
+"""
+
+
+def load_population():
+	raise NotImplementedError()
 
 
 """

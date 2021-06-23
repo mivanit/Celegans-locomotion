@@ -14,10 +14,11 @@ from nptyping import NDArray # type: ignore
 from pyutil.util import (
 	Path,mkdir,joinPath,dump_state,
 	strList_to_dict,
-	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
 	keylist_access_nested_dict,
 )
+
+from pyutil.extract_run_data import find_conn_idx,find_conn_idx_regex
 
 
 SPACE_GENERATOR_MAPPING : Dict[str,Callable] = {

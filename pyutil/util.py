@@ -122,11 +122,21 @@ def raise_(ex):
 """
 
 def wrapper_printdict(func : Callable[..., dict]):
-	# TODO: copy func metadata
+	
 	def newfunc(*args, **kwargs) -> None:
 		data : dict = func(*args, **kwargs)
 		for x in data:
 			print(f'{x}\t{data[x]}')
+
+	# add metadata
+	newfunc.__name__ = func.__name__
+	newfunc.__doc__ = f"""
+		{wrapper_printdict.__doc__} 
+		#### docstring of wrapped function:
+		```markdown
+		{func.__doc__}
+		```
+	"""
 	
 	return newfunc
 

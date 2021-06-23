@@ -14,14 +14,20 @@ from matplotlib import cm # type: ignore
 if TYPE_CHECKING:
 	from pyutil.util import (
 		Path,joinPath,unixPath,GeneRunID,
-		ParamsDict,ModParam,ModParamsDict,ModParamsRanges,
 		wrapper_printdict,raise_,
+	)
+	from pyutil.params import (
+		ParamsDict,ModParam,
+		ModParamsDict,ModParamsRanges,
 	)
 else:
 	from util import (
 		Path,joinPath,unixPath,GeneRunID,
-		ParamsDict,ModParam,ModParamsDict,ModParamsRanges,
 		wrapper_printdict,raise_,
+	)
+	from params import (
+		ParamsDict,ModParam,
+		ModParamsDict,ModParamsRanges,
 	)
 
 CACHE_FILE : Path = "extracted_cache"

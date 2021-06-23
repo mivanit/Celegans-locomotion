@@ -189,7 +189,7 @@ def body_data_split_DV(
 	n_tstep : int = data.shape[0]
 	n_seg : int = data.shape[1]
 
-	worm_thickness : float = (
+	worm_thickness : NDArray[n_seg, float] = (
 		WORM_RADIUS / 2.0 * abs(
 			np.sin(np.arccos(
 				((np.linspace(0,n_seg,n_seg)) - n_seg / 2.0) 

@@ -183,20 +183,21 @@ def find_conn_idx_regex(
 
 	conn_idxs : List[Optional[int]] = [None]
 
+
+	conn_idxs = list()		
+	conn_key_temp : dict = deepcopy(conn_key)
+	cidx_temp : Optional[int] = None
+
 	# UGLY: clean this bit up
 
 	if conn_key['to'].endswith('*'):
 		# if wildcard given, find every connection that matches
-		conn_idxs = list()
-		
-		conn_key_temp : dict = deepcopy(conn_key)
-		
 		for nrn in params_data[conn_key['NS']]['neurons']:
 			# loop over neuron names, check if they match
 			# REVIEW: this isnt full regex, but whatever
 			if nrn.startswith(conn_key['to'].split('*')[0]):
 				conn_key_temp['to'] = nrn
-				cidx_temp : Optional[int] = find_conn_idx(
+				cidx_temp = find_conn_idx(
 					params_data[conn_key_temp['NS']]['connections'],
 					conn_key_temp,
 				)
@@ -205,18 +206,15 @@ def find_conn_idx_regex(
 				# in that new connections will not be created
 				if cidx_temp is not None:
 					conn_idxs.append(cidx_temp)
+					
 	elif conn_key['from'].endswith('*'):
 		# if wildcard given, find every connection that matches
-		conn_idxs = list()
-		
-		conn_key_temp : dict = deepcopy(conn_key)
-		
 		for nrn in params_data[conn_key['NS']]['neurons']:
 			# loop over neuron names, check if they match
 			# REVIEW: this isnt full regex, but whatever
 			if nrn.startswith(conn_key['from'].split('*')[0]):
 				conn_key_temp['from'] = nrn
-				cidx_temp : Optional[int] = find_conn_idx(
+				cidx_temp = find_conn_idx(
 					params_data[conn_key_temp['NS']]['connections'],
 					conn_key_temp,
 				)

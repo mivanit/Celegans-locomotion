@@ -88,7 +88,7 @@ def _wrapper_extract(
 	return result
 
 
-def _wrap_multi_extract(
+def wrap_multi_extract(
 		func_extract : ExtractorFunc,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 	) -> MultiExtractorFunc:
@@ -117,7 +117,7 @@ def _wrap_multi_extract(
 	# add metadata
 	_func_extract_MULTI.__name__ = func_extract.__name__
 	_func_extract_MULTI.__doc__ = f"""
-		{_wrap_multi_extract.__doc__} 
+		{wrap_multi_extract.__doc__} 
 		#### docstring of wrapped function:
 		```markdown
 		{func_extract.__doc__}
@@ -192,7 +192,7 @@ def extract_finalpos(
 	if ret_nan:
 		return ( float('nan'), float('nan') )	
 	else: 
-		bodydata : CoordsRotArr = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
+		bodydata : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
 		return ( bodydata['x'], bodydata['y'] )
 
 def extract_food_dist(
@@ -210,7 +210,7 @@ def extract_food_dist(
 		return float('nan')
 	else:
 		# get head pos
-		bodydata : CoordsRotArr = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
+		bodydata : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
 		pos_head : VecXY = VecXY( bodydata['x'], bodydata['y'] )
 
 		# get food pos

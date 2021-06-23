@@ -1,10 +1,7 @@
 from typing import *
 
-from pyutil.util import (
-	ModParam, ModTypes, Path,mkdir,joinPath,
-	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,ModParamsDists,
-	RangeTuple,DistTuple,NormalDistTuple,
-)
+from pyutil.util import *
+from pyutil.params import *
 
 ranges_chemo_v6 : ModParamsRanges = {
 	ModParam("conn",   "Head,AWA,RIM,chem") : RangeTuple(-40000,40000),
