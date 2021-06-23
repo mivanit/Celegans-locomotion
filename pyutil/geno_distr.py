@@ -234,6 +234,28 @@ dists_chemo_v15_1 : ModParamsDists = {
 	# ModParam("conn",   "") : RangeTuple(,),
 }
 
+dists_chemo_v16_1 : ModParamsDists = {
+	# chemo params
+	ModParam("params", "ChemoReceptors.kappa") : NormalDistTuple(mu=230.0, sigma=15.0),
+	ModParam("params", "ChemoReceptors.lambda") : NormalDistTuple(mu=-52000, sigma=3000.0),
+	# conns
+	ModParam("conn",   "Head,AWA,AIY,chem") : NormalDistTuple(mu=-10.0, sigma=3.0),
+	ModParam("conn",   "Head,AIY,AIY,chem") : NormalDistTuple(mu=-1.0, sigma=1.0),
+	ModParam("conn",   "Head,AIY,RIA,chem") : NormalDistTuple(mu=-40.0, sigma=15.0),
+	ModParam("conn",   "Head,RIA,RMD*,chem") : NormalDistTuple(mu=-15.5, sigma=2.0),
+	ModParam("conn",   "Head,SMD*,RIA,chem") : NormalDistTuple(mu=1.3, sigma=1.0),
+	ModParam("conn",   "Head,RIA,RIA,chem") : NormalDistTuple(mu=0.0, sigma=0.1),
+	ModParam("conn",   "Head,RIA,SMD*,chem") : NormalDistTuple(mu=0.0, sigma=20.0),
+	ModParam("conn",   "Head,RMD*,RIA,chem") : NormalDistTuple(mu=0.0, sigma=1.0),
+	# neuron params
+	ModParam("params", "Head.neurons.AWA.theta") : NormalDistTuple(mu=-2.10, sigma=1.0),
+	ModParam("params", "Head.neurons.AIY.theta") : NormalDistTuple(mu=-2.76, sigma=1.0),
+	ModParam("params", "Head.neurons.RIA.theta") : NormalDistTuple(mu=-2.46, sigma=1.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+
 # DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v12_1
 DEFAULT_DISTS : ModParamsDists = dists_chemo_v15_1
 

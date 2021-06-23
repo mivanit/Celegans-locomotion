@@ -134,6 +134,20 @@ def keylist_access_nested_dict(
 		d : Dict[str,Any], 
 		keys : List[str],
 	) -> Tuple[dict,str]:
+	"""given a keylist `keys`, return (x,y) where x[y] is d[keys]
+
+	by pretending that `d` can be accessed dotlist-style, with keys in the list being keys to successive nested dicts, we can provide both read and write access to the element of `d` pointed to by `keys`
+	
+	### Parameters:
+	 - `d : Dict[str,Any]`   
+	   dict to access
+	 - `keys : List[str]`   
+	   list of keys to nested dict `d`
+	
+	### Returns:
+	 - `Tuple[dict,str]` 
+	   dict is the final layer dict which contains the element pointed to by `keys`, and the string is the last key in `keys`
+	"""
 	
 	fin_dict : dict = d
 	for k in keys[:-1]:
@@ -183,6 +197,27 @@ def dict_to_filename(
 		key_order : Optional[List[str]] = None,
 		short_keys : Optional[int] = None,
 	) -> str:
+	"""convert a dictionary to a filename
+	
+	format:
+	`key=value_otherkey=otherval_morekey=-0.1`
+	dont do this with long dicts, and dont use unsafe keys!
+	if `short_keys` is true, trims each key to that many chars
+	
+	### Parameters:
+	 - `data : Dict[str,float]`   
+	   dict to turn into a filename. if keys are dotlists, use the last element of the dotlist
+	 - `key_order : Optional[List[str]]`   
+	   if specfied, list the keys in this order
+	   (defaults to `None`)
+	 - `short_keys : Optional[int]`   
+	   if specified, shorten each key to this many chars
+	   (defaults to `None`)
+	
+	### Returns:
+	 - `str` 
+	   string from the dict
+	"""
 
 	if key_order is None:
 		key_order = list(data.keys())
@@ -193,11 +228,24 @@ def dict_to_filename(
 		# shorten the keys by splitting by dot, 
 		# and taking the first `short_keys` chars of the last bit
 		k_short : str = k.split('.')[-1][:short_keys]
-		output.append(f'{k_short}={data[k_short]:.3}')
+		output.append(f'{k_short}_{data[k_short]:.3}')
 	
 	return '_'.join(output)
 
 def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
+	""""hashes" a dict in a non-recoverable way
+	
+	used mainly for uniquely naming files/dirs
+	
+	### Parameters:
+	 - `data : dict`   
+	 - `hash_len_mod : int`   
+	   (defaults to `int(10**8)`)
+	
+	### Returns:
+	 - `int`
+	"""	
+	
 	return hash(tuple(data.items())) % hash_len_mod
 
 
@@ -286,6 +334,7 @@ def load_params(path : Path) -> ParamsDict:
 	return data
 
 
+# TODO: delete this function
 def modprmdict_to_filename(
 		data : ModParamsDict,
 		key_order : Optional[List[ModParam]] = None,

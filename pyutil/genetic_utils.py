@@ -6,6 +6,7 @@
 	- dont print anything except the final position to stdout
 """
 
+from genericpath import isdir
 from posixpath import join
 from typing import *
 import subprocess
@@ -132,6 +133,70 @@ def merge_params_with_mods(
 			raise NotImplementedError(f'given key type {tup_key.mod_type} unknown')
 
 	return output
+
+
+def extract_mods_from_params(
+		params : ParamsDict, 
+		modkeys : List[ModParam],
+		default_val : Any = None,
+	) -> Tuple[ParamsDict,ModParamsDict]:
+	"""extracts modparams from a params dict (inverts `merge_params_with_mods`)
+
+	returns `Tuple[ParamsDict,ModParamsDict]` containing:
+	- copy of the params dict, with extracted values overwritten with `default_val`
+	- the mod params dict
+
+	combining these two using `merge_params_with_mods` should just give back `params`
+	"""
+
+	params_stripped : ParamsDict = deepcopy(params)
+	modparams : ModParamsDict = dict()
+
+	for key in modkeys:
+		# merge in the standard params
+		if key.mod_type == ModTypes.params.value:
+			# access the element
+			fin_dic,fin_key = keylist_access_nested_dict(
+				d = params_stripped, 
+				keys = key.path.split('.'),
+			)
+			# store copy in modparams
+			modparams[key] = deepcopy(fin_dic[fin_key])
+			# overwrite in params_stripped
+			fin_dic[fin_key] = default_val
+
+		elif key.mod_type == ModTypes.conn.value:
+			# merge in the connection modifiers
+
+			# get the key
+			conn_key = strList_to_dict(
+				in_data = key.path,
+				keys_list = ['NS', 'from', 'to', 'type'],
+				delim = ',',
+			)
+
+			# get the indecies of the connections whose weights need to be changed
+			conn_idxs : List[Optional[int]] = find_conn_idx_regex(
+				params_data = params_stripped,
+				conn_key = conn_key,
+			)
+
+			for cidx in conn_idxs:
+				# store weights in mod params
+				modparams[key] = (
+					params_stripped
+					[conn_key['NS']]
+					['connections']
+					[cidx]
+					['weight']
+				)
+
+				params_stripped[conn_key['NS']]['connections'][cidx]['weight'] = default_val
+
+		else:
+			raise NotImplementedError(f'given key type {key.mod_type} unknown')
+
+	return params_stripped,modparams
 
 
 
@@ -1083,6 +1148,107 @@ def run_genetic_algorithm(
 	for i,counts in enumerate(pop_sizes):
 		count_cull,count_new = counts
 		prntmsg(f'running generation {i} / {gen_count}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
+		
+		generation_dir : Path = joinPath(rootdir, f"g{i}/")
+		mkdir(generation_dir)
+
+		pop = run_generation(
+			pop = pop,
+			rootdir = generation_dir,
+			params_base = params_base,
+			popsize_select = count_cull,
+			popsize_new = count_new,
+			ranges_override = ranges,
+			mut_sigma = mut_sigma,
+			mutprob = mutprob,
+			eval_runs = eval_runs,
+			calc_mean = calc_mean,
+			func_extract = func_extract,
+			gene_combine = gene_combine,
+			gene_combine_kwargs = gene_combine_kwargs,
+			n_gen = i,
+		)
+
+	# return final generation
+	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
+		print('## after run completion', file = info_fout)
+		print(locals(), file = info_fout)
+		print('\n\n', file = info_fout)
+	
+	return pop
+
+
+
+
+def continue_genetic_algorithm(
+		# for setup
+		rootdir : Path,
+		dists : ModParamsDists = DEFAULT_DISTS,
+		# first_gen_size : int = 500,
+		gen_count : int = 20,
+		factor_cull : float = 0.5,
+		factor_repro : float = 2.0,
+		# passed to `run_generation`
+		params_base : ParamsDict = load_params("input/chemo_v16.json"),
+		mut_sigma : float = 0.05,
+		mutprob : float = 0.05,
+		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
+		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
+		func_extract : ExtractorFunc = extract_food_dist_inv,
+		gene_combine : GenoCombineFunc = combine_geno_select,
+		gene_combine_kwargs : Dict[str,Any] = dict(),
+	) -> PopulationFitness:
+
+	if not os.path.isdir(rootdir):
+		FileNotFoundError(f'directory to continue run from does not exist: {rootdir}')
+
+	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
+		print('# info for run (continued)', file = info_fout)
+		print(locals(), file = info_fout)
+		print('\n\n', file = info_fout)
+
+	# load starting population (pick largest generation number)
+	generation_dirs : Dict[int, Path] = {
+		int(p.strip('/gen_ ')) : p
+		for p in os.listdir(rootdir)
+		if (
+			os.path.isdir(joinPath(rootdir,p)) 
+			and p.startswith('g')
+		)
+	}
+
+	last_gen : int = max(generation_dirs.keys())
+	last_gen_path : Path = joinPath(rootdir, generation_dirs[last_gen])
+	last_gen_size : int = len([
+		p
+		for p in os.listdir(last_gen_path)
+		if (
+			os.path.isdir(joinPath(last_gen_path,p))
+			and p.startswith('h')
+		)
+	])
+
+	pop : PopulationFitness = load_population()
+
+	# compute population sizes
+	pop_sizes : List[Tuple[int, int]] = compute_gen_sizes(
+		first_gen_size = last_gen_size,
+		gen_count = gen_count,
+		factor_cull = factor_cull,
+		factor_repro = factor_repro,
+	)
+	prntmsg(f'computed population sizes for new generations: \n\t{pop_sizes}')
+
+	# compute ranges for mutation scaling
+	ranges : ModParamsRanges = distributions_to_ranges(dists)
+
+	prntmsg(f'generated initial population with {len(pop)} individuals')
+
+	prntmsg(f'running generations')
+	# run each generation
+	for i,counts in enumerate(pop_sizes):
+		count_cull,count_new = counts
+		prntmsg(f'running generation {i+last_gen} / {gen_count+last_gen}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
 		
 		generation_dir : Path = joinPath(rootdir, f"g{i}/")
 		mkdir(generation_dir)
