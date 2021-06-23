@@ -28,7 +28,7 @@ from pydbg import dbg # type: ignore
 
 if TYPE_CHECKING:
 	from pyutil.util import (
-		Path,joinPath,
+		Path,joinPath,unixPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
 		get_last_dir_name,
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 	)
 else:
 	from util import (
-		Path,joinPath,
+		Path,joinPath,unixPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
 		get_last_dir_name,
@@ -189,7 +189,7 @@ def body_data_split_DV(
 	n_tstep : int = data.shape[0]
 	n_seg : int = data.shape[1]
 
-	worm_thickness : float = (
+	worm_thickness : NDArray[n_seg, float] = (
 		WORM_RADIUS / 2.0 * abs(
 			np.sin(np.arccos(
 				((np.linspace(0,n_seg,n_seg)) - n_seg / 2.0) 
@@ -554,7 +554,7 @@ class Plotters(object):
 		multi_dirs : List[str] = os.listdir(rootdir)
 		multi_dirs = [ x for x in multi_dirs if os.path.isdir(rootdir + x) ]
 
-		default_dir : str = joinPath(rootdir, multi_dirs[0], "")
+		default_dir : str = joinPath(rootdir, multi_dirs[0]) + "/"
 		print(f'> using as default: {default_dir}')
 
 		fig,ax,data_default,bounds = _draw_setup(
@@ -614,11 +614,13 @@ class Plotters(object):
 		dbg(joinPath(rootdir,bodydat))
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
 		lst_dirs : List[Path] = [ 
-			joinPath(os.path.dirname(p),'') 
+			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 
-		print(lst_dirs)
+		dbg(lst_dirs)
+		if not lst_dirs:
+			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 
@@ -700,7 +702,7 @@ class Plotters(object):
 			lst_dirs_gen : List[Path] = [
 				p
 				for p in lst_dirs
-				if get_last_dir_name(p).startswith(f'g{n_gen}_')
+				if get_last_dir_name(p,-3) == f'gen_{n_gen}'
 			]
 
 			print(f'  > for gen {n_gen} found {len(lst_dirs_gen)} dirs')

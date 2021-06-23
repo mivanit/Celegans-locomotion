@@ -14,10 +14,11 @@ from nptyping import NDArray # type: ignore
 from pyutil.util import (
 	Path,mkdir,joinPath,dump_state,
 	strList_to_dict,
-	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
 	keylist_access_nested_dict,
 )
+
+from pyutil.extract_run_data import find_conn_idx,find_conn_idx_regex
 
 
 SPACE_GENERATOR_MAPPING : Dict[str,Callable] = {
@@ -30,7 +31,8 @@ class Launchers(object):
 	@staticmethod
 	def multi_food_run(
 			rootdir : Path = 'data/run/',
-			foodPos : Union[None,str,Tuple[float,float]] = None,
+			foodPos : Union[None,str,Tuple[float,float]] = (-0.003,0.005),
+			angle : Optional[float] = 1.57,
 			**kwargs,
 		):
 		"""runs multiple trials of the simulation with food on left, right, and absent
@@ -112,6 +114,7 @@ class Launchers(object):
 			cmd : str = genCmd_singlerun(
 				output = out_path,
 				foodPos = foodPos,
+				angle = angle,
 				**kwargs,
 			)
 

@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import os
 import math
 from typing import *
-from copy import deepcopy
+from copy import Error, deepcopy
 from enum import Enum
 # from collections import namedtuple
 # from dataclasses import dataclass
+from functools import wraps as functools_wraps
 
 import json
 
@@ -21,21 +24,51 @@ from nptyping import NDArray # type: ignore
 """
 Path = str
 
+def unixPath(in_path : Path) -> Path:
+	return in_path.replace("\\", "/").rstrip("/")
+
 def mkdir(p : Path):
 	if not os.path.isdir(p):
 		os.mkdir(p)
 
-def joinPath(*args):
+def joinPath(*args) -> Path:
 	return os.path.join(*args).replace("\\", "/")
 
-def get_last_dir_name(p : Path) -> Path:
-	return p.rstrip('/').split('/')[-1]
+def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
+	return unixPath(p).strip('/').split('/')[i_from_last]
 
 # def joinPath(*args):
 # 	output : Path = '/'.join(args).replace("\\", "/")
 # 	while '//' in output:
 # 		output.replace("//", "/")	
 # 	return output
+
+# GeneRunID = NamedTuple(
+# 	'GeneRunID',
+# 	[
+# 		('gen', int), 
+# 		('h', int),
+# 	],
+# )
+
+class GeneRunID(NamedTuple):
+	gen : int
+	h : int
+
+	def __repr__(self) -> str:
+		return f"g{self.gen}/h{self.h}"
+	
+	@staticmethod
+	def from_str(p : str) -> GeneRunID:
+		p_split : List[str] = unixPath(p).strip('/').split('/')[:2]
+
+		return GeneRunID(
+			gen = int(p_split[0].strip('gen_/ ')),
+			h = int(p_split[1].strip('h/ ')),
+		)
+		
+
+
 
 """
  #    # #  ####   ####
@@ -66,6 +99,18 @@ def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 def prntmsg(msg : str, indent = 0):
 	print(f"{'  '*indent}> {msg}")
 
+
+def norm_prob(arr : NDArray) -> NDArray:
+	sum_arr : float = np.sum(arr)
+	if sum_arr > 0:
+		return arr / sum_arr
+	else:
+		return np.ones(arr.shape, dtype = arr.dtype) / len(arr)
+
+
+def raise_(ex):
+    raise ex
+
 """
 ########  ####  ######  ########
 ##     ##  ##  ##    ##    ##
@@ -76,10 +121,43 @@ def prntmsg(msg : str, indent = 0):
 ########  ####  ######     ##
 """
 
+def wrapper_printdict(func : Callable[..., dict]):
+	
+	def newfunc(*args, **kwargs) -> None:
+		data : dict = func(*args, **kwargs)
+		for x in data:
+			print(f'{x}\t{data[x]}')
+
+	# add metadata
+	newfunc.__name__ = func.__name__
+	newfunc.__doc__ = f"""
+		{wrapper_printdict.__doc__} 
+		#### docstring of wrapped function:
+		```markdown
+		{func.__doc__}
+		```
+	"""
+	
+	return newfunc
+
 def keylist_access_nested_dict(
 		d : Dict[str,Any], 
 		keys : List[str],
 	) -> Tuple[dict,str]:
+	"""given a keylist `keys`, return (x,y) where x[y] is d[keys]
+
+	by pretending that `d` can be accessed dotlist-style, with keys in the list being keys to successive nested dicts, we can provide both read and write access to the element of `d` pointed to by `keys`
+	
+	### Parameters:
+	 - `d : Dict[str,Any]`   
+	   dict to access
+	 - `keys : List[str]`   
+	   list of keys to nested dict `d`
+	
+	### Returns:
+	 - `Tuple[dict,str]` 
+	   dict is the final layer dict which contains the element pointed to by `keys`, and the string is the last key in `keys`
+	"""
 	
 	fin_dict : dict = d
 	for k in keys[:-1]:
@@ -129,6 +207,27 @@ def dict_to_filename(
 		key_order : Optional[List[str]] = None,
 		short_keys : Optional[int] = None,
 	) -> str:
+	"""convert a dictionary to a filename
+	
+	format:
+	`key=value_otherkey=otherval_morekey=-0.1`
+	dont do this with long dicts, and dont use unsafe keys!
+	if `short_keys` is true, trims each key to that many chars
+	
+	### Parameters:
+	 - `data : Dict[str,float]`   
+	   dict to turn into a filename. if keys are dotlists, use the last element of the dotlist
+	 - `key_order : Optional[List[str]]`   
+	   if specfied, list the keys in this order
+	   (defaults to `None`)
+	 - `short_keys : Optional[int]`   
+	   if specified, shorten each key to this many chars
+	   (defaults to `None`)
+	
+	### Returns:
+	 - `str` 
+	   string from the dict
+	"""
 
 	if key_order is None:
 		key_order = list(data.keys())
@@ -139,142 +238,25 @@ def dict_to_filename(
 		# shorten the keys by splitting by dot, 
 		# and taking the first `short_keys` chars of the last bit
 		k_short : str = k.split('.')[-1][:short_keys]
-		output.append(f'{k_short}={data[k_short]:.3}')
+		output.append(f'{k_short}_{data[k_short]:.3}')
 	
 	return '_'.join(output)
 
 def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
-	return hash(tuple(data.items())) % hash_len_mod
-
-
-"""
-
- #    #  ####  #####     #####    ##   #####    ##   #    #  ####
- ##  ## #    # #    #    #    #  #  #  #    #  #  #  ##  ## #
- # ## # #    # #    #    #    # #    # #    # #    # # ## #  ####
- #    # #    # #    #    #####  ###### #####  ###### #    #      #
- #    # #    # #    #    #      #    # #   #  #    # #    # #    #
- #    #  ####  #####     #      #    # #    # #    # #    #  ####
-
-"""
-
-Valid_NS = Literal['Head', 'VentralCord']
-Valid_Neurons = str
-# Valid_Neurons = Literal['Head', 'VentralCord']
-
-class ModTypes(Enum):
-	params : str = 'params'
-	conn : str = 'conn'
-	# cli : str = 'cli'
-
-# T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
-T_ModTypes = Literal['params', 'conn']
-
-# ModTypes = Literal[
-# 	'params',
-# 	'conn',
-# 	'cli',
-# ]
-
-ModParam = NamedTuple(
-	'ModParam', 
-	[
-		('mod_type', T_ModTypes), 
-		('path', str),
-	],
-)
-
-RangeTuple = NamedTuple(
-	'RangeTuple', 
-	[
-		('min', float), 
-		('max', float),
-	],
-)
-
-ParamsDict = Dict[str, Any]
-ModParamsDict = Dict[ModParam, float]
-ModParamsRanges = Dict[ModParam, RangeTuple]
-
-def load_params(path : Path) -> ParamsDict:
-	with open(path, 'r') as fin:
-		data : ParamsDict = json.load(fin)
-	return data
-
-# ConnKey = NamedTuple(
-# 	'ConnKey',
-# 	[
-# 		('NS', Valid_NS),
-# 		('from', Valid_Neurons),
-# 		('to', Valid_Neurons),
-# 		('weight', float),
-# 	],
-# )
-
-
-"""
- ######   #######  ##    ## ##    ##
-##    ## ##     ## ###   ## ###   ##
-##       ##     ## ####  ## ####  ##
-##       ##     ## ## ## ## ## ## ##
-##       ##     ## ##  #### ##  ####
-##    ## ##     ## ##   ### ##   ###
- ######   #######  ##    ## ##    ##
-"""
-
-def find_conn_idx(params_data : Dict[str,Any], conn_key : dict) -> Optional[int]:
-	"""finds the index of the entry matching conn_key"""
-
-	for i,item in enumerate(params_data):
-		if all([
-				conn_key[k] == item[k]
-				for k in conn_key 
-				if k != 'NS'
-			]):
-			return i
-
-	return None
-
-
-def find_conn_idx_regex(
-		params_data : Dict[str,Any], 
-		conn_key : dict,
-		# special_scaling_map : Optional[Dict[str,float]] = None,
-	) -> List[Optional[int]]:
-
-	conn_idxs : List[Optional[int]] = [None]
-
-	if conn_key['to'].endswith('*'):
-		# if wildcard given, find every connection that matches
-		conn_idxs = list()
-		
-		conn_key_temp : dict = deepcopy(conn_key)
-		
-		for nrn in params_data[conn_key['NS']]['neurons']:
-			# loop over neuron names, check if they match
-			# REVIEW: this isnt full regex, but whatever
-			if nrn.startswith(conn_key['to'].split('*')[0]):
-				conn_key_temp['to'] = nrn
-				cidx_temp : Optional[int] = find_conn_idx(
-					params_data[conn_key_temp['NS']]['connections'],
-					conn_key_temp,
-				)
-				# append to list, but only if an existing connection is found
-				# note that this behavior differs from when no wildcard is given,
-				# in that new connections will not be created
-				if cidx_temp is not None:
-					conn_idxs.append(cidx_temp)
-	else:
-		# if special_scaling_map is not None:
-		# 	raise ValueError(f"`special_scaling_map` specified, but no wildcard given in neuron name:   {special_scaling_map}    {conn_key['to']}")
-
-		# if no wildcard specified, just get the one connection
-		conn_idxs = [ find_conn_idx(
-			params_data[conn_key['NS']]['connections'],
-			conn_key,
-		) ]
+	""""hashes" a dict in a non-recoverable way
 	
-	return conn_idxs
+	used mainly for uniquely naming files/dirs
+	
+	### Parameters:
+	 - `data : dict`   
+	 - `hash_len_mod : int`   
+	   (defaults to `int(10**8)`)
+	
+	### Returns:
+	 - `int`
+	"""	
+	
+	return hash(tuple(data.items())) % hash_len_mod
 
 
 
