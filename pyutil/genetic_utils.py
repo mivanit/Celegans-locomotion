@@ -882,19 +882,41 @@ def generation_selection(
 		for _,f in pop
 	), "`None` fitness found when trying to run `generation_selection`"
 
-	lst_fit : List[float] = sorted((f for _,f in pop), reverse = True)
+	lst_fit : List[float] = list(sorted((f for _,f in pop), reverse = True))
+	dbg(lst_fit)
 	fitness_thresh : float = lst_fit[new_popsize]
 
+	# TODO: WHYYYYYY is this line failing???
+	"""
+	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 967, in run_generation
+    pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
+	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 907, in generation_selection
+		prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
+	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 907, in <listcomp>
+		prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
+	ValueError: too many values to unpack (expected 2)
+	"""
+
 	prntmsg(f'fitness distribution: {str_fitness_distr(lst_fit)}', 2)
-	prntmsg(f'trimming with fitness threshold: {fitness_thresh}', 2)
+	prntmsg(f'trimming with fitness threshold approx {fitness_thresh}', 2)
 
-	newpop : PopulationFitness = [
-		(prm,fit)
-		for prm,fit in pop
-		if (fit > fitness_thresh)
-	]
+	newpop : PopulationFitness = sorted(
+		pop, 
+		reverse = True, 
+		key = lambda x : x[1],
+	)[new_popsize]
+	
 
-	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
+	# newpop : PopulationFitness = [
+	# 	(prm,fit)
+	# 	for prm,fit in pop
+	# 	if (fit > fitness_thresh)
+	# ]
+
+	dbg
+
+	lst_fit_afterTrim : List[float] = sorted([fit for prm,fit in newpop], reverse=True)
+	prntmsg(f'distribution after trim: {str_fitness_distr(lst_fit_afterTrim)}', 2)
 
 	# TODO: pop/push if the element count is not quite right?
 
