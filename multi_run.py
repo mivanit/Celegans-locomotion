@@ -30,7 +30,8 @@ class Launchers(object):
 	@staticmethod
 	def multi_food_run(
 			rootdir : Path = 'data/run/',
-			foodPos : Union[None,str,Tuple[float,float]] = None,
+			foodPos : Union[None,str,Tuple[float,float]] = (-0.003,0.005),
+			angle : Optional[float] = 1.57,
 			**kwargs,
 		):
 		"""runs multiple trials of the simulation with food on left, right, and absent
@@ -112,6 +113,7 @@ class Launchers(object):
 			cmd : str = genCmd_singlerun(
 				output = out_path,
 				foodPos = foodPos,
+				angle = angle,
 				**kwargs,
 			)
 

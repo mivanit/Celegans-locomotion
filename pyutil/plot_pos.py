@@ -28,7 +28,7 @@ from pydbg import dbg # type: ignore
 
 if TYPE_CHECKING:
 	from pyutil.util import (
-		Path,joinPath,
+		Path,joinPath,unixPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
 		get_last_dir_name,
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 	)
 else:
 	from util import (
-		Path,joinPath,
+		Path,joinPath,unixPath,
 		CoordsArr,CoordsRotArr,
 		read_body_data,read_coll_objs_file,
 		get_last_dir_name,
@@ -554,7 +554,7 @@ class Plotters(object):
 		multi_dirs : List[str] = os.listdir(rootdir)
 		multi_dirs = [ x for x in multi_dirs if os.path.isdir(rootdir + x) ]
 
-		default_dir : str = joinPath(rootdir, multi_dirs[0], "")
+		default_dir : str = joinPath(rootdir, multi_dirs[0]) + "/"
 		print(f'> using as default: {default_dir}')
 
 		fig,ax,data_default,bounds = _draw_setup(
@@ -614,7 +614,7 @@ class Plotters(object):
 		dbg(joinPath(rootdir,bodydat))
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
 		lst_dirs : List[Path] = [ 
-			joinPath(os.path.dirname(p),'') 
+			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 

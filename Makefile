@@ -104,8 +104,7 @@ doc:
 mypy:
 	@echo "# run python static type checker"
 	
-	-mypy *.py
-	-mypy pyutil/*.py
+	-mypy *.py pyutil/*.py
 
 
 # misc

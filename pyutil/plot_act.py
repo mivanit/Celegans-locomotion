@@ -51,7 +51,7 @@ def pattern_match_names(
 
 
 def plot_act(
-		filename : str = 'data/run/act.dat',
+		rootdir : str = 'data/run/act.dat',
 		names : Union[str,List[str],None] = None, 
 		strict_fname : bool = True,
 		show : bool = True,
@@ -59,22 +59,22 @@ def plot_act(
 	"""plot activations of worm neurons
 	
 	### Parameters:
-	 - `filename : str`   
+	 - `rootdir : str`   
 	   file to look for, expects tsv forums
 	   (defaults to `'data/run/act.dat'`)
 	 - `names : Union[str,List[str],None]`   
 	   comma-separated (or regular) list of strings. will attempt to match using regex
 	   (defaults to `None`)
 	 - `strict_fname : bool`   
-	   set this to false if you want to use a filename other than `'act.dat'`
+	   set this to false if you want to use a rootdir other than `'act.dat'`
 	   (defaults to `True`)
 	"""
 
-	# fix filename if only dir given
-	if filename.endswith('/') or (strict_fname and not filename.endswith('act.dat')):
-		filename = joinPath(filename, 'act.dat')
+	# fix rootdir if only dir given
+	if rootdir.endswith('/') or (strict_fname and not rootdir.endswith('act.dat')):
+		rootdir = joinPath(rootdir, 'act.dat')
 	
-	print(filename)
+	print(rootdir)
 
 	# split names
 	if isinstance(names,str):
@@ -83,9 +83,9 @@ def plot_act(
 	print(f'> raw names: {names}')
 
 	# read data
-	data_raw = pd.read_csv(filename, sep = ' ').to_records(index=False)
+	data_raw = pd.read_csv(rootdir, sep = ' ').to_records(index=False)
 	fields_raw : List[str] = list(data_raw.dtype.fields.keys())
-	# data_raw = np.genfromtxt(filename, delimiter = ' ', dtype = np.float).T
+	# data_raw = np.genfromtxt(rootdir, delimiter = ' ', dtype = np.float).T
 	# print(data_raw.shape, fields_raw)
 
 	names_new : List[str] = pattern_match_names(names, fields_raw)
@@ -105,7 +105,7 @@ def plot_act(
 		# print(v_name, v_arr.shape, v_arr.dtype)
 		plt.plot(T, v_arr, label = v_name)
 
-	plt.title(filename)
+	plt.title(rootdir)
 	plt.xlabel('time')
 	plt.ylabel('neuron output')
 	

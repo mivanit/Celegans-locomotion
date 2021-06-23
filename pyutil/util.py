@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 import math
 from typing import *
-from copy import deepcopy
+from copy import Error, deepcopy
 from enum import Enum
 # from collections import namedtuple
 # from dataclasses import dataclass
@@ -30,7 +32,7 @@ def mkdir(p : Path):
 		os.mkdir(p)
 
 def joinPath(*args) -> Path:
-	return unixPath(os.path.join(*args))
+	return os.path.join(*args).replace("\\", "/")
 
 def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
 	return unixPath(p).strip('/').split('/')[i_from_last]
@@ -40,6 +42,33 @@ def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
 # 	while '//' in output:
 # 		output.replace("//", "/")	
 # 	return output
+
+# GeneRunID = NamedTuple(
+# 	'GeneRunID',
+# 	[
+# 		('gen', int), 
+# 		('h', int),
+# 	],
+# )
+
+class GeneRunID(NamedTuple):
+	gen : int
+	h : int
+
+	def __repr__(self) -> str:
+		return f"g{self.gen}/h{self.h}"
+	
+	@staticmethod
+	def from_str(p : str) -> GeneRunID:
+		p_split : List[str] = unixPath(p).strip('/').split('/')[:2]
+
+		return GeneRunID(
+			gen = int(p_split[0].strip('gen_/ ')),
+			h = int(p_split[1].strip('h/ ')),
+		)
+		
+
+
 
 """
  #    # #  ####   ####
@@ -78,6 +107,10 @@ def norm_prob(arr : NDArray) -> NDArray:
 	else:
 		return np.ones(arr.shape, dtype = arr.dtype) / len(arr)
 
+
+def raise_(ex):
+    raise ex
+
 """
 ########  ####  ######  ########
 ##     ##  ##  ##    ##    ##
@@ -89,9 +122,9 @@ def norm_prob(arr : NDArray) -> NDArray:
 """
 
 def wrapper_printdict(func : Callable[..., dict]):
-	@functools_wraps
-	def newfunc(in_data : Any) -> None:
-		data : dict = func(in_data)
+	# TODO: copy func metadata
+	def newfunc(*args, **kwargs) -> None:
+		data : dict = func(*args, **kwargs)
 		for x in data:
 			print(f'{x}\t{data[x]}')
 	

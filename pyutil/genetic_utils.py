@@ -623,7 +623,7 @@ def generation_reproduction(
 
 
 	# choose `popsize_new` pairs of individuals, with probability weighted by their fitness
-	random_selection : NDArray = np.random.choice(
+	random_selection : list = np.random.choice(
 		[ key for key,_ in pop ], 
 		size = (popsize_new, 2), 
 		p = norm_prob(np.array([
@@ -1084,7 +1084,7 @@ def run_genetic_algorithm(
 		count_cull,count_new = counts
 		prntmsg(f'running generation {i} / {gen_count}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
 		
-		generation_dir : Path = joinPath(rootdir, f"gen_{i}/")
+		generation_dir : Path = joinPath(rootdir, f"g{i}/")
 		mkdir(generation_dir)
 
 		pop = run_generation(
