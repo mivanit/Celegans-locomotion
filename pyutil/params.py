@@ -1,10 +1,9 @@
 from typing import *
-import subprocess
 import copy
-import os
 from math import dist,isnan
-import random
 import json
+import sys
+from enum import Enum
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
@@ -15,7 +14,10 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-from pyutil.util import *
+if TYPE_CHECKING or (__name__ == 'pyutil.params'):
+	from pyutil.util import *
+else:
+	from util import *
 
 """
 

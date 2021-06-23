@@ -11,24 +11,23 @@ from nptyping import NDArray,StructuredType # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 from matplotlib import cm # type: ignore
 
-if TYPE_CHECKING:
-	from pyutil.util import (
-		Path,joinPath,unixPath,GeneRunID,
-		wrapper_printdict,raise_,
-	)
-	from pyutil.params import (
-		ParamsDict,ModParam,
-		ModParamsDict,ModParamsRanges,
-	)
+if TYPE_CHECKING or (__name__ == 'pyutil.plot_gene'):
+	from pyutil.util import *
+	from pyutil.params import *
 else:
-	from util import (
-		Path,joinPath,unixPath,GeneRunID,
-		wrapper_printdict,raise_,
-	)
-	from params import (
-		ParamsDict,ModParam,
-		ModParamsDict,ModParamsRanges,
-	)
+	from util import *
+	from params import *
+"""
+from pyutil.util import (
+	Path,joinPath,unixPath,GeneRunID,
+	wrapper_printdict,raise_,
+)
+
+from pyutil.params import (
+	ParamsDict,ModParam,
+	ModParamsDict,ModParamsRanges,
+)
+"""
 
 CACHE_FILE : Path = "extracted_cache"
 EXTRACTED_FILENAME : Path = "extracted.txt"

@@ -1,11 +1,10 @@
 from typing import *
-
 import json
 
 import matplotlib.pyplot as plt # type: ignore
 import networkx as nx # type: ignore
 
-if TYPE_CHECKING:
+if TYPE_CHECKING or (__name__ == 'pyutil.plot_net'):
 	from pyutil.util import Path,joinPath
 else:
 	from util import Path,joinPath

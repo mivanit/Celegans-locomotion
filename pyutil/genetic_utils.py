@@ -10,6 +10,7 @@ import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 from pydbg import dbg # type: ignore
 
+
 from pyutil.util import *
 from pyutil.params import *
 from pyutil.extract_run_data import *
@@ -731,6 +732,7 @@ def run_genetic_algorithm(
 		func_extract : ExtractorFunc = extract_food_dist_inv,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
+		verbose : bool = False,
 	) -> PopulationFitness:
 
 	mkdir(rootdir)

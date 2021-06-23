@@ -26,7 +26,7 @@ import pandas as pd # type: ignore
 from pydbg import dbg # type: ignore
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING or (__name__ == 'pyutil.plot_pos'):
 	from pyutil.util import (
 		Path,joinPath,unixPath,
 		CoordsArr,CoordsRotArr,
@@ -48,12 +48,12 @@ else:
 		get_last_dir_name,
 	)
 	from collision_object import (
-		CollisionType,CollisionObject,
-		read_collobjs_tsv,
-		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
-		get_bounds,get_bbox_ranges,pad_BoundingBox,
-		_bounds_tuples_to_bbox,_combine_bounds,
-	)
+	CollisionType,CollisionObject,
+	read_collobjs_tsv,
+	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
+	get_bounds,get_bbox_ranges,pad_BoundingBox,
+	_bounds_tuples_to_bbox,_combine_bounds,
+)
 
 # types
 # ==================================================

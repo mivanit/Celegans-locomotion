@@ -8,7 +8,7 @@ from nptyping import NDArray # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING or (__name__ == 'pyutil.plot_sweep'):
 	from pyutil.util import Path,joinPath,split_dict_arrs
 	from pyutil.plot_pos import read_body_data,CoordsArr,CoordsRotArr
 else:

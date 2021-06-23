@@ -15,8 +15,12 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-from pyutil.util import *
-from pyutil.params import *
+if TYPE_CHECKING or (__name__ == 'pyutil.extract_run_data'):
+	from pyutil.util import *
+	from pyutil.params import *
+else:
+	from util import *
+	from params import *
 
 
 """
