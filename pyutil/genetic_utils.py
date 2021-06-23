@@ -25,7 +25,7 @@ else:
 	Arg = lambda t,s : t
 
 from pyutil.util import (
-	ModParam, ModTypes, Path,mkdir,joinPath,
+	ModParam, ModParamsDists, ModTypes, NormalDistTuple, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
 	RangeTuple,norm_prob,
 	VecXY,dump_state,
@@ -37,7 +37,7 @@ from pyutil.util import (
 	prntmsg,
 )
 
-from pyutil.genetic_ranges import DEFAULT_RANGES,DEFAULT_EVALRUNS
+from pyutil.geno_distr import DEFAULT_DISTS,DEFAULT_EVALRUNS
 
 
 Process = Any
@@ -486,7 +486,7 @@ def mutate_state(
 		params_mod : ModParamsDict,
 		ranges : ModParamsRanges,
 		mutprob : float,
-		sigma : float,
+		mut_sigma : float,
 	) -> ModParamsDict:
 	
 	params_new : ModParamsDict = copy.deepcopy(params_mod)
@@ -494,7 +494,7 @@ def mutate_state(
 	# each variable might be mutated
 	for key,val in params_new.items():
 		if random.random() < mutprob:
-			delta_val : float = random.gauss(0, sigma)
+			delta_val : float = random.gauss(0, mut_sigma)
 			params_new[key] = val + delta_val
 
 	return params_new
@@ -607,6 +607,7 @@ def generation_reproduction(
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		# chance_direct_progression : float = 0.2,
+		min_fitness : float = 0.0,
 	) -> Population:
 
 	popsize_old : int = len(pop)
@@ -619,14 +620,16 @@ def generation_reproduction(
 	# 	size = (popsize_new, 2),
 	# )
 
+
+	# choose `popsize_new` pairs of individuals, with probability weighted by their fitness
 	random_selection : NDArray = np.random.choice(
-		[ x[0] for x in pop ], 
+		[ key for key,_ in pop ], 
 		size = (popsize_new, 2), 
 		p = norm_prob(np.array([
-			x[1]
-			if not isnan(x[1])
-			else 0.0
-			for x in pop
+			fit - min_fitness
+			if not isnan(fit)
+			else min_fitness
+			for key,fit in pop
 		])),
 	)
 
@@ -676,6 +679,40 @@ def generate_geno_uniform_many(
 				for pr in ranges.keys()
 			},
 			float('nan'),
+		)	
+		for i in range(n_genos)
+	]
+
+def generate_geno(
+		dists : ModParamsDists,
+		n_genos : int,
+		ranges = None,
+	) -> PopulationFitness:
+
+	if ranges is not None:
+		raise ValueError("This new code uses a new style of declaring initial parameter ranges, which allows for arbitrary initial distributions and not just normal distributions. since you're passing a `ranges` parameter, you are probably using old code and should be careful. if its just an old set of ranges, it should work fine though")
+
+	# generate a dict mapping keys to lists of random values
+	random_vals : Dict[ModParam, NDArray[n_genos, float]] = dict()
+	
+	# for each parameter, generate array depending on distribution
+	for pr,dst in dists.items():
+		if isinstance(pr, RangeTuple):
+			random_vals[pr] = np.random.uniform(dst.min, dst.max, size = n_genos)
+		elif isinstance(pr, NormalDistTuple):
+			random_vals[pr] = np.random.normal(dst.mu, dst.sigma, size = n_genos)
+		else:
+			raise NotImplementedError(f"unknown distribution type:\t{pr}\t{dst}\t{type(dst)}")	
+
+	# assemble
+	return [
+		(
+			# this dict maps keys to the random values in the arrays
+			{
+				pr : random_vals[pr][i]
+				for pr in dists.keys()
+			},
+			float('nan'), # this nan is the fitness, not a parameter value. quirk of how the populations are represented
 		)	
 		for i in range(n_genos)
 	]
@@ -875,8 +912,8 @@ def run_generation(
 		params_base : ParamsDict,
 		popsize_select : int,
 		popsize_new : int,
-		ranges : ModParamsRanges,
-		sigma : float,
+		# ranges : ModParamsRanges,
+		mut_sigma : float,
 		mutprob : float,
 		func_extract : ExtractorFunc,
 		eval_runs: List[ModParamsDict],
@@ -888,6 +925,12 @@ def run_generation(
 
 	# prntmsg(f' fitness of population of size {len(pop)}, storing in {rootdir}', 2)
 
+	min_fitness : float = min( 
+		x 
+		for x in pop.values() 
+		if not isnan(x)
+	)
+
 	# trim old population
 	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
 
@@ -897,10 +940,12 @@ def run_generation(
 		popsize_new = popsize_new,
 		gene_combine = gene_combine,
 		gene_combine_kwargs = gene_combine_kwargs,
+		min_fitness = min_fitness,
 	)
 
 	# mutate
 	# we pass the ranges of the *current population*, otherwise sigma will be too big and cause huge mutations later on when the model begins to converge
+	# REVIEW: I think this actually makes the mutations too small
 	
 	ranges_pop_mated : ModParamsRanges = get_pop_ranges([
 		xa
@@ -912,7 +957,7 @@ def run_generation(
 			params_mod = prm,
 			ranges = ranges_pop_mated,
 			mutprob = mutprob,
-			sigma = sigma,
+			mut_sigma = mut_sigma,
 		)
 		for prm in pop_mated
 	]
@@ -952,15 +997,15 @@ def compute_gen_sizes(
 def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
-		ranges : ModParamsRanges = DEFAULT_RANGES,
-		first_gen_size : int = 24,
-		gen_count : int = 5,
-		factor_cull : float = 0.8,
-		factor_repro : float = 1.25,
+		dists : ModParamsDists = DEFAULT_DISTS,
+		first_gen_size : int = 500,
+		gen_count : int = 10,
+		factor_cull : float = 0.5,
+		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v13.json"),
-		sigma : float = 2.0,
-		mutprob : float = 0.3,
+		params_base : ParamsDict = load_params("input/chemo_v14.json"),
+		mut_sigma : float = 0.2,
+		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 		func_extract : ExtractorFunc = extract_food_dist_inv,
@@ -984,10 +1029,11 @@ def run_genetic_algorithm(
 	prntmsg(f'computed population sizes for generations: \n\t{pop_sizes}')
 
 	# generate initial population
-	pop : PopulationFitness = generate_geno_uniform_many(
-		ranges = ranges,
+	pop : PopulationFitness = generate_geno(
+		dists = dists,
 		n_genos = pop_sizes[0][1],
 	)
+
 	prntmsg(f'generated initial population with {len(pop)} individuals')
 
 	prntmsg(f'running generations')
@@ -1005,8 +1051,8 @@ def run_genetic_algorithm(
 			params_base = params_base,
 			popsize_select = count_cull,
 			popsize_new = count_new,
-			ranges = ranges,
-			sigma = sigma,
+			# ranges = ranges,
+			mut_sigma = mut_sigma,
 			mutprob = mutprob,
 			eval_runs = eval_runs,
 			calc_mean = calc_mean,

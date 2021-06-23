@@ -2,8 +2,8 @@ from typing import *
 
 from pyutil.util import (
 	ModParam, ModTypes, Path,mkdir,joinPath,
-	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
-	RangeTuple,
+	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,ModParamsDists,
+	RangeTuple,DistTuple,NormalDistTuple,
 )
 
 ranges_chemo_v6 : ModParamsRanges = {
@@ -191,7 +191,29 @@ ranges_chemo_v12_1 : ModParamsRanges = {
 	# ModParam("conn",   "") : RangeTuple(,),
 }
 
-DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v12_1
+dists_chemo_v14_1 : ModParamsDists = {
+# conns
+	ModParam("conn",   "Head,AWA,AIY,chem") : NormalDistTuple(mu=-11.7, sigma=5.0),
+	ModParam("conn",   "Head,AIY,AIY,chem") : NormalDistTuple(mu=-2.14, sigma=1.0),
+	ModParam("conn",   "Head,AIY,RIA,chem") : NormalDistTuple(mu=-34.5, sigma=10.0),
+	ModParam("conn",   "Head,RIA,RMD*,chem") : NormalDistTuple(mu=-13.1, sigma=5.0),
+	ModParam("conn",   "Head,RIA,SMD*,chem") : NormalDistTuple(mu=0.0, sigma=5.0),
+	ModParam("conn",   "Head,RIA,RIA,chem") : NormalDistTuple(mu=0.0, sigma=0.1),
+	ModParam("conn",   "Head,SMD*,RIA,chem") : NormalDistTuple(mu=0.0, sigma=1.0),
+	ModParam("conn",   "Head,RMD*,RIA,chem") : NormalDistTuple(mu=0.0, sigma=1.0),
+	# chemo params
+	ModParam("params", "ChemoReceptors.kappa") : NormalDistTuple(mu=209.5, sigma=30.0),
+	ModParam("params", "ChemoReceptors.lambda") : NormalDistTuple(mu=-54000, sigma=3000.0),
+	# neuron params
+	ModParam("params", "Head.neurons.AWA.theta") : NormalDistTuple(mu=-2.10, sigma=1.0),
+	ModParam("params", "Head.neurons.AIY.theta") : NormalDistTuple(mu=-2.76, sigma=1.0),
+	ModParam("params", "Head.neurons.RIA.theta") : NormalDistTuple(mu=-2.46, sigma=1.0),
+	# ModParam("params", "") : RangeTuple(,),
+	# ModParam("conn",   "") : RangeTuple(,),
+}
+
+# DEFAULT_RANGES : ModParamsRanges = ranges_chemo_v12_1
+DEFAULT_DISTS : ModParamsDists = dists_chemo_v14_1
 
 
 

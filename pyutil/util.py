@@ -213,9 +213,39 @@ RangeTuple = NamedTuple(
 	],
 )
 
+NormalDistTuple = NamedTuple(
+	'NormalDistTuple', 
+	[
+		('mu', float), 
+		('sigma', float),
+	],
+)
+
+DistTuple = Union[RangeTuple,NormalDistTuple]
+
+
+
 ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
 ModParamsRanges = Dict[ModParam, RangeTuple]
+ModParamsDists = Dict[ModParam, DistTuple]
+
+def distributions_to_ranges(in_data : ModParamsDists, n_sigma : float = 1.5) -> ModParamsRanges:
+	output : ModParamsRanges = dict()
+	for k,v in in_data:
+		if isinstance(v, RangeTuple):
+			output[k] = v
+		elif isinstance(v, DistTuple):
+			output[k] = RangeTuple(
+				min = v.mu - v.sigma * n_sigma,
+				max = v.mu + v.sigma * n_sigma,
+			)
+		else:
+			raise NotImplementedError(f"unknown distribution type:\t{k}\t{v}\t{type(v)}")
+	
+	return output
+
+
 
 def load_params(path : Path) -> ParamsDict:
 	with open(path, 'r') as fin:
