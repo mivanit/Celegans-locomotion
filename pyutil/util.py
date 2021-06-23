@@ -232,7 +232,7 @@ ModParamsDists = Dict[ModParam, DistTuple]
 
 def distributions_to_ranges(in_data : ModParamsDists, n_sigma : float = 1.5) -> ModParamsRanges:
 	output : ModParamsRanges = dict()
-	for k,v in in_data:
+	for k,v in in_data.items():
 		if isinstance(v, RangeTuple):
 			output[k] = v
 		elif isinstance(v, DistTuple):

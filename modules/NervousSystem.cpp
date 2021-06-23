@@ -31,7 +31,7 @@ void NervousSystem::init_NS(json & ns_data)
     // compute and set the circuit size
     SetCircuitSize(
         compute_size(ns_data["neurons"]),
-        compute_maxconn(ns_data["connections"], CONNTYPE_CHEM) + 1,
+        compute_maxconn_bidir_sum(ns_data["connections"], CONNTYPE_CHEM) + 1,
         compute_maxconn_bidir_sum(ns_data["connections"], CONNTYPE_ELE)
     );
     PRINTF_DEBUG("      >>  size: %d, max_CHEM: %d, max_ELE: %d\n", size, maxchemconns, maxelecconns)

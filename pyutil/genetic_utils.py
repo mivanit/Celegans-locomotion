@@ -228,11 +228,12 @@ def _wrap_multi_extract(
 
 		for p in os.listdir(datadir):
 			p_joined : Path = joinPath(datadir,p)
-			lst_extracted.append(func_extract(
-				datadir = p_joined,
-				params = params,
-				ret_nan = ret_nan,
-			))
+			if os.path.isdir(p_joined):
+				lst_extracted.append(func_extract(
+					datadir = p_joined,
+					params = params,
+					ret_nan = ret_nan,
+				))
 
 		return calc_mean(lst_extracted)
 
@@ -697,9 +698,9 @@ def generate_geno(
 	
 	# for each parameter, generate array depending on distribution
 	for pr,dst in dists.items():
-		if isinstance(pr, RangeTuple):
+		if isinstance(dst, RangeTuple):
 			random_vals[pr] = np.random.uniform(dst.min, dst.max, size = n_genos)
-		elif isinstance(pr, NormalDistTuple):
+		elif isinstance(dst, NormalDistTuple):
 			random_vals[pr] = np.random.normal(dst.mu, dst.sigma, size = n_genos)
 		else:
 			raise NotImplementedError(f"unknown distribution type:\t{pr}\t{dst}\t{type(dst)}")	
@@ -840,12 +841,20 @@ def fitness_distr(lst_fit : List[float]) -> Dict[str,float]:
 	 - `lst_fit : List[Optional[float]]`
 	"""
 	# TODO: not the real median here, oops
-	return {
-		'max' : lst_fit[0],
-		'median' : lst_fit[len(lst_fit) // 2],
-		'mean' : sum(lst_fit) / len(lst_fit),
-		'min' : lst_fit[-1],
-	}
+	if lst_fit:
+		return {
+			'max' : lst_fit[0],
+			'median' : lst_fit[len(lst_fit) // 2],
+			'mean' : sum(lst_fit) / len(lst_fit),
+			'min' : lst_fit[-1],
+		}
+	else:
+		return {
+			'max' : float('nan'),
+			'median' : float('nan'),
+			'mean' : float('nan'),
+			'min' : float('nan'),
+		}
 
 def str_fitness_distr(lst_fit : List[float]) -> str:
 	return ', '.join(
@@ -884,6 +893,7 @@ def generation_selection(
 		for prm,fit in pop
 		if (fit > fitness_thresh)
 	]
+
 	prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
 
 	# TODO: pop/push if the element count is not quite right?
@@ -925,11 +935,23 @@ def run_generation(
 
 	# prntmsg(f' fitness of population of size {len(pop)}, storing in {rootdir}', 2)
 
-	min_fitness : float = min( 
-		x 
-		for x in pop.values() 
-		if not isnan(x)
-	)
+	if n_gen == 0:
+		return eval_pop_fitness(
+			pop = [ x for x,_ in pop ],
+			rootdir = rootdir,
+			params_base = params_base,
+			func_extract = func_extract, 
+			eval_runs = eval_runs,
+			calc_mean = calc_mean,
+		)
+
+	# UGLY: be able to modify the default fitness here
+	min_fitness : float = min([
+		fit
+		if not isnan(fit)
+		else 0.0
+		for _,fit in pop 
+	])
 
 	# trim old population
 	pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
