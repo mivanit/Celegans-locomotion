@@ -5,6 +5,7 @@ from copy import deepcopy
 from enum import Enum
 # from collections import namedtuple
 # from dataclasses import dataclass
+from functools import wraps as functools_wraps
 
 import json
 
@@ -21,15 +22,18 @@ from nptyping import NDArray # type: ignore
 """
 Path = str
 
+def unixPath(in_path : Path) -> Path:
+	return in_path.replace("\\", "/").rstrip("/")
+
 def mkdir(p : Path):
 	if not os.path.isdir(p):
 		os.mkdir(p)
 
-def joinPath(*args):
-	return os.path.join(*args).replace("\\", "/")
+def joinPath(*args) -> Path:
+	return unixPath(os.path.join(*args))
 
 def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
-	return p.strip('/').split('/')[i_from_last]
+	return unixPath(p).strip('/').split('/')[i_from_last]
 
 # def joinPath(*args):
 # 	output : Path = '/'.join(args).replace("\\", "/")
@@ -83,6 +87,15 @@ def norm_prob(arr : NDArray) -> NDArray:
 ##     ##  ##  ##    ##    ##
 ########  ####  ######     ##
 """
+
+def wrapper_printdict(func : Callable[..., dict]):
+	@functools_wraps
+	def newfunc(in_data : Any) -> None:
+		data : dict = func(in_data)
+		for x in data:
+			print(f'{x}\t{data[x]}')
+	
+	return newfunc
 
 def keylist_access_nested_dict(
 		d : Dict[str,Any], 
@@ -277,6 +290,8 @@ def find_conn_idx_regex(
 	) -> List[Optional[int]]:
 
 	conn_idxs : List[Optional[int]] = [None]
+
+	# UGLY: clean this bit up
 
 	if conn_key['to'].endswith('*'):
 		# if wildcard given, find every connection that matches
