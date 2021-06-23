@@ -1,0 +1,8 @@
+fire==0.4.0
+matplotlib==3.4.2
+mypy_extensions==0.4.3
+networkx==2.5.1
+nptyping==1.4.2
+numpy==1.21.0
+pandas==1.2.5
+pydbg==0.3.0
