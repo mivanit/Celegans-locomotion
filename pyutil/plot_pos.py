@@ -618,7 +618,9 @@ class Plotters(object):
 			for p in lst_bodydat
 		]
 
-		print(lst_dirs)
+		dbg(lst_dirs)
+		if not lst_dirs:
+			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 

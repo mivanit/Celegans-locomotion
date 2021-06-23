@@ -1042,7 +1042,7 @@ def run_genetic_algorithm(
 		factor_cull : float = 0.5,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v14.json"),
+		params_base : ParamsDict = load_params("input/chemo_v15.json"),
 		mut_sigma : float = 0.05,
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
