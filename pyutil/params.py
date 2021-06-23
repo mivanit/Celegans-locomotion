@@ -19,12 +19,12 @@ from pyutil.util import *
 
 """
 
- #    #  ####  #####     #####    ##   #####    ##   #    #  ####
- ##  ## #    # #    #    #    #  #  #  #    #  #  #  ##  ## #
- # ## # #    # #    #    #    # #    # #    # #    # # ## #  ####
- #    # #    # #    #    #####  ###### #####  ###### #    #      #
- #    # #    # #    #    #      #    # #   #  #    # #    # #    #
- #    #  ####  #####     #      #    # #    # #    # #    #  ####
+ ##### #   # #####  # #    #  ####
+   #    # #  #    # # ##   # #    #
+   #     #   #    # # # #  # #
+   #     #   #####  # #  # # #  ###
+   #     #   #      # #   ## #    #
+   #     #   #      # #    #  ####
 
 """
 
@@ -78,6 +78,18 @@ ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
 ModParamsRanges = Dict[ModParam, RangeTuple]
 ModParamsDists = Dict[ModParam, DistTuple]
+
+
+"""
+
+ #    # #  ####   ####
+ ##  ## # #      #    #
+ # ## # #  ####  #
+ #    # #      # #
+ #    # # #    # #    #
+ #    # #  ####   ####
+
+"""
 
 def distributions_to_ranges(in_data : ModParamsDists, n_sigma : float = 1.5) -> ModParamsRanges:
 	output : ModParamsRanges = dict()
@@ -312,6 +324,17 @@ def merge_params_with_mods(
 
 	return output
 
+
+"""
+
+ ###### #    # ##### #####    ##    ####  #####
+ #       #  #    #   #    #  #  #  #    #   #
+ #####    ##     #   #    # #    # #        #
+ #        ##     #   #####  ###### #        #
+ #       #  #    #   #   #  #    # #    #   #
+ ###### #    #   #   #    # #    #  ####    #
+
+"""
 
 def extract_mods_from_params(
 		params : ParamsDict, 
