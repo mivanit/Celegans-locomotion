@@ -85,19 +85,29 @@ def generational_histogram(
 	bin_centers : NDArray = 0.5 * (bins[1:] + bins[:-1])
 
 	# sort by generation
-	sorted_data : DefaultDict[Path, List[float]] = defaultdict(list)
+	data_sorted : DefaultDict[int, List[float]] = defaultdict(list)
 	for k,v in data.items():
-		gen_k : Path = k.split('/')[0]
-		sorted_data[gen_k].append(v)
+		gen_k : int = int(k.split('/')[0].split('_')[1])
+		data_sorted[gen_k].append(v)
 	
+	# fill in any gaps? also this keeps it ordered
+	data_sorted = {
+		k : (
+			data_sorted[k] if k in data_sorted 
+			else list()
+		)
+		for k in range(max(data_sorted.keys()))
+	}
 
 	# plot each generation
-	for gen_k,lst_v in sorted_data.items():		
+	for gen_k in range(max(data_sorted.keys())):
+		lst_v : List[float] = data_sorted[gen_k]
+		
 		hist,_ = np.histogram(lst_v, bins)
 		plt.plot(
 			bin_centers, hist,
 			'o-',
-			label = gen_k, 
+			label = f"gen {gen_k}", 
 		)
 	
 	plt.legend()
