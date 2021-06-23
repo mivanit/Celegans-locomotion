@@ -235,7 +235,7 @@ def distributions_to_ranges(in_data : ModParamsDists, n_sigma : float = 1.5) -> 
 	for k,v in in_data.items():
 		if isinstance(v, RangeTuple):
 			output[k] = v
-		elif isinstance(v, DistTuple):
+		elif isinstance(v, NormalDistTuple):
 			output[k] = RangeTuple(
 				min = v.mu - v.sigma * n_sigma,
 				max = v.mu + v.sigma * n_sigma,

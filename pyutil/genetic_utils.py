@@ -27,7 +27,7 @@ else:
 from pyutil.util import (
 	ModParam, ModParamsDists, ModTypes, NormalDistTuple, Path,mkdir,joinPath,
 	strList_to_dict,ParamsDict,ModParamsDict,ModParamsRanges,
-	RangeTuple,norm_prob,
+	RangeTuple,norm_prob,distributions_to_ranges,
 	VecXY,dump_state,
 	find_conn_idx,find_conn_idx_regex,
 	genCmd_singlerun,
@@ -886,17 +886,6 @@ def generation_selection(
 	dbg(lst_fit)
 	fitness_thresh : float = lst_fit[new_popsize]
 
-	# TODO: WHYYYYYY is this line failing???
-	"""
-	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 967, in run_generation
-    pop_trimmed : PopulationFitness = generation_selection(pop, popsize_select)
-	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 907, in generation_selection
-		prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
-	File "F:\projects\Izq_locomotion\pyutil\genetic_utils.py", line 907, in <listcomp>
-		prntmsg(f'distribution after trim: {str_fitness_distr(sorted([fit for prm,fit in newpop], reverse=True))}', 2)
-	ValueError: too many values to unpack (expected 2)
-	"""
-
 	prntmsg(f'fitness distribution: {str_fitness_distr(lst_fit)}', 2)
 	prntmsg(f'trimming with fitness threshold approx {fitness_thresh}', 2)
 
@@ -904,16 +893,14 @@ def generation_selection(
 		pop, 
 		reverse = True, 
 		key = lambda x : x[1],
-	)[new_popsize]
-	
+	)[:new_popsize]
+	# REEEEEEEEEEEEEEEEE i forgot a colon here
 
 	# newpop : PopulationFitness = [
 	# 	(prm,fit)
 	# 	for prm,fit in pop
 	# 	if (fit > fitness_thresh)
 	# ]
-
-	dbg
 
 	lst_fit_afterTrim : List[float] = sorted([fit for prm,fit in newpop], reverse=True)
 	prntmsg(f'distribution after trim: {str_fitness_distr(lst_fit_afterTrim)}', 2)
@@ -944,11 +931,11 @@ def run_generation(
 		params_base : ParamsDict,
 		popsize_select : int,
 		popsize_new : int,
-		# ranges : ModParamsRanges,
 		mut_sigma : float,
 		mutprob : float,
 		func_extract : ExtractorFunc,
 		eval_runs: List[ModParamsDict],
+		ranges_override : Optional[ModParamsRanges] = None,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
@@ -991,15 +978,23 @@ def run_generation(
 	# we pass the ranges of the *current population*, otherwise sigma will be too big and cause huge mutations later on when the model begins to converge
 	# REVIEW: I think this actually makes the mutations too small
 	
-	ranges_pop_mated : ModParamsRanges = get_pop_ranges([
-		xa
-		for xa,xb in pop_trimmed
-	])
+	ranges : ModParamsRanges = dict()
+	
+	if ranges_override is None:
+		ranges = get_pop_ranges([
+			xa
+			for xa,xb in pop_trimmed
+		])
+	else:
+		ranges = ranges_override
+
+	
+
 
 	pop_mutated : Population = [
 		mutate_state(
 			params_mod = prm,
-			ranges = ranges_pop_mated,
+			ranges = ranges,
 			mutprob = mutprob,
 			mut_sigma = mut_sigma,
 		)
@@ -1072,6 +1067,9 @@ def run_genetic_algorithm(
 	)
 	prntmsg(f'computed population sizes for generations: \n\t{pop_sizes}')
 
+	# compute ranges for mutation scaling
+	ranges : ModParamsRanges = distributions_to_ranges(dists)
+
 	# generate initial population
 	pop : PopulationFitness = generate_geno(
 		dists = dists,
@@ -1095,7 +1093,7 @@ def run_genetic_algorithm(
 			params_base = params_base,
 			popsize_select = count_cull,
 			popsize_new = count_new,
-			# ranges = ranges,
+			ranges_override = ranges,
 			mut_sigma = mut_sigma,
 			mutprob = mutprob,
 			eval_runs = eval_runs,
