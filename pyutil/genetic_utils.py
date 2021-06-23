@@ -1043,7 +1043,7 @@ def run_genetic_algorithm(
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
 		params_base : ParamsDict = load_params("input/chemo_v14.json"),
-		mut_sigma : float = 0.2,
+		mut_sigma : float = 0.05,
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
