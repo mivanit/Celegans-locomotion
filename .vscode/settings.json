@@ -67,5 +67,12 @@
 		"xtr1common": "cpp",
 		"xtree": "cpp",
 		"xutility": "cpp"
-	}
+	},
+	"python.pythonPath": "C:\\Program Files\\Python39\\python.exe",
+	"python.autoComplete.extraPaths": [
+		"F:\\projects\\Izq_locomotion"
+	],
+	"python.analysis.extraPaths": [
+		"F:\\projects\\Izq_locomotion"
+	]
 }

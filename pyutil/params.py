@@ -1,10 +1,9 @@
 from typing import *
-import subprocess
 import copy
-import os
 from math import dist,isnan
-import random
 import json
+import sys
+from enum import Enum
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
@@ -15,7 +14,10 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-from pyutil.util import *
+if TYPE_CHECKING or (__name__ == 'pyutil.params'):
+	from pyutil.util import *
+else:
+	from util import *
 
 """
 
@@ -337,6 +339,7 @@ def merge_params_with_mods(
 def extract_mods_from_params(
 		params : ParamsDict, 
 		modkeys : List[ModParam],
+		modkeys_striponly : List[ModParam],
 		default_val : Any = None,
 	) -> Tuple[ParamsDict,ModParamsDict]:
 	"""extracts modparams from a params dict (inverts `merge_params_with_mods`)
@@ -345,13 +348,17 @@ def extract_mods_from_params(
 	- copy of the params dict, with extracted values overwritten with `default_val`
 	- the mod params dict
 
+	`modkeys` takes precedence over `modkeys_striponly`. is this bad deisgn?
+
 	combining these two using `merge_params_with_mods` should just give back `params`
 	"""
 
 	params_stripped : ParamsDict = deepcopy(params)
 	modparams : ModParamsDict = dict()
 
-	for key in modkeys:
+	modkey_set : Set[ModParam] = set(modkeys)
+
+	for key in set([*modkeys, *modkeys_striponly]):
 		# merge in the standard params
 		if key.mod_type == ModTypes.params.value:
 			# access the element
@@ -360,7 +367,8 @@ def extract_mods_from_params(
 				keys = key.path.split('.'),
 			)
 			# store copy in modparams
-			modparams[key] = deepcopy(fin_dic[fin_key])
+			if key in modkey_set:
+				modparams[key] = deepcopy(fin_dic[fin_key])
 			# overwrite in params_stripped
 			fin_dic[fin_key] = default_val
 
@@ -382,14 +390,16 @@ def extract_mods_from_params(
 
 			for cidx in conn_idxs:
 				# store weights in mod params
-				modparams[key] = (
-					params_stripped
-					[conn_key['NS']]
-					['connections']
-					[cidx]
-					['weight']
-				)
+				if key in modkey_set:
+					modparams[key] = (
+						params_stripped
+						[conn_key['NS']]
+						['connections']
+						[cidx]
+						['weight']
+					)
 
+				# strip from params
 				params_stripped[conn_key['NS']]['connections'][cidx]['weight'] = default_val
 
 		else:

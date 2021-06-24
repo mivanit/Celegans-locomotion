@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt # type: ignore
 
 import pandas as pd # type: ignore
 
-if TYPE_CHECKING:
+
+if TYPE_CHECKING or (__name__ == 'pyutil.plot_act'):
 	from pyutil.util import Path,joinPath
 else:
 	from util import Path,joinPath
