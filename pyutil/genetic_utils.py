@@ -791,7 +791,7 @@ def run_genetic_algorithm(
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
-	) -> PopulationFitness:
+	) -> None:
 
 	mkdir(rootdir)
 	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
@@ -853,7 +853,7 @@ def run_genetic_algorithm(
 		print('\n\n', file = info_fout)
 	
 	# REVIEW: this return
-	return pop[0]
+	# return pop[0]
 
 
 
@@ -886,7 +886,7 @@ def continue_genetic_algorithm(
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
-	) -> PopulationFitness:
+	) -> None:
 
 	if not os.path.isdir(rootdir):
 		FileNotFoundError(f'directory to continue run from does not exist: {rootdir}')
@@ -975,4 +975,4 @@ def continue_genetic_algorithm(
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
 	
-	return pop[0]
+	# return pop
