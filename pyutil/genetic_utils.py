@@ -399,6 +399,7 @@ def eval_pop_fitness(
 		func_extract : ExtractorFunc,
 		eval_runs : List[ModParamsDict] = [ dict() ],
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
+		verbose : bool = False,
 	) -> PopulationFitness:
 
 	# wrap the extractor func for multiple runs
@@ -458,7 +459,9 @@ def eval_pop_fitness(
 		p.rstrip('/').split('/')[-1]
 		for _,_,_,p in to_read
 	])
-	prntmsg(f'initialized {sum(len(x[2]) for x in to_read)} processes for {len(to_read)} individuals with unknown fitnesses:\n\t{" ".join(lst_ids)}\n', 2)
+	prntmsg(f'initialized {sum(len(x[2]) for x in to_read)} processes for {len(to_read)} individuals with unknown fitnesses', 2)
+	if verbose:
+		print(f'\n\t{" ".join(lst_ids)}\n')
 
 	# wait for them to finish, then read fitness
 	for prm_join,prm_mod,lst_proc,outpath in to_read:
@@ -543,7 +546,6 @@ def generation_selection(
 	), "`None` fitness found when trying to run `generation_selection`"
 
 	lst_fit : List[float] = list(sorted((f for _,f in pop), reverse = True))
-	dbg(lst_fit)
 	fitness_thresh : float = lst_fit[new_popsize]
 
 	prntmsg(f'fitness distribution: {str_fitness_distr(lst_fit)}', 2)
@@ -598,6 +600,7 @@ def run_generation(
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		n_gen : int = -1,
+		verbose : bool = False,
 	) -> PopulationFitness:
 
 	# prntmsg(f' fitness of population of size {len(pop)}, storing in {rootdir}', 2)
@@ -610,6 +613,7 @@ def run_generation(
 			func_extract = func_extract, 
 			eval_runs = eval_runs,
 			calc_mean = calc_mean,
+			verbose = verbose,
 		)
 
 	# UGLY: be able to modify the default fitness here
@@ -785,6 +789,7 @@ def run_genetic_algorithm(
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,
 			n_gen = i,
+			verbose = verbose,
 		)
 
 	# return final generation
@@ -793,7 +798,8 @@ def run_genetic_algorithm(
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
 	
-	return pop
+	# REVIEW: this return
+	return pop[0]
 
 
 

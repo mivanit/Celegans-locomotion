@@ -36,7 +36,7 @@ def scrape_extracted_old(
 		rootdir : Path,
 		cast_func : Callable[[str], Any] = float,
 		comment_str : str = '#',
-		top_n : Optional[int] = None,
+		n_top : Optional[int] = None,
 	) -> Dict[Path,str]:
 
 	map_extracted : Dict[Path,str] = dict()
@@ -75,7 +75,7 @@ def scrape_extracted_old(
 			map_extracted.items(), 
 			key = lambda x : x[1], 
 			reverse = True,
-		)[:top_n]
+		)[:n_top]
 	}
 	
 	return map_extracted
@@ -97,7 +97,7 @@ def scrape_extracted_cache(
 		rootdir : Path,
 		cast_func : Callable[[str], Any] = float,
 		comment_str : str = '#',
-		top_n : Optional[int] = None,
+		n_top : Optional[int] = None,
 		use_cache : bool = True,
 		format : Literal['json','msgpack'] = 'json',
 	) -> Dict[GeneRunID, float]:
@@ -140,7 +140,7 @@ def scrape_extracted_cache(
 		for idx,p in enumerate(lst_data):
 
 			if (idx % 100 == 0) or (idx == n_items - 1):
-				print(f"  >> read \t{idx}\t/\t{n_items}", end = "\r")
+				print(f"  >> read \t{idx+1}\t/\t{n_items}", end = "\r")
 			
 			p_trim : Path = unixPath(
 				unixPath(p)
@@ -171,7 +171,7 @@ def scrape_extracted_cache(
 			map_extracted.items(), 
 			key = lambda x : x[1], 
 			reverse = True,
-		)[:top_n]
+		)[:n_top]
 	}
 
 	

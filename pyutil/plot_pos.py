@@ -676,6 +676,7 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 			max_gen : int = 5,
+			gen_n_step : int = 1,
 		):
 
 		# setup
@@ -697,12 +698,12 @@ class Plotters(object):
 			pad_frac = figsize_scalar,
 		)
 
-		for n_gen in range(max_gen):
+		for n_gen in range(0,max_gen+1,gen_n_step):
 			# filter by generation
 			lst_dirs_gen : List[Path] = [
 				p
 				for p in lst_dirs
-				if get_last_dir_name(p,-3) == f'gen_{n_gen}'
+				if get_last_dir_name(p,-3) == f'g{n_gen}'
 			]
 
 			print(f'  > for gen {n_gen} found {len(lst_dirs_gen)} dirs')
