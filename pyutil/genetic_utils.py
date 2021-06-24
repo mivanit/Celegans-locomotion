@@ -405,7 +405,10 @@ def eval_pop_fitness(
 	) -> PopulationFitness:
 
 	# wrap the extractor func for multiple runs
-	func_extract_multi : MultiExtractorFunc = wrap_multi_extract(func_extract)
+	func_extract_multi : MultiExtractorFunc = wrap_multi_extract(
+		func_extract = func_extract,
+		calc_mean = calcmean_symmetric,
+	)
 
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
@@ -773,6 +776,8 @@ def load_population(
 ##     ##  #######  ##    ##
 """
 
+
+# UGLY: this function should just call the continuation function after initialization
 def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
@@ -944,7 +949,7 @@ def continue_genetic_algorithm(
 	prntmsg(f'running generations')
 	# run each generation
 	for i,counts in enumerate(pop_sizes):
-		n_gen : int = i + last_gen
+		n_gen : int = i + last_gen + 1
 		count_cull,count_new = counts
 		prntmsg(f'running generation {n_gen} / {gen_count+last_gen}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
 		

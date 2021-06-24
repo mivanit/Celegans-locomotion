@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import *
 import subprocess
 import copy
@@ -94,7 +95,10 @@ def _wrapper_extract(
 
 def wrap_multi_extract(
 		func_extract : ExtractorFunc,
-		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
+		calc_mean : Callable[
+			[Dict[Path,float]], 
+			float
+		] = lambda x : min(x.values()),
 	) -> MultiExtractorFunc:
 
 	def _func_extract_MULTI(
@@ -105,18 +109,18 @@ def wrap_multi_extract(
 
 		# TODO: ret_nan is not actually doing the correct thing here, although its probably unimportant. current implementation does not allow for just one of several processes failing
 
-		lst_extracted : List[float] = list()
+		extracted : Dict[Path,float] = dict()
 
 		for p in os.listdir(datadir):
 			p_joined : Path = joinPath(datadir,p)
 			if os.path.isdir(p_joined):
-				lst_extracted.append(func_extract(
+				extracted[p] = func_extract(
 					datadir = p_joined,
 					params = params,
 					ret_nan = ret_nan,
-				))
+				)
 
-		return calc_mean(lst_extracted)
+		return calc_mean(extracted)
 
 	# add metadata
 	_func_extract_MULTI.__name__ = func_extract.__name__
@@ -249,3 +253,48 @@ def extract_df_row(
 	) -> dict:
 	# TODO: implement extracting more data, for parameter sweeps
 	raise NotImplementedError('please implement me :(')
+
+
+def calcmean_symmetric(data : Dict[str,float]) -> float:
+	"""gives mean for min out of each pair of angles
+	
+	VERY FRAGILE!!!"""
+	
+	# REVIEW: very fragile
+	# TODO: make less fragile
+	# UGLY: very fragile
+
+
+	# get the angles and match with pairs
+	
+	per_angle_lsts : DefaultDict[str, List[float]] = defaultdict(list)
+	
+	for k,v in data.items():
+		# extract data from filename
+		# TODO: use params json instead?
+		k_dict : Dict[str,str] = dict_from_dirname(k, func_cast = str)
+
+		# take absolute value
+		angle : str = k_dict['angle'].strip('- ')
+
+		per_angle_lsts[angle].append(v)
+
+	# TODO: assert 2 elements in each list
+	# TODO: assert all angles present
+	# TODO: handle angle keys better?
+
+	# min of each pair, then average
+	per_angle_min : Dict[str,float] = {
+		k : min(lst_v)
+		for k,lst_v in per_angle_lsts.items()
+	}
+
+	return sum(per_angle_min.values()) / len(per_angle_min.values())
+
+
+
+
+
+
+
+

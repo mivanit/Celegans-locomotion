@@ -206,11 +206,13 @@ def dict_to_filename(
 		data : Dict[str,float], 
 		key_order : Optional[List[str]] = None,
 		short_keys : Optional[int] = None,
+		delim_pair : str = '_',
+		delim_items : str = ',',
 	) -> str:
 	"""convert a dictionary to a filename
 	
 	format:
-	`key=value_otherkey=otherval_morekey=-0.1`
+	`key_value,otherkey_otherval,morekey_-0.1`
 	dont do this with long dicts, and dont use unsafe keys!
 	if `short_keys` is true, trims each key to that many chars
 	
@@ -238,9 +240,32 @@ def dict_to_filename(
 		# shorten the keys by splitting by dot, 
 		# and taking the first `short_keys` chars of the last bit
 		k_short : str = k.split('.')[-1][:short_keys]
-		output.append(f'{k_short}_{data[k_short]:.3}')
+		output.append(f'{k_short}{delim_pair}{data[k_short]:.3}')
 	
-	return '_'.join(output)
+	return delim_items.join(output)
+
+def dict_from_dirname(
+		name : str, 
+		func_cast : Callable[[str], Any] = float,
+		delim_pair : str = '_',
+		delim_items : str = ',',
+	) -> Dict[str,Any]:
+	"""	this is an ugly ugly hack, dont use it
+	
+	doesnt handle file extensions (among other things)
+	"""
+
+	lst_items : List[str] = name.strip(' /\\').split(delim_items)
+	
+	output : Dict[str,Any] = dict()
+
+	for x in lst_items:
+		x.split(delim_pair)
+		output[x[0]] = func_cast(x[1])
+
+	return output
+		
+
 
 def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
 	""""hashes" a dict in a non-recoverable way
