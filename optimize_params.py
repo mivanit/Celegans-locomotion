@@ -8,11 +8,17 @@
 
 from typing import *
 
-from pyutil.genetic_utils import run_genetic_algorithm
+from pyutil.genetic_utils import (
+	run_genetic_algorithm,
+	continue_genetic_algorithm,
+)
 
 if __name__ == '__main__':
 	import fire # type: ignore
-	fire.Fire(run_genetic_algorithm)
+	fire.Fire({
+		'run' : run_genetic_algorithm,
+		'continue' : continue_genetic_algorithm,
+	})
 
 
 

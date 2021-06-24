@@ -1,9 +1,11 @@
+from genericpath import isdir
 from typing import *
 import subprocess
 import copy
 import os
 from math import dist,isnan
 import random
+import glob
 import json
 
 import numpy as np # type: ignore
@@ -705,8 +707,60 @@ def compute_gen_sizes(
 """
 
 
-def load_population():
-	raise NotImplementedError()
+def load_population(
+		rootdir : Path,
+		modkeys : List[ModParam],
+		modkeys_striponly : List[ModParam] = [],
+		params_ref : Optional[ParamsDict] = None,
+	) -> Population:
+
+	# get all the individuals
+	pathlst_indiv : List[Path] = [ 
+		joinPath(rootdir,p)
+		for p in os.listdir(rootdir)
+		if (
+			os.path.isdir(joinPath(rootdir,p))
+			and p.startswith('h')
+		)
+	]
+
+	# from each dir, arbitrarily pick the first params json file
+	pathlst_params : List[Path] = [
+		next(glob.iglob(joinPath(p,'**/params.json')))
+		for p in pathlst_indiv
+	]
+
+	# load all the params files
+	lst_paramdict : List[ParamsDict] = [
+		load_params(p)
+		for p in pathlst_params
+	]
+
+	# extract 
+	lst_params_stripped : List[ParamsDict] = list()
+	pop : Population = list()
+	for p in lst_paramdict:
+		p_strip,mod = extract_mods_from_params(
+			params = p,
+			modkeys = modkeys,
+			modkeys_striponly = modkeys_striponly,
+			default_val = float('nan'),
+		)
+
+		lst_params_stripped.append(p_strip)
+		pop.append(mod)
+
+	# TODO: check that params jsons match. this also means that strip-only keys dont mean anything at the moment
+	if params_ref is not None:
+		raise NotImplementedError('checking that params match is not yet implemented')
+	# for p in lst_params_stripped:
+	# 	for k,v in p.items():
+	# 		if not isnan(v):
+				
+	return pop
+
+
+
 
 
 """
@@ -831,6 +885,7 @@ def continue_genetic_algorithm(
 		func_extract : ExtractorFunc = extract_food_dist_inv,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
+		verbose : bool = False,
 	) -> PopulationFitness:
 
 	if not os.path.isdir(rootdir):
@@ -862,7 +917,15 @@ def continue_genetic_algorithm(
 		)
 	])
 
-	pop : PopulationFitness = load_population()
+	pop : PopulationFitness = [
+		(p,float('nan'))
+		for p in load_population(
+			rootdir = last_gen_path,
+			modkeys = list(dists.keys()),
+			# modkeys_striponly = list(*list(m.keys()) for m in eval_runs)
+			# params_ref = 
+		)
+	]
 
 	# compute population sizes
 	pop_sizes : List[Tuple[int, int]] = compute_gen_sizes(
@@ -881,10 +944,11 @@ def continue_genetic_algorithm(
 	prntmsg(f'running generations')
 	# run each generation
 	for i,counts in enumerate(pop_sizes):
+		n_gen : int = i + last_gen
 		count_cull,count_new = counts
-		prntmsg(f'running generation {i+last_gen} / {gen_count+last_gen}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
+		prntmsg(f'running generation {n_gen} / {gen_count+last_gen}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
 		
-		generation_dir : Path = joinPath(rootdir, f"g{i}/")
+		generation_dir : Path = joinPath(rootdir, f"g{n_gen}/")
 		mkdir(generation_dir)
 
 		pop = run_generation(
@@ -901,7 +965,8 @@ def continue_genetic_algorithm(
 			func_extract = func_extract,
 			gene_combine = gene_combine,
 			gene_combine_kwargs = gene_combine_kwargs,
-			n_gen = i,
+			n_gen = n_gen,
+			verbose = verbose,
 		)
 
 	# return final generation
@@ -910,4 +975,4 @@ def continue_genetic_algorithm(
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
 	
-	return pop
+	return pop[0]
