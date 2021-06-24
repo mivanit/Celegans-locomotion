@@ -116,11 +116,14 @@ def load_params(path : Path) -> ParamsDict:
 	return data
 
 
-# TODO: delete this function
+
+
 def modprmdict_to_filename(
 		data : ModParamsDict,
 		key_order : Optional[List[ModParam]] = None,
 		short_keys : Optional[int] = None,
+		delim_pair : str = '_',
+		delim_items : str = ',',
 	):
 	
 	if key_order is None:
@@ -138,9 +141,9 @@ def modprmdict_to_filename(
 		elif k.mod_type == ModTypes.params.value:
 			k_write = k.path.split('.')[-1][:short_keys]
 		
-		output.append(f'{k_write}={data[k]:.3}')
+		output.append(f'{k_write}{delim_pair}{data[k]:.3}')
 	
-	return '_'.join(output)
+	return delim_items.join(output)
 
 # ConnKey = NamedTuple(
 # 	'ConnKey',

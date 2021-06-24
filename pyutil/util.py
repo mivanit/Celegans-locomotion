@@ -11,6 +11,8 @@ from functools import wraps as functools_wraps
 
 import json
 
+from pydbg import dbg # type: ignore
+
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 
@@ -254,14 +256,13 @@ def dict_from_dirname(
 	
 	doesnt handle file extensions (among other things)
 	"""
-
 	lst_items : List[str] = name.strip(' /\\').split(delim_items)
 	
 	output : Dict[str,Any] = dict()
 
 	for x in lst_items:
-		x.split(delim_pair)
-		output[x[0]] = func_cast(x[1])
+		x_spl : List[str] = x.split(delim_pair)
+		output[x_spl[0]] = func_cast(x_spl[1])
 
 	return output
 		
