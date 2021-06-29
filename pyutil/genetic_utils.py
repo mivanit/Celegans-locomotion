@@ -787,7 +787,7 @@ def run_genetic_algorithm(
 		factor_cull : float = 0.5,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v15.json"),
+		path_params_base : Path = "input/chemo_v15.json",
 		mut_sigma : float = 0.05,
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
@@ -797,6 +797,9 @@ def run_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
 	) -> None:
+
+	params_base : ParamsDict = load_params(path_params_base)
+	params_base["simulation"]["src-params"] = path_params_base
 
 	mkdir(rootdir)
 	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:

@@ -14,7 +14,10 @@ import json
 from pydbg import dbg # type: ignore
 
 import numpy as np # type: ignore
+import numpy.lib.recfunctions as recfunctions
 from nptyping import NDArray # type: ignore
+
+# import numba
 
 """
  #####    ##   ##### #    #
@@ -394,7 +397,6 @@ def genCmd_singlerun(
 ##     ## ######## ##     ## ########
 """
 
-
 def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 	"""reads given tsv file into a numpy array
 	
@@ -417,23 +419,16 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 
 	# compute dims
 	n_tstep = data_raw.shape[0]
-	n_seg = int(data_raw.shape[1] / 3)
+	n_seg = data_raw.shape[1] // 3
 
-	# allocate new array
-	# data : NDArray[(n_tstep, n_seg), CoordsRotArr] = np.full(
-	data : NDArray[(n_tstep, n_seg)] = np.full(
-		shape = (n_tstep, n_seg),
-		fill_value = np.nan,
+	# reshape to allow casting to structured array
+	data_raw = np.reshape(data_raw, (n_tstep, n_seg, len(CoordsRotArr)))
+
+	return recfunctions.unstructured_to_structured(
+		data_raw,
 		dtype = CoordsRotArr,
 	)
 
-	# organize by x pos, y pos, and rotation (phi)
-	for s in range(n_seg):
-		data[:, s]['x'] = data_raw[:, s*3]
-		data[:, s]['y'] = data_raw[:, s*3 + 1]
-		data[:, s]['phi'] = data_raw[:, s*3 + 2]
-
-	return data
 
 
 def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:

@@ -155,11 +155,11 @@ int main (int argc, const char* argv[])
     // set output dir
     overwrite_json_from_cmd<string>(simulation_params, cmd, "output");
 
-    // copy configs
-    copy_config_files(simulation_params["output"].get<std::string>(), params, collObjs);
-
     // REVIEW: is this required? not sure
     params["simulation"] = simulation_params;
+
+    // copy configs
+    copy_config_files(simulation_params["output"].get<std::string>(), params, collObjs);
 
     // ========================================
     // setting up simulation

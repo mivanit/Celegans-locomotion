@@ -24,57 +24,72 @@ PROFILE ?= 0
 ifeq ($(PROFILE), 1)
     CFLAGS = -pg
 else
-    CFLAGS = -O3
+    CFLAGS = -Ofast
 endif
 
 # compiler flags
-CC = G++
+CXX = G++
 ## GCCFLAGS = -pthread -c -O3 -flto
 ## GCCFLAGS = -std=c++11 -c -O3 -flto
+## GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
 # -flto is something to do with linking
-GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
+GCCFLAGS = -std=c++17 $(CFLAGS)
+MODULEFLAGS = -c -flto
 
 # building executables
-.PHONY: singlerun
-singlerun: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
-	@echo "# [DEFAULT] Compiling executable for single worm sim"
-	$(CC) $(CFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+.PHONY: sim
+sim: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+	@echo "# [DEFAULT] Compiling executable for worm sim"
+	$(CXX) $(GCCFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+
+# TODO: read this https://stackoverflow.com/questions/1079832/how-can-i-configure-my-makefile-for-debug-and-release-builds
+# TODO: implement output shortening flags
+
+# .PHONY: sim_shortout
+# sim_shortout: GCCFLAGS += -D_SHORT_OUT
+# 	@echo "# compiles sim with shortened output (head activations, head pos, no curve)"
+# sim_shortout: sim
+
+# .PHONY: sim_minout
+# sim_minout: GCCFLAGS += -D_MIN_OUT
+# 	@echo "# compiles sim with shortened output (no activations, final head pos, no curve)"
+# sim_minout: sim
 
 .PHONY: evolve
 evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "# [DEPRECATED] Compiling genetic alg optimization"
 	@echo "this code is very possibly broken, and will probably be replaced by a python script"
-	$(CC) $(CFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
+	$(CXX) $(GCCFLAGS) -o evolve.exe evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o $(FLAG_PTHREAD)
 
 .PHONY: demorun
 demorun: demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 	@echo "# [DEPRECATED] Compiling demo run"
 	@echo "this is deprecated! dont use it!"
-	$(CC) $(CFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
+	$(CXX) $(GCCFLAGS) -o demorun.exe demorun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
 
 # building modules
 random.o: modules/random.cpp modules/random.h modules/VectorMatrix.h
-	$(CC) $(GCCFLAGS) modules/random.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/random.cpp
 TSearch.o: modules/TSearch.cpp modules/TSearch.h
-	$(CC) $(GCCFLAGS) modules/TSearch.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/TSearch.cpp
 Worm.o: modules/Worm.cpp modules/Worm.h
-	$(CC) $(GCCFLAGS) modules/Worm.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/Worm.cpp
 Collide.o: modules/Collide.cpp modules/Collide.h
-	$(CC) $(GCCFLAGS) modules/Collide.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/Collide.cpp
 WormBody.o: modules/WormBody.cpp modules/WormBody.h modules/Collide.h
-	$(CC) $(GCCFLAGS) modules/WormBody.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/WormBody.cpp
 NervousSystem.o: modules/NervousSystem.cpp modules/NervousSystem.h modules/VectorMatrix.h modules/random.h
-	$(CC) $(GCCFLAGS) modules/NervousSystem.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/NervousSystem.cpp
 StretchReceptor.o: modules/StretchReceptor.cpp modules/StretchReceptor.h
-	$(CC) $(GCCFLAGS) modules/StretchReceptor.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/StretchReceptor.cpp
 Muscles.o: modules/Muscles.cpp modules/Muscles.h modules/VectorMatrix.h modules/random.h
-	$(CC) $(GCCFLAGS) modules/Muscles.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) modules/Muscles.cpp
 evolve.o: evolve.cpp modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CC) $(GCCFLAGS) evolve.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) evolve.cpp
 demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CC) $(GCCFLAGS) demorun.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) demorun.cpp
 singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CC) $(GCCFLAGS) singlerun.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) singlerun.cpp
 
 # cleaning up
 .PHONY: clean
@@ -87,9 +102,9 @@ cleanob:
 	@echo "# cleaning up object files only"
 	-rm *.o
 
-.PHONY: clean_nogch
-clean_nogch:
-	@echo "# cleaning up compiled files, but leaving precompiled package headers"
+.PHONY: cleangh
+cleangh:
+	@echo "# cleaning up compiled files, but leaving .gch precompiled package headers"
 	-rm *.o *.exe
 
 
@@ -134,7 +149,7 @@ help:
 .PHONY: precomp
 precomp:
 	@echo "# Precompiling .gch files"
-	$(foreach var,$(PACKAGES_HEADERS),$(CC) $(var);)
+	$(foreach var,$(PACKAGES_HEADERS),$(CXX) $(var);)
 
 
 

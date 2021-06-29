@@ -1,9 +1,11 @@
+# 2021-06-28 22:25
+look into this for writing data
+https://forum.hdfgroup.org/t/write-simulation-data-line-by-line/4657/2
+
 # 2021-06-24 02:00
 https://www.desmos.com/calculator/3d3qkqzdmo
 
-try $$e^{-x}$$ as a loss func!!
-
-
+try $$e^{-x}$$ as a loss func
 
  
 # 2021-05-27 13:38
