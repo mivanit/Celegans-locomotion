@@ -5,6 +5,7 @@
 gmon.out
 prof.txt
 singlerun
+sim
 
 # data
 data/run/**

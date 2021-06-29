@@ -1,4 +1,4 @@
-"""runs `singlerun` with food on left, right, and no food"""
+"""runs `sim` with food on left, right, and no food"""
 
 import os
 from typing import *

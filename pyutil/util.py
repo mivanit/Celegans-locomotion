@@ -340,9 +340,9 @@ def genCmd_singlerun(
 		rand : Optional[bool] = None,
 		seed : Optional[int] = None,
 	) -> str:
-	"""gets a shell command string for launching singlerun
+	"""gets a shell command string for launching sim
 	
-	`./singlerun.exe <FLAGS>`
+	`./sim.exe <FLAGS>`
 	
 	### Parameters:
 	 - `params : Optional[Path]`   
@@ -376,7 +376,7 @@ def genCmd_singlerun(
 	"""
 
 	cmd : str = _command_assembler(**{
-		SCRIPTNAME_KEY : "./singlerun.exe",
+		SCRIPTNAME_KEY : "./sim.exe",
 		**locals(),
 	}) 
 

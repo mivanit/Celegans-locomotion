@@ -38,9 +38,9 @@ MODULEFLAGS = -c -flto
 
 # building executables
 .PHONY: sim
-sim: singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+sim: sim.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
 	@echo "# [DEFAULT] Compiling executable for worm sim"
-	$(CXX) $(GCCFLAGS) -o singlerun.exe singlerun.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
+	$(CXX) $(GCCFLAGS) -o sim.exe sim.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.o Collide.o
 
 # TODO: read this https://stackoverflow.com/questions/1079832/how-can-i-configure-my-makefile-for-debug-and-release-builds
 # TODO: implement output shortening flags
@@ -88,8 +88,8 @@ evolve.o: evolve.cpp modules/Worm.h modules/WormBody.h modules/StretchReceptor.h
 	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) evolve.cpp
 demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) demorun.cpp
-singlerun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) singlerun.cpp
+sim.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) sim.cpp
 
 # cleaning up
 .PHONY: clean
@@ -133,10 +133,10 @@ os:
 .PHONY: prof
 prof:
 	@echo "# running profiling"
-	@echo "# NOTE: it is expected that 'singlerun.exe' has been compiled with 'PROFILE=1'"
+	@echo "# NOTE: it is expected that 'sim.exe' has been compiled with 'PROFILE=1'"
 	@echo "#       and run at least once, generating 'gmon.out'"
 	@echo "# Writing analysis of 'gmon.out' file to 'prof.txt':"
-	gprof singlerun.exe gmon.out > prof.txt
+	gprof sim.exe gmon.out > prof.txt
 
 # listing targets, from stackoverflow
 # https://stackoverflow.com/questions/4219255/how-do-you-get-the-list-of-targets-in-a-makefile

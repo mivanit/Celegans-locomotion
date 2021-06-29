@@ -797,6 +797,57 @@ def run_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
 	) -> None:
+	"""runs a genetic optimization
+	
+	starts C++ processes
+	
+	### Parameters:
+	 - `rootdir : Path`   
+	   [description]
+	   (defaults to `"data/geno_sweep/"`)
+	 - `dists : ModParamsDists`   
+	   [description]
+	   (defaults to `DEFAULT_DISTS`)
+	 - `first_gen_size : int`   
+	   [description]
+	   (defaults to `500`)
+	 - `gen_count : int`   
+	   [description]
+	   (defaults to `20`)
+	 - `factor_cull : float`   
+	   [description]
+	   (defaults to `0.5`)
+	 - `factor_repro : float`   
+	   [description]
+	   (defaults to `2.0`)
+	 - `path_params_base : Path`   
+	   [description]
+	   (defaults to `"input/chemo_v15.json"`)
+	 - `mut_sigma : float`   
+	   [description]
+	   (defaults to `0.05`)
+	 - `mutprob : float`   
+	   [description]
+	   (defaults to `0.05`)
+	 - `eval_runs : List[ModParamsDict]`   
+	   [description]
+	   (defaults to `DEFAULT_EVALRUNS`)
+	 - `calc_mean : Callable[[List[float]], float]`   
+	   [description]
+	   (defaults to `lambdax:min(x)`)
+	 - `func_extract : ExtractorFunc`   
+	   [description]
+	   (defaults to `extract_food_dist_inv`)
+	 - `gene_combine : GenoCombineFunc`   
+	   [description]
+	   (defaults to `combine_geno_select`)
+	 - `gene_combine_kwargs : Dict[str,Any]`   
+	   [description]
+	   (defaults to `dict()`)
+	 - `verbose : bool`   
+	   [description]
+	   (defaults to `False`)
+	"""	
 
 	params_base : ParamsDict = load_params(path_params_base)
 	params_base["simulation"]["src-params"] = path_params_base

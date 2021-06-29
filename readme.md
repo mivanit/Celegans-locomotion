@@ -6,7 +6,7 @@ A tool for simulating both the electrophysiology and mechanical body of a _C. El
 Code heavily modified by Michael Ivanitskiy [@mivanit](https://github.com/mivanit)
 
 # Building
-Build with `make` (calls `make singlerun`)
+Build with `make` (calls `make sim`)
 
 - `make help` lists targets with descriptions
 - if you recompile the code a lot, run `make precomp` to precompile headers
@@ -16,7 +16,7 @@ Build with `make` (calls `make singlerun`)
 
 # Running
 ## Running executable directly
-`./singlerun.exe --help` will provide more info on running the program directly. The important parameters are:
+`./sim.exe --help` will provide more info on running the program directly. The important parameters are:
  - `--params` needs a json file that provides network topology and other parameters
  - `--coll` needs a `.tsv`-ish file with collision objects. an empty file also works
 
@@ -41,8 +41,8 @@ Scripts of the form `pyutil/plot_*.py` will let you plot the position of the wor
 build with `PROFILE=1`, run normally (a `gmon.out` file should be generated), and run analysis with `make prof` (simply calls gprof):
 
 ```bash
-make singlerun PROFILE=1
-./singlerun.exe [ARGS]
+make sim PROFILE=1
+./sim.exe [ARGS]
 make prof
 ```
 
