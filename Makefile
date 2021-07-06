@@ -109,10 +109,11 @@ cleangh:
 
 
 # building documentation
-.PHONY: doc
-doc:
+.PHONY: docs
+docs:
 	@echo "# [WIP] Generating documentation"
-	cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
+	pdoc pyutil/ -o ../docs/ --html --force
+# cldoc generate $(GCCFLAGS) -- $(COMMON_DOC_FLAGS)
 
 # python stuff
 .PHONY: mypy

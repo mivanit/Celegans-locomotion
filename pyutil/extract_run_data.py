@@ -145,7 +145,7 @@ def wrap_multi_extract(
 
 """
 
-def _extract_TEMPLATE(
+def extract_TEMPLATE(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,

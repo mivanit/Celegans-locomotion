@@ -4,8 +4,12 @@ from typing import *
 
 # import numpy as np # type: ignore
 
-if TYPE_CHECKING:
+print(__name__)
+
+if TYPE_CHECKING or (__name__ == 'pyutil.collision_object'):
 	from pyutil.util import Path
+elif (__name__ == 'Izq_locomotion.pyutil.collision_object'):
+	import Izq_locomotion.pyutil.Path
 else:
 	from util import Path
 

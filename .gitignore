@@ -17,6 +17,9 @@ data/collision_objs.tsv
 data/geno_sweep/
 data/selected_geno/**/*.dat
 
+# docs
+docs/**
+
 # ?? idk
 *.gch
 **/*.gch

@@ -50,15 +50,17 @@ A file called `prof.txt` with useful info should be generated. You can also look
 
 
 # Documentation
-**[ THIS DOESN'T WORK ]**
-
+documentation for the python code can be build automatically using [`pdoc`](https://pdoc3.github.io/pdoc/)
 to build, do
 
 ```bash
-make doc
+make docs
 ```
-requirements:
+
+Whenever I can get automatic generation of documentation for the C++ code to work, it will also be launched using `make docs`
+
+<!-- requirements:
 
  - make
  - [cldoc](https://jessevdk.github.io/cldoc)
- - [clang](https://clang.llvm.org), version 3.8+
+ - [clang](https://clang.llvm.org), version 3.8+ -->

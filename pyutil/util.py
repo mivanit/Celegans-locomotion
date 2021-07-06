@@ -422,7 +422,7 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 	n_seg = data_raw.shape[1] // 3
 
 	# reshape to allow casting to structured array
-	data_raw = np.reshape(data_raw, (n_tstep, n_seg, len(CoordsRotArr)))
+	data_raw = np.reshape(data_raw, (n_tstep, n_seg, len(CoordsRotArr))) # type: ignore
 
 	return recfunctions.unstructured_to_structured(
 		data_raw,
