@@ -1,9 +1,14 @@
+#ifndef H_FITNESSCALC
+#define H_FITNESSCALC
+
 #include <string>
 
+#include "../consts.h"
 #include "Worm.h"
 
 class FitnessCalc
 {
+public:
 
 // position measures
 double xt,yt;
@@ -14,6 +19,9 @@ double bodyorientation;
 double movementorientation;
 double anglediff;
 double distancetravelled;
+
+// temp vars
+double temp_fwd;
 
 // reference to the worm we care about
 Worm & w;
@@ -53,13 +61,13 @@ bool update()
 	anglediff = movementorientation - bodyorientation;  
 	
 	// Add to fitness only movement forward
-	temp = cos(anglediff) > 0.0 ? 1.0 : -1.0;           
-	distancetravelled += temp * sqrt(pow(xt-xtp,2)+pow(yt-ytp,2));
+	temp_fwd = cos(anglediff) > 0.0 ? 1.0 : -1.0;           
+	distancetravelled += temp_fwd * sqrt(pow(xt-xtp,2)+pow(yt-ytp,2));
 
 	return false;
 }
 
-string sprintf()
+string strprintf()
 {
 	char buffer [512];
 	sprintf(
@@ -70,8 +78,11 @@ string sprintf()
 		anglediff,
 		distancetravelled
 	);
+
+	return string(buffer);
 }
 
 };
 
 
+#endif

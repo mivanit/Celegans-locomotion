@@ -89,7 +89,7 @@ evolve.o: evolve.cpp modules/Worm.h modules/WormBody.h modules/StretchReceptor.h
 demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) demorun.cpp
 sim.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) singlerun.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) singlerun.cpp -o sim.o
 
 # cleaning up
 .PHONY: clean

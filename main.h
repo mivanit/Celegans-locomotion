@@ -34,6 +34,7 @@
 
 #ifdef _OUT_MIN
     #define OUT_ANY 1
+    
     #define _OUTW_POS_ANY
     #define _OUTW_POS_HEAD
 
@@ -104,7 +105,7 @@
 using namespace std;
 
 
-double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<CollisionObject> & collObjs, string output_dir)
+FitnessCalc EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<CollisionObject> & collObjs, string output_dir)
 {
 
     // open the files
@@ -187,7 +188,7 @@ double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<Col
         fcalc.update();
 
         // dump states to files
-        #ifdef OUTPUT
+        #ifdef _OUT_ANY
                 #ifdef _OUTW_CURVE
                     w.Curvature(curvature);
                     curvfile << curvature << endl;
@@ -230,8 +231,8 @@ double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<Col
     PRINT_DEBUG("\n\n    > fitnesses:\n")
     std::string fcalc_output = fcalc.strprintf();
     std::replace(fcalc_output.begin(), fcalc_output.end(), '\n', '\t');
-    PRINTF_DEBUG(fcalc_output.c_str())
+    PRINT_DEBUG(fcalc_output.c_str())
 
-    return fitness;
+    return fcalc;
 }
 

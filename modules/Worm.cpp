@@ -470,16 +470,23 @@ void Worm::DumpBodyState(ofstream &ofs, int skips)
 {
     #ifdef _OUTW_POS_ANY
     
-    #ifdef 
-    static int N_toprint = 
+    #ifdef _OUTW_POS_BODY
+        static int N_toprint = N_rods;
+    #else
+        #ifdef _OUTW_POS_BODY
+            static int N_toprint = 1;
+        #endif
+    #endif
+
     static int tt = skips;
 
-    if (++tt >= skips) {
+    if (++tt >= skips)
+    {
         tt = 0;
 
         ofs << t;
         // Body
-        for (int i = 1; i <= N_rods; i++)
+        for (int i = 1; i <= N_toprint; i++)
         {
             ofs <<  " " << b.X(i) << " " << b.Y(i) << " " << b.Phi(i);
         }
@@ -588,7 +595,7 @@ void Worm::DumpActState(ofstream &ofs, int skips)
 
 void Worm::DumpVoltage(ofstream &ofs, int skips)
 {
-    #ifdef _OUTW_ACT_ANY
+    #ifdef _OUTW_VOLT_ANY
         static int tt = skips;
 
         if (++tt >= skips) {

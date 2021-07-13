@@ -1,8 +1,3 @@
-#define PRINTTOFILE
-//#define SEED
-
-#define OUTPUT
-#define SPEEDOUTPUT
 #define COLLIDE
 
 #define ENABLE_CTOR_JSON 1
@@ -19,6 +14,7 @@
 #include "modules/packages/cxxopts.hpp"
 #include "modules/util.h"
 #include "modules/Collide.h"
+#include "modules/FitnessCalc.h"
 
 #include "main.h"
 
@@ -176,7 +172,7 @@ int main (int argc, const char* argv[])
     // run simulation
     // ========================================
     PRINT_DEBUG("> running evaluation:\n")
-    EvaluationFunction(
+    FitnessCalc fcalc = EvaluationFunction(
         wrm, 
         rs,
         params["simulation"]["angle"].get<double>(),

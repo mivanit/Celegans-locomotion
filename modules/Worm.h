@@ -6,6 +6,9 @@
 //  Copyright © 2015 Eduardo Izquierdo. All rights reserved.
 //
 
+#ifndef H_WORM
+#define H_WORM
+
 #include "VectorMatrix.h"
 #include "random.h"
 #include "WormBody.h"
@@ -93,3 +96,5 @@ public:
     double dorsalinput1, ventralinput1, dorsalinput2, ventralinput2;
     double headFreq, headDelay, headGain, headBias;
 };
+
+#endif
