@@ -16,6 +16,46 @@
 #define ENABLE_CTOR_PHENO 0
 #define ENABLE_CTOR_JSON 1
 
+// NOTE: no checking is done to make sure only one macro flag is passed
+#ifdef _OUT_NONE
+    #ifdef _OUT_SHORT
+    #error Both _OUT_SHORT and _OUT_MIN defined, please only pass one
+#else
+#ifdef _OUT_SHORT
+    #ifdef _OUT_MIN
+        #error Both _OUT_SHORT and _OUT_MIN defined, please only pass one
+    #else
+        #define _OUTW_POS_ANY
+        #define _OUTW_POS_HEAD
+
+        #define _OUTW_ACT_ANY
+        #define _OUTW_ACT_HEAD
+    #endif
+#else
+    #ifdef _OUT_MIN
+        #define _OUTW_POS_ANY
+        #define _OUTW_POS_HEAD
+    #else
+        // if none of the shortened output modes specified, do a full output
+        #define _OUT_FULL
+        
+        #define _OUTW_POS_ANY
+        #define _OUTW_POS_HEAD
+        #define _OUTW_POS_BODY
+        
+        #define _OUTW_ACT_ANY
+        #define _OUTW_ACT_VC
+        #define _OUTW_ACT_SR
+        #define _OUTW_ACT_MUSC
+
+        #define _OUTW_VOLT_ANY
+        #define _OUTW_VOLT_HEAD
+        #define _OUTW_VOLT_BODY
+        
+        #define _OUTW_CURVE
+    #endif
+#endif
+
 
 #if ENABLE_CTOR_GENO
     #include "modules/TSearch.h"
@@ -181,10 +221,18 @@ double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<Col
     {
         w.Step(STEPSIZE, 1);
         #ifdef OUTPUT
-                w.Curvature(curvature);
-                curvfile << curvature << endl;
-                w.DumpBodyState(bodyfile, skip);
-                w.DumpActState(actfile, skip);
+                #ifdef _OUTW_CURVE
+                    w.Curvature(curvature);
+                    curvfile << curvature << endl;
+                #endif
+
+                #ifdef _OUTW_POS_ANY
+                    w.DumpBodyState(bodyfile, skip);
+                #endif
+
+                #ifdef _OUTW_ACT_ANY
+                    w.DumpActState(actfile, skip);
+                #endif
         #endif
     }
 
@@ -223,11 +271,20 @@ double EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<Col
         temp = cos(anglediff) > 0.0 ? 1.0 : -1.0;           // Add to fitness only movement forward
         distancetravelled += temp * sqrt(pow(xt-xtp,2)+pow(yt-ytp,2));
 
+
         #ifdef OUTPUT
-                w.Curvature(curvature);
-                curvfile << curvature << endl;
-                w.DumpBodyState(bodyfile, skip);
-                w.DumpActState(actfile, skip);
+                #ifdef _OUTW_CURVE
+                    w.Curvature(curvature);
+                    curvfile << curvature << endl;
+                #endif
+
+                #ifdef _OUTW_POS_ANY
+                    w.DumpBodyState(bodyfile, skip);
+                #endif
+
+                #ifdef _OUTW_ACT_ANY
+                    w.DumpActState(actfile, skip);
+                #endif
         #endif
     }
     PRINT_DEBUG("\n\n  > finished time loop!\n")

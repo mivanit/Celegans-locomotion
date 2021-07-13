@@ -28,7 +28,7 @@ else
 endif
 
 # compiler flags
-CXX = G++
+CXX = g++
 ## GCCFLAGS = -pthread -c -O3 -flto
 ## GCCFLAGS = -std=c++11 -c -O3 -flto
 ## GCCFLAGS = -std=c++17 -c -flto $(CFLAGS)
@@ -45,15 +45,15 @@ sim: sim.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o random.
 # TODO: read this https://stackoverflow.com/questions/1079832/how-can-i-configure-my-makefile-for-debug-and-release-builds
 # TODO: implement output shortening flags
 
-# .PHONY: sim_shortout
-# sim_shortout: GCCFLAGS += -D_SHORT_OUT
-# 	@echo "# compiles sim with shortened output (head activations, head pos, no curve)"
-# sim_shortout: sim
+.PHONY: sim_Oshort
+sim_Oshort: GCCFLAGS += -D_OUT_SHORT
+sim_Oshort: sim
+	@echo "# compiles sim with shortened output (head activations, head pos, no curve)"
 
-# .PHONY: sim_minout
-# sim_minout: GCCFLAGS += -D_MIN_OUT
-# 	@echo "# compiles sim with shortened output (no activations, final head pos, no curve)"
-# sim_minout: sim
+.PHONY: sim_Omin
+sim_Omin: GCCFLAGS += -D_OUT_MIN
+sim_Omin: sim
+	@echo "# compiles sim with minimum output (no activations, head pos, no curve)"
 
 .PHONY: evolve
 evolve: os evolve.o Worm.o WormBody.o NervousSystem.o StretchReceptor.o Muscles.o TSearch.o random.o Collide.o
@@ -89,7 +89,7 @@ evolve.o: evolve.cpp modules/Worm.h modules/WormBody.h modules/StretchReceptor.h
 demorun.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
 	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) demorun.cpp
 sim.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscles.h modules/TSearch.h modules/Collide.h
-	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) sim.cpp
+	$(CXX) $(GCCFLAGS) $(MODULEFLAGS) singlerun.cpp
 
 # cleaning up
 .PHONY: clean

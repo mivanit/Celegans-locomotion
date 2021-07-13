@@ -961,7 +961,7 @@ def continue_genetic_algorithm(
 		verbose : bool = False,
 	) -> None:
 
-	params_base : ParamsDict = load_params(path_params_base),
+	params_base : ParamsDict = load_params(path_params_base)
 
 	if not os.path.isdir(rootdir):
 		FileNotFoundError(f'directory to continue run from does not exist: {rootdir}')
