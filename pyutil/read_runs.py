@@ -13,9 +13,6 @@ else:
 	from collision_object import read_collobjs_tsv
 
 
-
-
-
 RunComponent = Literal[
 	'params',
 	'collobjs',
@@ -54,7 +51,71 @@ Enable_RunComponents_min : List[RunComponent] = [
 	'fitness',
 ]
 
+BodyData = Annotated[
+	NDArray[(int, int), CoordsRotArr],
+	ShapeAnnotation('timestep', 'segment'),
+]
 
+def read_body_data(filename : Path) -> BodyData:
+	"""reads given tsv file into a numpy array
+	
+	array is a 2-D structured array of type `CoordsRotArr`
+	with `'x', 'y', 'phi'` fields for each segment
+	so essentially 3-D, where first index is timestep, second is segment, and third/field is x/y/phi
+	
+	### Parameters:
+	- `filename : Path`   
+	filename to read
+	
+	### Returns:
+	- `BodyData` 
+	"""
+	# read in
+	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+
+	# trim first variable (time)
+	data_raw = data_raw[:,1:]
+
+	# compute dims
+	n_tstep = data_raw.shape[0]
+	n_seg = data_raw.shape[1] // 3
+
+	# reshape to allow casting to structured array
+	data_raw = np.reshape(data_raw, (n_tstep, n_seg, len(CoordsRotArr))) # type: ignore
+
+	return recfunctions.unstructured_to_structured(
+		data_raw,
+		dtype = CoordsRotArr,
+	)
+
+	
+
+
+READ_ACT_FILTERS : Dict[str, Callable[[str], bool]] = {
+	'all' : lambda x: True,
+	'head' : lambda x: (not ':' in x) or (x == 't'),
+	'nrn' : lambda x: (not '.' in x) or (x == 't'),
+	'body' : lambda x: (':' in x) or (x == 't'),
+}
+
+def read_act_data(
+		filename : Path, 
+		nrn_filter : Optional[Callable[[str], bool]] = None,
+	) -> NDArray:
+	
+	# read the data
+	data_df : pd.DataFrame = pd.read_csv(filename, sep = ' ')
+	
+	if nrn_filter is not None:
+		# if filter is given, filter the columns
+		cols_keep : List[str] = list(filter(
+			nrn_filter,
+			data_df.columns.values.tolist()
+		))
+		data_df = data_df[cols_keep]
+	
+	# convert to numpy array
+	return data_df.to_records(index=False)
 
 def load_old_txt_extracted(path: str) -> Dict[str, float]:
 	# try to get the name of extracting function from the comment line
