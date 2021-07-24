@@ -1,3 +1,21 @@
+# 2021-07-24 17:04
+## params writing
+ - [ ] save genetic run info to `params.json` when generating:
+   - [ ] ModParams
+   - [ ] genetic run id
+   - [ ] generation id
+   - [ ] individual id
+   - [ ] eval runs params
+## reading existing runs
+ - [ ] move stuff from `util` and `plot_act` into `read_runs`
+ - [ ] name `extract_run_data` something more meaningful
+ - [ ] save into json/msgpack
+ - [ ] figure out how to deal nicely with mutliple runs per eval?
+
+
+
+
+
 # 2021-06-28 22:25
 look into this for writing data
 https://forum.hdfgroup.org/t/write-simulation-data-line-by-line/4657/2

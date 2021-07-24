@@ -2,7 +2,8 @@ import sys
 from enum import Enum
 from typing import *
 
-# import numpy as np # type: ignore
+import numpy as np # type: ignore
+from nptyping import NDArray
 
 print(__name__)
 
@@ -131,6 +132,12 @@ class CollisionObject(object):
 		]
 		return delim.join(output)
 
+	def serialize_lst(self) -> List[Any]:
+		output = [self.coll_type.name] + [
+			self.data[a]
+			for a in self.lst_attrs[1:]
+		]
+		return output
 
 	def set_force(self, mag : float = 1.0):
 		if self.coll_type == CollisionType.Box_Ax:
@@ -327,3 +334,39 @@ def read_collobjs_tsv(filename : Path = "../data/collision_objs.tsv") -> List[Co
 			output.append(CollisionObject.deserialize_tsv(line))
 	
 	return output
+
+
+"""
+##       ########  ######      ###     ######  ##    ##
+##       ##       ##    ##    ## ##   ##    ##  ##  ##
+##       ##       ##         ##   ##  ##         ####
+##       ######   ##   #### ##     ## ##          ##
+##       ##       ##    ##  ######### ##          ##
+##       ##       ##    ##  ##     ## ##    ##    ##
+######## ########  ######   ##     ##  ######     ##
+""" 
+
+
+def read_legacy_collobjs(objs_file : str) -> Tuple[NDArray,NDArray]:
+	"""reads an old blocks/vecs style collider file
+	
+	### Parameters:
+	 - `objs_file : str`   
+	
+	### Returns:
+	 - `Tuple[NDArray,NDArray]` 
+	"""
+	blocks : list = []
+	vecs : list = []
+	
+	with open(objs_file, 'r') as fin:
+		for row in fin:
+			row_lst : List[float] = [
+				float(x) 
+				for x in row.strip().split()
+			]
+
+			blocks.append([ row_lst[0:2], row_lst[2:4] ])
+			vecs.append(row_lst[4:])
+
+	return (np.array(blocks), np.array(vecs))

@@ -17,6 +17,8 @@ import numpy as np # type: ignore
 import numpy.lib.recfunctions as recfunctions
 from nptyping import NDArray # type: ignore
 
+import pandas as pd # type: ignore
+
 # import numba
 
 """
@@ -41,6 +43,10 @@ def joinPath(*args) -> Path:
 
 def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
 	return unixPath(p).strip('/').split('/')[i_from_last]
+
+def read_file(path : Path) -> str:
+	with open(path, 'r') as f:
+		return f.read()
 
 # def joinPath(*args):
 # 	output : Path = '/'.join(args).replace("\\", "/")
@@ -83,6 +89,8 @@ class GeneRunID(NamedTuple):
  #    # # #    # #    #
  #    # #  ####   ####
 """
+
+ShapeAnnotation = NewType("ShapeAnnotation", Tuple[str,...])
 
 CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
 CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
@@ -383,10 +391,6 @@ def genCmd_singlerun(
 	return cmd
 	# return cmd + f' > {output}log.txt'
 
-
-
-
-
 """
 ########  ########    ###    ########
 ##     ## ##         ## ##   ##     ##
@@ -397,7 +401,12 @@ def genCmd_singlerun(
 ##     ## ######## ##     ## ########
 """
 
-def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
+BodyData = Annotated[
+	NDArray[(int, int), CoordsRotArr],
+	ShapeAnnotation('timestep', 'segment'),
+]
+
+def read_body_data(filename : Path) -> BodyData:
 	"""reads given tsv file into a numpy array
 	
 	array is a 2-D structured array of type `CoordsRotArr`
@@ -409,7 +418,7 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 	filename to read
 	
 	### Returns:
-	- `NDArray[Any, CoordsRotArr]` 
+	- `BodyData` 
 	"""
 	# read in
 	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
@@ -430,27 +439,7 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 	)
 
 
-
-def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:
-	"""reads an old blocks/vecs style collider file
+def read_act_data(filename : Path) -> NDArray:
+	data_raw = pd.read_csv(filename, sep = ' ').to_records(index=False)
 	
-	### Parameters:
-	 - `objs_file : str`   
-	
-	### Returns:
-	 - `Tuple[NDArray,NDArray]` 
-	"""
-	blocks : list = []
-	vecs : list = []
-	
-	with open(objs_file, 'r') as fin:
-		for row in fin:
-			row_lst : List[float] = [
-				float(x) 
-				for x in row.strip().split()
-			]
 
-			blocks.append([ row_lst[0:2], row_lst[2:4] ])
-			vecs.append(row_lst[4:])
-
-	return (np.array(blocks), np.array(vecs))
