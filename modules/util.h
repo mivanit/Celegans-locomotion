@@ -11,9 +11,9 @@
 
 #ifdef UTIL_H_DEBUG
 	#define PRINT_DEBUG(content) \
-		fprintf(stderr, content);
+		fprintf(stdout, content);
 	#define PRINTF_DEBUG(content, ...) \
-		fprintf(stderr, content, __VA_ARGS__);
+		fprintf(stdout, content, __VA_ARGS__);
 #else
 	#define PRINT_DEBUG(content)
 	#define PRINTF_DEBUG(content, ...)

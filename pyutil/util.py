@@ -11,8 +11,15 @@ from functools import wraps as functools_wraps
 
 import json
 
+from pydbg import dbg # type: ignore
+
 import numpy as np # type: ignore
+import numpy.lib.recfunctions as recfunctions
 from nptyping import NDArray # type: ignore
+
+import pandas as pd # type: ignore
+
+# import numba
 
 """
  #####    ##   ##### #    #
@@ -36,6 +43,10 @@ def joinPath(*args) -> Path:
 
 def get_last_dir_name(p : Path, i_from_last : int = -1) -> Path:
 	return unixPath(p).strip('/').split('/')[i_from_last]
+
+def read_file(path : Path) -> str:
+	with open(path, 'r') as f:
+		return f.read()
 
 # def joinPath(*args):
 # 	output : Path = '/'.join(args).replace("\\", "/")
@@ -78,6 +89,8 @@ class GeneRunID(NamedTuple):
  #    # # #    # #    #
  #    # #  ####   ####
 """
+
+ShapeAnnotation = NewType("ShapeAnnotation", Tuple[str,...])
 
 CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
 CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
@@ -206,11 +219,13 @@ def dict_to_filename(
 		data : Dict[str,float], 
 		key_order : Optional[List[str]] = None,
 		short_keys : Optional[int] = None,
+		delim_pair : str = '_',
+		delim_items : str = ',',
 	) -> str:
 	"""convert a dictionary to a filename
 	
 	format:
-	`key=value_otherkey=otherval_morekey=-0.1`
+	`key_value,otherkey_otherval,morekey_-0.1`
 	dont do this with long dicts, and dont use unsafe keys!
 	if `short_keys` is true, trims each key to that many chars
 	
@@ -238,9 +253,31 @@ def dict_to_filename(
 		# shorten the keys by splitting by dot, 
 		# and taking the first `short_keys` chars of the last bit
 		k_short : str = k.split('.')[-1][:short_keys]
-		output.append(f'{k_short}_{data[k_short]:.3}')
+		output.append(f'{k_short}{delim_pair}{data[k_short]:.3}')
 	
-	return '_'.join(output)
+	return delim_items.join(output)
+
+def dict_from_dirname(
+		name : str, 
+		func_cast : Callable[[str], Any] = float,
+		delim_pair : str = '_',
+		delim_items : str = ',',
+	) -> Dict[str,Any]:
+	"""	this is an ugly ugly hack, dont use it
+	
+	doesnt handle file extensions (among other things)
+	"""
+	lst_items : List[str] = name.strip(' /\\').split(delim_items)
+	
+	output : Dict[str,Any] = dict()
+
+	for x in lst_items:
+		x_spl : List[str] = x.split(delim_pair)
+		output[x_spl[0]] = func_cast(x_spl[1])
+
+	return output
+		
+
 
 def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
 	""""hashes" a dict in a non-recoverable way
@@ -311,9 +348,9 @@ def genCmd_singlerun(
 		rand : Optional[bool] = None,
 		seed : Optional[int] = None,
 	) -> str:
-	"""gets a shell command string for launching singlerun
+	"""gets a shell command string for launching sim
 	
-	`./singlerun.exe <FLAGS>`
+	`./sim.exe <FLAGS>`
 	
 	### Parameters:
 	 - `params : Optional[Path]`   
@@ -347,16 +384,12 @@ def genCmd_singlerun(
 	"""
 
 	cmd : str = _command_assembler(**{
-		SCRIPTNAME_KEY : "./singlerun.exe",
+		SCRIPTNAME_KEY : "./sim.exe",
 		**locals(),
 	}) 
 
 	return cmd
 	# return cmd + f' > {output}log.txt'
-
-
-
-
 
 """
 ########  ########    ###    ########
@@ -368,8 +401,12 @@ def genCmd_singlerun(
 ##     ## ######## ##     ## ########
 """
 
+BodyData = Annotated[
+	NDArray[(int, int), CoordsRotArr],
+	ShapeAnnotation('timestep', 'segment'),
+]
 
-def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
+def read_body_data(filename : Path) -> BodyData:
 	"""reads given tsv file into a numpy array
 	
 	array is a 2-D structured array of type `CoordsRotArr`
@@ -381,7 +418,7 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 	filename to read
 	
 	### Returns:
-	- `NDArray[Any, CoordsRotArr]` 
+	- `BodyData` 
 	"""
 	# read in
 	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
@@ -391,45 +428,18 @@ def read_body_data(filename : Path) -> NDArray[(Any,Any), CoordsRotArr]:
 
 	# compute dims
 	n_tstep = data_raw.shape[0]
-	n_seg = int(data_raw.shape[1] / 3)
+	n_seg = data_raw.shape[1] // 3
 
-	# allocate new array
-	# data : NDArray[(n_tstep, n_seg), CoordsRotArr] = np.full(
-	data : NDArray[(n_tstep, n_seg)] = np.full(
-		shape = (n_tstep, n_seg),
-		fill_value = np.nan,
+	# reshape to allow casting to structured array
+	data_raw = np.reshape(data_raw, (n_tstep, n_seg, len(CoordsRotArr))) # type: ignore
+
+	return recfunctions.unstructured_to_structured(
+		data_raw,
 		dtype = CoordsRotArr,
 	)
 
-	# organize by x pos, y pos, and rotation (phi)
-	for s in range(n_seg):
-		data[:, s]['x'] = data_raw[:, s*3]
-		data[:, s]['y'] = data_raw[:, s*3 + 1]
-		data[:, s]['phi'] = data_raw[:, s*3 + 2]
 
-	return data
-
-
-def read_coll_objs_file(objs_file : str) -> Tuple[NDArray,NDArray]:
-	"""reads an old blocks/vecs style collider file
+def read_act_data(filename : Path) -> NDArray:
+	data_raw = pd.read_csv(filename, sep = ' ').to_records(index=False)
 	
-	### Parameters:
-	 - `objs_file : str`   
-	
-	### Returns:
-	 - `Tuple[NDArray,NDArray]` 
-	"""
-	blocks : list = []
-	vecs : list = []
-	
-	with open(objs_file, 'r') as fin:
-		for row in fin:
-			row_lst : List[float] = [
-				float(x) 
-				for x in row.strip().split()
-			]
 
-			blocks.append([ row_lst[0:2], row_lst[2:4] ])
-			vecs.append(row_lst[4:])
-
-	return (np.array(blocks), np.array(vecs))

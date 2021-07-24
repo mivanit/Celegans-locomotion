@@ -20,9 +20,13 @@ from pyutil.geno_distr import DEFAULT_DISTS,DEFAULT_EVALRUNS
 
 Process = Any
 Population = List[ModParamsDict]
+"""List of parameter dicts (genotypes)"""
 PopulationFitness = List[
 	Tuple[ModParamsDict, float]
 ]
+"""Maps parameter dicts to fitness"""
+
+
 
 """
 ######## ##     ##    ###    ##
@@ -169,6 +173,7 @@ GenoCombineFunc = Callable
 # 	[ModParamsDict, ModParamsDict],
 # 	ModParamsDict,
 # ]
+"""Typing for a function that combines geneotypes. needs review."""
 
 
 """
@@ -385,12 +390,12 @@ def generate_geno(
 
 """
 
- ###### #    #   ##   #
- #      #    #  #  #  #
- #####  #    # #    # #
- #      #    # ###### #
- #       #  #  #    # #
- ######   ##   #    # ######
+ ###### #    #   ##   #      #####   ####  #####
+ #      #    #  #  #  #      #    # #    # #    #
+ #####  #    # #    # #      #    # #    # #    #
+ #      #    # ###### #      #####  #    # #####
+ #       #  #  #    # #      #      #    # #
+ ######   ##   #    # ###### #       ####  #
 
 """
 
@@ -405,7 +410,10 @@ def eval_pop_fitness(
 	) -> PopulationFitness:
 
 	# wrap the extractor func for multiple runs
-	func_extract_multi : MultiExtractorFunc = wrap_multi_extract(func_extract)
+	func_extract_multi : MultiExtractorFunc = wrap_multi_extract(
+		func_extract = func_extract,
+		calc_mean = calcmean_symmetric,
+	)
 
 	# a mapping of parameters to fitness
 	output_fitness : PopulationFitness = list()
@@ -773,6 +781,8 @@ def load_population(
 ##     ##  #######  ##    ##
 """
 
+
+# UGLY: this function should just call the continuation function after initialization
 def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = "data/geno_sweep/",
@@ -782,7 +792,7 @@ def run_genetic_algorithm(
 		factor_cull : float = 0.5,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v15.json"),
+		path_params_base : Path = "input/chemo_v15.json",
 		mut_sigma : float = 0.05,
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
@@ -792,6 +802,68 @@ def run_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
 	) -> None:
+	"""runs a genetic optimization
+	
+	#### overview:
+	- generates initial population using `first_gen_size` and `dists`
+	- for each generation (using `run_generation`):
+	  - runs simulations using C++ code `./sim.exe`, runs the sims given in `eval_runs`
+	  - evaluates according to parameter `func_extract` and `calc_mean`
+	  - culls population according to `factor_cull`
+	  - creates new generation according to `factor_repro`, `mut_sigma`, `mut_prob` and `gene_combine`
+	
+
+	
+	### Parameters:
+	 - `rootdir : Path`   
+	   stores sims and parameters in this directory (organized by generation)
+	   (defaults to `"data/geno_sweep/"`)
+	 - `dists : ModParamsDists`   
+	   initial distribution of the parameters
+	   (defaults to `DEFAULT_DISTS`)
+	 - `first_gen_size : int`   
+	   size of the first generated generations
+	   (defaults to `500`)
+	 - `gen_count : int`   
+	   maximum number of generations to run for (terminating earlier is fine)
+	   (defaults to `20`)
+	 - `factor_cull : float`   
+	   proportion of each population to preserve at each generation
+	   (defaults to `0.5`)
+	 - `factor_repro : float`   
+	   size to multiply the culled population by to get the size of the next generation.
+	   (defaults to `2.0`)
+	 - `path_params_base : Path`   
+	   [IMPORTANT] base set of parameters. Anything not overridden according to `dists` or `eval_runs` will match whats in this file
+	   (defaults to `"input/chemo_v15.json"`)
+	 - `mut_sigma : float`   
+	   mutation follows a gaussian with sigma determined by multiplying `mut_sigma` by the range of parameters in the population (or maybe in `dists`? need to check)
+	   (defaults to `0.05`)
+	 - `mutprob : float`   
+	   probability that a given parameter will be modified
+	   (defaults to `0.05`)
+	 - `eval_runs : List[ModParamsDict]`   
+	   a list of parameters sets used to evaluate each worm genotype (i.e. try different angles)
+	   (defaults to `DEFAULT_EVALRUNS`)
+	 - `calc_mean : Callable[[List[float]], float]`   
+	   for computing the fitness of the individual from multiple sims of the genotype. this is messy.
+	   (defaults to `lambdax:min(x)`)
+	 - `func_extract : ExtractorFunc`   
+	   function to extract fitness from the output directory and parameters. see `_extract_TEMPLATE` in `pyutil.extract_run_data`
+	   (defaults to `extract_food_dist_inv`)
+	 - `gene_combine : GenoCombineFunc`   
+	   function to combine two individuals into a single individual
+	   (defaults to `combine_geno_select`)
+	 - `gene_combine_kwargs : Dict[str,Any]`   
+	   kwargs to pass to `gene_combine`
+	   (defaults to `dict()`)
+	 - `verbose : bool`   
+	   verbose output printing (hashes and fitnesses for every individual)
+	   (defaults to `False`)
+	"""	
+
+	params_base : ParamsDict = load_params(path_params_base)
+	params_base["simulation"]["src-params"] = path_params_base
 
 	mkdir(rootdir)
 	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
@@ -800,6 +872,7 @@ def run_genetic_algorithm(
 		print('\n\n', file = info_fout)
 
 	# compute population sizes
+	# TODO: `pop_sizes` should be an input parameter
 	pop_sizes : List[Tuple[int, int]] = compute_gen_sizes(
 		first_gen_size = first_gen_size,
 		gen_count = gen_count,
@@ -877,7 +950,7 @@ def continue_genetic_algorithm(
 		factor_cull : float = 0.5,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		params_base : ParamsDict = load_params("input/chemo_v16.json"),
+		path_params_base : Path = "input/chemo_v15.json",
 		mut_sigma : float = 0.05,
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
@@ -887,6 +960,8 @@ def continue_genetic_algorithm(
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
 	) -> None:
+
+	params_base : ParamsDict = load_params(path_params_base)
 
 	if not os.path.isdir(rootdir):
 		FileNotFoundError(f'directory to continue run from does not exist: {rootdir}')
@@ -944,7 +1019,7 @@ def continue_genetic_algorithm(
 	prntmsg(f'running generations')
 	# run each generation
 	for i,counts in enumerate(pop_sizes):
-		n_gen : int = i + last_gen
+		n_gen : int = i + last_gen + 1
 		count_cull,count_new = counts
 		prntmsg(f'running generation {n_gen} / {gen_count+last_gen}, with population size {len(pop)} -> {count_cull} -> {count_new}', 1)
 		

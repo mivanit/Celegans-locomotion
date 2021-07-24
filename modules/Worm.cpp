@@ -468,109 +468,153 @@ double Worm::Orientation()
 
 void Worm::DumpBodyState(ofstream &ofs, int skips)
 {
+    #ifdef _OUTW_POS_ANY
+    
+    #ifdef _OUTW_POS_BODY
+        static int N_toprint = N_rods;
+    #else
+        #ifdef _OUTW_POS_BODY
+            static int N_toprint = 1;
+        #endif
+    #endif
+
     static int tt = skips;
 
-    if (++tt >= skips) {
+    if (++tt >= skips)
+    {
         tt = 0;
 
         ofs << t;
         // Body
-        for (int i = 1; i <= N_rods; i++)
+        for (int i = 1; i <= N_toprint; i++)
         {
             ofs <<  " " << b.X(i) << " " << b.Y(i) << " " << b.Phi(i);
         }
         ofs << "\n";
     }
+    #endif
 }
 
 void Worm::DumpActState_header(ofstream &ofs)
 {
+    #ifdef _OUTW_ACT_ANY
     ofs << "t";
-    //ofs << "\nSR: ";
-    // Stretch receptors
-    ofs <<  " " << "sr.HeadDorsalOutput" << " " << "sr.HeadVentralOutput";
-    for (int i = 1; i <= N_stretchrec; i++) {
-        ofs <<  " " 
-            << "sr.VCDorsalOutput:" << i << " " 
-            << "sr.VCVentralAOutput:" << i << " " 
-            << "sr.VCVentralPOutput:" << i;
-    }
-    // Head Neurons
-    //ofs << "\nH: ";
-    for (int i = 1; i <= h.size; i++) {
-        ofs <<  " " << h.namesMapInv[i];
-    }
-    // Ventral Cord Motor Neurons
-    //ofs << "\nV: ";
-    for (int i = 1; i <= N_units; i++) {
-        for (int j = 1; j <= N_neuronsperunit; j++) {
-            ofs <<  " " << n.namesMapInv[nn(j,i)] << ":" << i;
-        }
-    }
-    // Muscles
-    //ofs << "\nM: ";
-    for (int i = 1; i <= N_muscles; i++) {
-        ofs <<  " " << "m.DorsalMuscleOutput:" << i 
-            << " " << "m.VentralMuscleOutput:" << i;
-    }
-    ofs << "\n";
-}
 
-void Worm::DumpActState(ofstream &ofs, int skips)
-{
-    static int tt = skips;
-
-    if (++tt >= skips) {
-        tt = 0;
-
-        ofs << t;
-        //ofs << "\nSR: ";
-        // Stretch receptors
-        ofs <<  " " << sr.HeadDorsalOutput() << " " << sr.HeadVentralOutput();
-        for (int i = 1; i <= N_stretchrec; i++) {
-            ofs <<  " " << sr.VCDorsalOutput(i) << " " << sr.VCVentralAOutput(i) << " " << sr.VCVentralPOutput(i);;
-        }
+    #ifdef _OUTW_ACT_HEAD
         // Head Neurons
         //ofs << "\nH: ";
         for (int i = 1; i <= h.size; i++) {
-            ofs <<  " " << h.NeuronOutput(i);
+            ofs <<  " " << h.namesMapInv[i];
         }
+    #endif
+    
+    #ifdef _OUTW_ACT_SR
+        //ofs << "\nSR: ";
+        // Stretch receptors
+        ofs <<  " " << "sr.HeadDorsalOutput" << " " << "sr.HeadVentralOutput";
+        for (int i = 1; i <= N_stretchrec; i++)  {
+            ofs <<  " " 
+                << "sr.VCDorsalOutput:" << i << " " 
+                << "sr.VCVentralAOutput:" << i << " " 
+                << "sr.VCVentralPOutput:" << i;
+        }
+    #endif
+
+    #ifdef _OUTW_ACT_VC
         // Ventral Cord Motor Neurons
         //ofs << "\nV: ";
         for (int i = 1; i <= N_units; i++) {
             for (int j = 1; j <= N_neuronsperunit; j++) {
-                ofs <<  " " << n.NeuronOutput(nn(j,i));
+                ofs <<  " " << n.namesMapInv[nn(j,i)] << ":" << i;
             }
         }
+    #endif
+
+    #ifdef _OUTW_ACT_MUSC
         // Muscles
         //ofs << "\nM: ";
         for (int i = 1; i <= N_muscles; i++) {
-            ofs <<  " " << m.DorsalMuscleOutput(i) << " " << m.VentralMuscleOutput(i);
+            ofs <<  " " << "m.DorsalMuscleOutput:" << i 
+                << " " << "m.VentralMuscleOutput:" << i;
         }
-        ofs << "\n";
-    }
+    #endif
+
+    ofs << "\n";
+    #endif
 }
 
-void Worm::DumpVoltage(ofstream &ofs, int skips)
+void Worm::DumpActState(ofstream &ofs, int skips)
 {
+    #ifdef _OUTW_ACT_ANY
     static int tt = skips;
 
     if (++tt >= skips) {
         tt = 0;
 
         ofs << t;
-        // Head Neurons
-        for (int i = 1; i <= 4; i++) {
-            ofs <<  " " << h.NeuronState(i);
-        }
-        // Ventral Cord Motor Neurons
-        for (int i = 1; i <= N_units; i++) {
-            for (int j = 1; j <= N_neuronsperunit; j++) {
-                ofs <<  " " << n.NeuronState(nn(j,i));
+        
+        #ifdef _OUTW_ACT_HEAD
+            // Head Neurons
+            //ofs << "\nH: ";
+            for (int i = 1; i <= h.size; i++) {
+                ofs <<  " " << h.NeuronOutput(i);
             }
-        }
-        ofs << "\n";
+        #endif
+
+        #ifdef _OUTW_ACT_SR
+            //ofs << "\nSR: ";
+            // Stretch receptors
+            ofs <<  " " << sr.HeadDorsalOutput() << " " << sr.HeadVentralOutput();
+            for (int i = 1; i <= N_stretchrec; i++) {
+                ofs <<  " " << sr.VCDorsalOutput(i) << " " << sr.VCVentralAOutput(i) << " " << sr.VCVentralPOutput(i);;
+            }
+        #endif
+
+        #ifdef _OUTW_ACT_VC
+            // Ventral Cord Motor Neurons
+            //ofs << "\nV: ";
+            for (int i = 1; i <= N_units; i++) {
+                for (int j = 1; j <= N_neuronsperunit; j++) {
+                    ofs <<  " " << n.NeuronOutput(nn(j,i));
+                }
+            }
+        #endif
+
+        #ifdef _OUTW_ACT_MUSC
+            // Muscles
+            //ofs << "\nM: ";
+            for (int i = 1; i <= N_muscles; i++) {
+                ofs <<  " " << m.DorsalMuscleOutput(i) << " " << m.VentralMuscleOutput(i);
+            }
+            ofs << "\n";
+        #endif
     }
+    #endif
+}
+
+
+void Worm::DumpVoltage(ofstream &ofs, int skips)
+{
+    #ifdef _OUTW_VOLT_ANY
+        static int tt = skips;
+
+        if (++tt >= skips) {
+            tt = 0;
+
+            ofs << t;
+            // Head Neurons
+            for (int i = 1; i <= 4; i++) {
+                ofs <<  " " << h.NeuronState(i);
+            }
+            // Ventral Cord Motor Neurons
+            for (int i = 1; i <= N_units; i++) {
+                for (int j = 1; j <= N_neuronsperunit; j++) {
+                    ofs <<  " " << n.NeuronState(nn(j,i));
+                }
+            }
+            ofs << "\n";
+        }
+    #endif
 }
 
 void Worm::DumpParams(ofstream &ofs)

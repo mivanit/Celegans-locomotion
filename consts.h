@@ -1,4 +1,5 @@
-#pragma once
+#ifndef H_CONSTS
+#define H_CONSTS
 
 // Integration parameters
 // const double DURATION = 100.0;           // Seconds
@@ -32,3 +33,5 @@ const double    BBCfit = AvgSpeed*DURATION;
 
 // Size of genotype (VC)
 int	VectSize = 30;
+
+#endif

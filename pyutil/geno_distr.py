@@ -262,11 +262,11 @@ DEFAULT_DISTS : ModParamsDists = dists_chemo_v15_1
 
 
 
-
-
-
-
 DEFAULT_EVALRUNS : List[ModParamsDict] = [
 	{ ModParam("params",   "simulation.angle") : 0.5 },
 	{ ModParam("params",   "simulation.angle") : -0.5 },
+	{ ModParam("params",   "simulation.angle") : 1.0 },
+	{ ModParam("params",   "simulation.angle") : -1.0 },
+	{ ModParam("params",   "simulation.angle") : 0.2 },
+	{ ModParam("params",   "simulation.angle") : -0.2 },
 ]
