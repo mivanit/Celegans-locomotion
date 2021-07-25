@@ -26,34 +26,29 @@ import pandas as pd # type: ignore
 from pydbg import dbg # type: ignore
 
 
-if TYPE_CHECKING or (__name__ == 'pyutil.plot_pos'):
-	from pyutil.util import (
-		Path,joinPath,unixPath,
-		CoordsArr,CoordsRotArr,
-		read_body_data,read_coll_objs_file,
-		get_last_dir_name,
-	)
-	from pyutil.collision_object import (
-		CollisionType,CollisionObject,
-		read_collobjs_tsv,
-		BoundingBox,AxBounds,BOUNDS_TEMPLATE,
-		get_bounds,get_bbox_ranges,pad_BoundingBox,
-		_bounds_tuples_to_bbox,_combine_bounds,
-	)
-else:
-	from util import (
-		Path,joinPath,unixPath,
-		CoordsArr,CoordsRotArr,
-		read_body_data,read_coll_objs_file,
-		get_last_dir_name,
-	)
-	from collision_object import (
+__EXPECTED_PATH__ : str = 'pyutil.plot.pos'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import (
+	Path,joinPath,unixPath,
+	CoordsArr,CoordsRotArr,
+	get_last_dir_name,
+)
+
+from pyutil.read_runs import read_body_data
+
+from pyutil.collision_object import (
 	CollisionType,CollisionObject,
 	read_collobjs_tsv,
 	BoundingBox,AxBounds,BOUNDS_TEMPLATE,
 	get_bounds,get_bbox_ranges,pad_BoundingBox,
 	_bounds_tuples_to_bbox,_combine_bounds,
 )
+
 
 # types
 # ==================================================

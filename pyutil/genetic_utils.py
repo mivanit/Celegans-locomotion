@@ -12,10 +12,17 @@ import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 from pydbg import dbg # type: ignore
 
+__EXPECTED_PATH__ : str = 'pyutil.genetic_utils'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
 
 from pyutil.util import *
 from pyutil.params import *
-from pyutil.extract_run_data import *
+from pyutil.eval_run import *
 from pyutil.geno_distr import DEFAULT_DISTS,DEFAULT_EVALRUNS
 
 Process = Any

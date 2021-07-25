@@ -14,10 +14,14 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-if TYPE_CHECKING or (__name__ == 'pyutil.params'):
-	from pyutil.util import *
-else:
-	from util import *
+__EXPECTED_PATH__ : str = 'pyutil.params'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import *
 
 """
 

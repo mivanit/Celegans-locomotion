@@ -1,5 +1,12 @@
 from typing import *
 
+__EXPECTED_PATH__ : str = 'pyutil.geno_distr'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
 from pyutil.util import *
 from pyutil.params import *
 

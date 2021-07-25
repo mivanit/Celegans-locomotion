@@ -4,10 +4,14 @@ import json
 import matplotlib.pyplot as plt # type: ignore
 import networkx as nx # type: ignore
 
-if TYPE_CHECKING or (__name__ == 'pyutil.plot_net'):
-	from pyutil.util import Path,joinPath
-else:
-	from util import Path,joinPath
+__EXPECTED_PATH__ : str = 'pyutil.plot.net'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import Path,joinPath
 
 
 DEFAULT_POS : Dict[str,Tuple[float,float]] = {

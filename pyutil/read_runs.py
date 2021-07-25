@@ -1,16 +1,23 @@
 from typing import *
 import os
+import sys
 
-import yaml
+import numpy as np # type: ignore
+from nptyping import NDArray # type: ignore
+# from numpy.typing import NDArray
 
-if TYPE_CHECKING or (__name__ == 'pyutil.aggregate_runs'):
-	from pyutil.util import *
-	from pyutil.params import load_params
-	from pyutil.collision_object import read_collobjs_tsv
-else:
-	from util import *
-	from params import load_params
-	from collision_object import read_collobjs_tsv
+import yaml # type: ignore
+
+__EXPECTED_PATH__ : str = 'pyutil.read_runs'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import *
+from pyutil.params import load_params
+from pyutil.collision_object import read_collobjs_tsv
 
 
 RunComponent = Literal[
@@ -51,12 +58,10 @@ Enable_RunComponents_min : List[RunComponent] = [
 	'fitness',
 ]
 
-BodyData = Annotated[
-	NDArray[(int, int), CoordsRotArr],
-	ShapeAnnotation('timestep', 'segment'),
-]
+# BodyData = NDArray[(Any, Any), CoordsRotArr]
+# BodyData = Annotated[NDArray[(Any, Any), CoordsRotArr], ShapeAnnotation(('timestep', 'segment')) ]
 
-def read_body_data(filename : Path) -> BodyData:
+def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	"""reads given tsv file into a numpy array
 	
 	array is a 2-D structured array of type `CoordsRotArr`
@@ -68,7 +73,7 @@ def read_body_data(filename : Path) -> BodyData:
 	filename to read
 	
 	### Returns:
-	- `BodyData` 
+	- `NDArray[(Any, Any), CoordsRotArr]` 
 	"""
 	# read in
 	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
@@ -117,6 +122,7 @@ def read_act_data(
 	# convert to numpy array
 	return data_df.to_records(index=False)
 
+
 def load_old_txt_extracted(path: str) -> Dict[str, float]:
 	# try to get the name of extracting function from the comment line
 	with open(joinPath(path, 'extracted.txt'), 'r') as f:
@@ -147,7 +153,7 @@ def load_old_txt_extracted(path: str) -> Dict[str, float]:
 
 
 def load_extracted(rootdir : Path) -> Dict[str, float]:
-	if not rootdir.is_dir():
+	if not os.path.isdir(rootdir):
 		raise FileNotFoundError(f'{rootdir} is not a directory')
 	
 	if os.path.isfile(joinPath(rootdir, 'extracted.yml')):
@@ -171,11 +177,12 @@ read_runcomp_map : Dict[RunComponent, Callable[[Path], Any]] = {
 	'fitness' : load_extracted,
 	'pos_head' : lambda p : read_body_data(joinPath(p, "body.dat"))[:,0],
 	'pos_all' : lambda p : read_body_data(joinPath(p, "body.dat")),
-	'act_head' : ,
-	'act_all' : ,
+	'act_head' : lambda p : read_act_data(
+		joinPath(p, "act.dat"), 
+		nrn_filter = READ_ACT_FILTERS['head'],
+	),
+	'act_all' : lambda p : read_act_data(joinPath(p, "act.dat")),
 }
-
-
 
 
 # def load_single_run(
