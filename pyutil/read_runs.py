@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 from typing import *
 import os
 import sys
@@ -5,6 +6,7 @@ import sys
 import glob
 import json
 import pickle
+import gzip
 
 from pydbg import dbg
 
@@ -311,9 +313,11 @@ def load_eval_run(
 			output['fitness'] = READ_RUNCOMP_MAP['fitness'](rootdir)				
 		except FileNotFoundError as e:
 			if strict:
+				print("\n\n")
 				raise e
+				output['fitness'] = None
 			else:
-				print(f'WARNING: {e}')
+				print(f'\n\nWARNING: {e}')
 				output['fitness'] = None
 
 	# load the subdirectories
@@ -350,17 +354,19 @@ def load_recursive_allevals(
 	) -> Dict[str, Any]:
 	print(f'> searching in {rootdir}')
 	alldirs : List[Path] = glob.glob(joinPath(rootdir,'**/h*/'), recursive=True)
-
-	print(f'> found {len(alldirs)} eval run directories\n')
+	len_alldirs : int = len(alldirs)
+	print(f'> found {len_alldirs} eval run directories\n')
 
 	output : Dict[str, Any] = dict()
 	for idx,subdir in enumerate(alldirs):
-		print(f'\t> loading eval run {idx+1}\t/\t{len(alldirs)}\t{subdir}                                 ', end = '\r')
+		print(f'\t> loading eval run {idx+1} / {len_alldirs}\t{subdir}' + ' '*30, end = '\r')
 		output[subdir] = load_eval_run(
 			rootdir = subdir,
 			strict = False,
 			enable = enable,
 		)
+	
+	print("\n")
 
 	return output
 
@@ -387,18 +393,6 @@ class NumpyEncoder(json.JSONEncoder):
 		elif isinstance(obj, np.floating):
 			return float(obj)
 		return json.JSONEncoder.default(self, obj)
-
-def save_msgpack(data : Any, filename : str) -> None:
-	with open(filename, 'wb') as f:
-		msgpack.dump(data, f)
-
-def save_json(data : Any, filename : str) -> None:
-	with open(filename, 'w') as f:
-		json.dump(data, f, cls = NumpyEncoder)
-
-def save_yaml(data : Any, filename : str) -> None:
-	with open(filename, 'w') as f:
-		yaml.dump(data, f)
 
 """some stats on how the various methods compare, size-wise
 
@@ -427,6 +421,55 @@ note that this is before the json files stored structured arrays properly.
 it appears that the new method for structured arrays takes a bit less space, which i suppose is good.
 """
 
+def scrape_runinfo(rootdir : Path) -> Dict[str, str]:
+	"""search for '.runinfo' files in `rootdir` using glob,
+	place them into a dictorionary mapping path to data as string"""
+	
+	print(f'> looking for .runinfo files in {rootdir}')
+	output : Dict[str, str] = dict()
+
+	lst_runinfo_files : List[Path] = glob.glob(joinPath(rootdir, '**/.runinfo'), recursive = True)
+	len_lst_runinfo_files : int = len(lst_runinfo_files)
+	print(f'> found {len_lst_runinfo_files} files')
+	
+	for idx,runinfo_file in enumerate(lst_runinfo_files):
+		runinfo_file_unix : str = unixPath(runinfo_file)
+		print(f'\t> loading runinfo file {idx+1} / {len_lst_runinfo_files}\t{runinfo_file_unix}' + ' '*30)
+		with open(runinfo_file_unix, 'r') as f:
+			output[runinfo_file_unix] = f.read()
+
+	print("\n")
+
+	return output
+
+def scrape_runinfo_interface(
+		rootdir : Path, 
+		fmt : str = "json", 
+		filename : Optional[Path] = None,
+		zip : bool = False) -> None:
+	"""wraps `scrape_runinfo` to allow saving data to a file"""
+	
+	data : Dict[str,str] = scrape_runinfo(rootdir)
+
+	# figure out the filename
+	if filename is None:
+		filename = joinPath(rootdir, f'runinfo_data.{fmt}')
+
+
+	file_open_func : Callable[[str, str], TextIOWrapper] = open
+	
+	# if zipping, adjust things
+	if zip:
+		filename += '.gz'
+		file_open_func = gzip.open
+
+	print(f'> saving data to: {filename}')
+
+	# save the data 
+	with file_open_func(filename, SAVE_MODES[fmt]) as file:
+		SAVE_FUNCS[SAVE_FORMATS[fmt]](data, file)
+
+
 SAVE_FORMATS : Dict[str,str] = {
 	"json" : "json",
 	"messagepack" : "mpk",
@@ -438,14 +481,21 @@ SAVE_FORMATS : Dict[str,str] = {
 	"yml" : "yaml",
 }
 
-SAVE_FUNCS : Dict[str, Callable[[Any, str], None]] = {
-	'json': save_json,
-	'mpk': save_msgpack,
-	'pkl' : lambda x,y: pickle.dump(x, open(y, 'wb')),
-	'yaml' : save_yaml,
+SAVE_MODES : Dict[str,str] = {
+	"json" : "wt",
+	"mpk" : "wb",
+	"pkl" : "wb",
+	"yaml" : "wt",
 }
 
-def cli_wrapper(
+SAVE_FUNCS : Dict[str, Callable[[Any, str], None]] = {
+	'json': lambda x,f,**kw: json.dump(x, f, cls = NumpyEncoder, **kw),
+	'mpk': msgpack.dump,
+	'pkl' : pickle.dump,
+	'yaml' : yaml.dump,
+}
+
+def cli_wrapper_runloaders(
 		func_load : Callable,
 	) -> None:
 	
@@ -454,20 +504,33 @@ def cli_wrapper(
 			fmt : str = "json",
 			enable : str = "all",
 			filename : Optional[Path] = None,
-			# zip : bool = False,
+			zip : bool = False,
 			*args, **kwargs,
 		) -> None:
 		
+		# load the data
 		data : Dict[str,Any] = func_load(
 			rootdir = rootdir, 
 			enable = ENABLE_RUNCOMPONENTS[enable],
 			**kwargs,
 		)
 
+		# figure out the filename
 		if filename is None:
 			filename = joinPath(rootdir, f'data_{enable}.{fmt}')
+
+		file_open_func : Callable[[str, str], TextIOWrapper] = open
+		
+		# if zipping, adjust things
+		if zip:
+			filename += '.gz'
+			file_open_func = gzip.open
+
 		print(f'> saving data to: {filename}')
-		SAVE_FUNCS[SAVE_FORMATS[fmt]](data, filename)
+
+		# save the data 
+		with file_open_func(filename, SAVE_MODES[fmt]) as file:
+			SAVE_FUNCS[SAVE_FORMATS[fmt]](data, file)
 	
 	return newfunc
 	
@@ -475,9 +538,10 @@ if __name__ == '__main__':
 	import fire
 
 	fire.Fire({
-		'single' : cli_wrapper(load_single_run),
-		'eval' : cli_wrapper(load_eval_run),
-		'recursive' : cli_wrapper(load_recursive_allevals),
+		'single' : cli_wrapper_runloaders(load_single_run),
+		'eval' : cli_wrapper_runloaders(load_eval_run),
+		'recursive' : cli_wrapper_runloaders(load_recursive_allevals),
+		'runinfo' : scrape_runinfo_interface,
 	})
 
 
