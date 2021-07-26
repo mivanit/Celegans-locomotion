@@ -1,10 +1,20 @@
 from typing import *
 import os
 import sys
+# from dataclasses import dataclass
+import glob
+import json
+import pickle
+
+from pydbg import dbg
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 # from numpy.typing import NDArray
+
+import msgpack
+import msgpack_numpy
+msgpack_numpy.patch()
 
 import yaml # type: ignore
 
@@ -16,7 +26,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 	))
 
 from pyutil.util import *
-from pyutil.params import load_params
+from pyutil.params import load_params,ModParamsHashable
 from pyutil.collision_object import read_collobjs_tsv
 
 
@@ -33,30 +43,30 @@ RunComponent = Literal[
 
 LST_RunComponents : Tuple[RunComponent, ...] = get_args(RunComponent)
 
-Enable_RunComponents_all : List[RunComponent] = [
-	'params',
-	'collobjs',
-	'log',
-	'fitness',
-	'pos_all',
-	'act_all',
-]
-
-Enable_RunComponents_short : List[RunComponent] = [
-	'params',
-	'collobjs',
-	'log',
-	'fitness',
-	'pos_head',
-	'act_head',
-]
-
-Enable_RunComponents_min : List[RunComponent] = [
-	'params',
-	'collobjs',
-	'log',
-	'fitness',
-]
+ENABLE_RUNCOMPONENTS : Dict[str, List[RunComponent]] = {
+	'all' : [
+		'params',
+		'collobjs',
+		'log',
+		'fitness',
+		'pos_all',
+		'act_all',
+	],
+	'short' : [
+		'params',
+		'collobjs',
+		'log',
+		'fitness',
+		'pos_head',
+		'act_head',
+	],
+	'min' : [
+		'params',
+		'collobjs',
+		'log',
+		'fitness',
+	],
+}
 
 # BodyData = NDArray[(Any, Any), CoordsRotArr]
 # BodyData = Annotated[NDArray[(Any, Any), CoordsRotArr], ShapeAnnotation(('timestep', 'segment')) ]
@@ -94,8 +104,6 @@ def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	)
 
 	
-
-
 READ_ACT_FILTERS : Dict[str, Callable[[str], bool]] = {
 	'all' : lambda x: True,
 	'head' : lambda x: (not ':' in x) or (x == 't'),
@@ -106,10 +114,20 @@ READ_ACT_FILTERS : Dict[str, Callable[[str], bool]] = {
 def read_act_data(
 		filename : Path, 
 		nrn_filter : Optional[Callable[[str], bool]] = None,
+		replace_colnames : Optional[Tuple[str,str]] = None,
 	) -> NDArray:
 	
 	# read the data
 	data_df : pd.DataFrame = pd.read_csv(filename, sep = ' ')
+
+	# fix the column names, because serialization of numpy structured arrays in messagepack is weird
+	# colons are not allowed, so we replace them with dashes
+	# -----
+	# actually, messagepack sort of suck so we aren't going to do that anymore for consistency. 
+	# the option still exists, just figure out how to set `replace_colnames = (':', '-')`
+	# oh and also youd need to modify `READ_ACT_FILTERS`
+	if replace_colnames is not None:
+		data_df.columns = data_df.columns.str.replace(*replace_colnames)
 	
 	if nrn_filter is not None:
 		# if filter is given, filter the columns
@@ -123,9 +141,9 @@ def read_act_data(
 	return data_df.to_records(index=False)
 
 
-def load_old_txt_extracted(path: str) -> Dict[str, float]:
+def load_old_txt_extracted(filename : str) -> Dict[str, float]:
 	# try to get the name of extracting function from the comment line
-	with open(joinPath(path, 'extracted.txt'), 'r') as f:
+	with open(filename, 'r') as f:
 		output : Dict[str,float] = dict()
 		
 		# separate into comment blocks
@@ -155,7 +173,6 @@ def load_old_txt_extracted(path: str) -> Dict[str, float]:
 def load_extracted(rootdir : Path) -> Dict[str, float]:
 	if not os.path.isdir(rootdir):
 		raise FileNotFoundError(f'{rootdir} is not a directory')
-	
 	if os.path.isfile(joinPath(rootdir, 'extracted.yml')):
 		with open(joinPath(rootdir, 'extracted.yml'), 'r') as f:
 			return yaml.safe_load(f)
@@ -167,7 +184,7 @@ def load_extracted(rootdir : Path) -> Dict[str, float]:
 
 
 
-read_runcomp_map : Dict[RunComponent, Callable[[Path], Any]] = {
+READ_RUNCOMP_MAP : Dict[RunComponent, Callable[[Path], Any]] = {
 	'params' : lambda p : load_params(joinPath(p, "params.json")),
 	'collobjs' : lambda p : [ 
 		x.serialize_lst() 
@@ -184,8 +201,300 @@ read_runcomp_map : Dict[RunComponent, Callable[[Path], Any]] = {
 	'act_all' : lambda p : read_act_data(joinPath(p, "act.dat")),
 }
 
+def validate_params(rootdir : Path, level : Literal["error", "warn", "quiet"] = "error") -> bool:
+	try:
+		params_json : Dict[str, Any] = load_params(joinPath(rootdir, "params.json"))
+		params_json_alt : Dict[str, Any] = load_params(joinPath(rootdir, "in-params.json"))
+	
+		raise NotImplementedError("validation not yet done oops")
 
-# def load_single_run(
-# 		rootdir : Path,
-# 		enable : Dict[RunComponent, bool] = {x:True for x in LST_RunComponents},
-# 	) -> Dict[str, Any]:)
+	except FileNotFoundError as e:
+		if level == "error":
+			raise e
+		elif level == "warn":
+			print(f'WARNING: missing one of two params files in {rootdir}: {e}')
+
+		return False
+
+		
+
+
+def load_single_run(
+		rootdir : Path,
+		*,
+		enable : Iterable[RunComponent],
+		strict : bool = False,
+		validate_mode : Literal["error", "warn", "quiet", "none"] = "none",
+	) -> Dict[RunComponent, Any]:
+	"""loads a single run from the given directory, attempting to get all data in `enabled`
+	
+	### Parameters:
+	- `rootdir : Path`   
+	path to the run directory
+	- `enable : Dict[RunComponent, bool]` 
+	dictionary of which components to load
+	- `strict : bool`
+	whether to raise an error if a component is not found
+	(defaults to `False`)
+	- `validate_mode : Literal["error", "warn", "quiet", "none"]`
+	how to handle validation of params (not implemented)
+	(defaults to "error")
+
+	
+	### Returns:
+	- `Dict[RunComponent, Any]` 
+	dictionary of run data
+	"""
+	# validate that the contetents of `params.json` match those of `in-params.json`
+	if validate_mode != "none":
+		validate_params(rootdir, validate_mode)
+
+	# read in the run data
+	run_data : Dict[RunComponent, Any] = dict()
+
+	for run_component in LST_RunComponents:
+		if run_component in enable:
+			try:
+				run_data[run_component] = READ_RUNCOMP_MAP[run_component](rootdir)
+			except (FileNotFoundError,ValueError) as e:
+				if strict:
+					raise e
+				else:
+					print(f'WARNING: {e}')
+					run_data[run_component] = None
+	
+	return run_data
+
+
+def read_evalruns_modparams(rootdir : Path) -> None:
+	"""reads the parameters for the evaluation runs from the given directory
+	
+	modes:
+	 - try to extract from the subirectory names
+	 - try to extract the diffs between modparams in the runs
+	 - try to extract from "eval_runs.json"
+	"""
+	raise NotImplementedError("`read_evalruns_modparams` not yet implemented")
+
+
+def transform_dirname_evalruns(runs : List[str]) -> Dict[str, str]:
+	"""translates old format seps '=/_' to new format '_/,'"""
+	runs_map : Dict[str, str] = dict() 
+	for x in runs:
+		if '=' in x:
+			runs_map[x] = (
+				x
+				.replace('_', ',')
+				.replace('=', '_')
+			)
+		else:
+			runs_map[x] = x
+
+	return runs_map
+
+
+
+def load_eval_run(
+		rootdir : Path,
+		*,
+		enable : Iterable[RunComponent] = {x for x in LST_RunComponents},
+		strict : bool = False,
+		validate_mode : Literal["error", "warn", "quiet", "none"] = "none",
+	) -> Dict[Union[RunComponent, str], Any]:
+
+	output : Dict[ModParamsHashable, Any] = dict()
+
+	# load fitness data, if needed
+	if 'fitness' in enable:
+		enable = {x for x in enable if x != 'fitness'}
+		try:
+			output['fitness'] = READ_RUNCOMP_MAP['fitness'](rootdir)				
+		except FileNotFoundError as e:
+			if strict:
+				raise e
+			else:
+				print(f'WARNING: {e}')
+				output['fitness'] = None
+
+	# load the subdirectories
+	lst_eval_dirs : List[Path] = [
+		p 
+		for p in os.listdir(rootdir) 
+		if os.path.isdir(joinPath(rootdir, p))
+	]
+	
+	dict_eval_runs : Dict[str,Any] = dict()
+
+	for er_dir in lst_eval_dirs:
+		dict_eval_runs[er_dir] = load_single_run(
+			rootdir = joinPath(rootdir, er_dir),
+			enable = enable,
+			strict = strict,
+			validate_mode = validate_mode,
+		)
+
+	output['eval_runs'] = dict_eval_runs
+
+	# TODO: load eval runs params
+
+	# TODO: store intersection of params, collobjs
+
+	output['rootdir'] = unixPath(rootdir)
+
+	return output
+
+
+def load_recursive_allevals(
+		rootdir : Path,
+		enable : Iterable[RunComponent] = {x for x in LST_RunComponents},
+	) -> Dict[str, Any]:
+	print(f'> searching in {rootdir}')
+	alldirs : List[Path] = glob.glob(joinPath(rootdir,'**/h*/'), recursive=True)
+
+	print(f'> found {len(alldirs)} eval run directories\n')
+
+	output : Dict[str, Any] = dict()
+	for idx,subdir in enumerate(alldirs):
+		print(f'\t> loading eval run {idx+1}\t/\t{len(alldirs)}\t{subdir}                                 ', end = '\r')
+		output[subdir] = load_eval_run(
+			rootdir = subdir,
+			strict = False,
+			enable = enable,
+		)
+
+	return output
+
+
+class NumpyEncoder(json.JSONEncoder):
+	""" Special json encoder for numpy types
+	
+	https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
+
+	modified to save structured array as dict of arrays, where keys to dict are field names
+	"""
+	
+	def default(self, obj):
+		if isinstance(obj, np.ndarray):
+			if obj.dtype.names is None:
+				return obj.tolist()
+			else:
+				return {
+					k : obj[k].tolist() 
+					for k in obj.dtype.names
+				}
+		elif isinstance(obj, np.integer):
+			return int(obj)
+		elif isinstance(obj, np.floating):
+			return float(obj)
+		return json.JSONEncoder.default(self, obj)
+
+def save_msgpack(data : Any, filename : str) -> None:
+	with open(filename, 'wb') as f:
+		msgpack.dump(data, f)
+
+def save_json(data : Any, filename : str) -> None:
+	with open(filename, 'w') as f:
+		json.dump(data, f, cls = NumpyEncoder)
+
+def save_yaml(data : Any, filename : str) -> None:
+	with open(filename, 'w') as f:
+		yaml.dump(data, f)
+
+"""some stats on how the various methods compare, size-wise
+
+```bash
+$ pwd; ls -l
+/f/projects/CE-learn/Izq_locomotion/data/geno_sweep/old_sweep/chemo_v17_2
+total 389756
+-rw-r--r-- 1 mivanit 197609 145708056 Jul 25 16:56 data.json
+-rw-r--r-- 1 mivanit 197609 100715871 Jul 25 17:04 data.msgpack
+-rw-r--r-- 1 mivanit 197609 100839939 Jul 25 17:09 data.pkl
+-rw-r--r-- 1 mivanit 197609    438166 Jul 25 17:20 data_min.json
+-rw-r--r-- 1 mivanit 197609  12201112 Jul 25 17:22 data_short.json
+-rw-r--r-- 1 mivanit 197609   1724664 Jul 25 18:59 data_short.json.gz
+-rw-r--r-- 1 mivanit 197609   5038011 Jul 25 17:47 data_short.mpk
+-rw-r--r-- 1 mivanit 197609   3428458 Jul 25 18:58 data_short.mpk.gz
+-rw-r--r-- 1 mivanit 197609   5082089 Jul 25 19:12 data_short.pkl
+-rw-r--r-- 1 mivanit 197609   3441790 Jul 25 19:12 data_short.pkl.gz
+-rw-r--r-- 1 mivanit 197609   7952314 Jul 25 19:10 data_short.yaml
+-rw-r--r-- 1 mivanit 197609   4275504 Jul 25 19:10 data_short.yaml.gz
+-rw-r--r-- 1 mivanit 197609   6622529 Jul 25 17:20 data_short_noidnt.json
+-rw-r--r-- 1 mivanit 197609   1611771 Jul 25 18:58 data_short_noidnt.json.gz
+drwxr-xr-x 1 mivanit 197609         0 Jun 24 00:35 g0/
+```
+
+note that this is before the json files stored structured arrays properly. 
+it appears that the new method for structured arrays takes a bit less space, which i suppose is good.
+"""
+
+SAVE_FORMATS : Dict[str,str] = {
+	"json" : "json",
+	"messagepack" : "mpk",
+	"msgpack" : "mpk",
+	"mpk" : "mpk",
+	"pickle" : "pkl",
+	"pkl" : "pkl",
+	"yaml" : "yaml",
+	"yml" : "yaml",
+}
+
+SAVE_FUNCS : Dict[str, Callable[[Any, str], None]] = {
+	'json': save_json,
+	'mpk': save_msgpack,
+	'pkl' : lambda x,y: pickle.dump(x, open(y, 'wb')),
+	'yaml' : save_yaml,
+}
+
+def cli_wrapper(
+		func_load : Callable,
+	) -> None:
+	
+	def newfunc(
+			rootdir : Path,
+			fmt : str = "json",
+			enable : str = "all",
+			filename : Optional[Path] = None,
+			# zip : bool = False,
+			*args, **kwargs,
+		) -> None:
+		
+		data : Dict[str,Any] = func_load(
+			rootdir = rootdir, 
+			enable = ENABLE_RUNCOMPONENTS[enable],
+			**kwargs,
+		)
+
+		if filename is None:
+			filename = joinPath(rootdir, f'data_{enable}.{fmt}')
+		print(f'> saving data to: {filename}')
+		SAVE_FUNCS[SAVE_FORMATS[fmt]](data, filename)
+	
+	return newfunc
+	
+if __name__ == '__main__':
+	import fire
+
+	fire.Fire({
+		'single' : cli_wrapper(load_single_run),
+		'eval' : cli_wrapper(load_eval_run),
+		'recursive' : cli_wrapper(load_recursive_allevals),
+	})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

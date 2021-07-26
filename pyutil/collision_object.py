@@ -6,8 +6,6 @@ from typing import *
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 
-print(__name__)
-
 __EXPECTED_PATH__ : str = 'pyutil.collision_object'
 if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 	sys.path.append(os.path.join(

@@ -32,7 +32,7 @@ import pandas as pd # type: ignore
 Path = str
 
 def unixPath(in_path : Path) -> Path:
-	return in_path.replace("\\", "/").rstrip("/")
+	return in_path.replace("\\", "/")
 
 def mkdir(p : Path):
 	if not os.path.isdir(p):

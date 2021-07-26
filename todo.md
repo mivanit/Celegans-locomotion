@@ -11,6 +11,7 @@
  - [ ] name `extract_run_data` something more meaningful
  - [ ] save into json/msgpack
  - [ ] figure out how to deal nicely with mutliple runs per eval?
+ - [ ] error checking in validating params
 
 
 

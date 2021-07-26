@@ -41,10 +41,12 @@ Valid_Neurons = str
 class ModTypes(Enum):
 	params : str = 'params'
 	conn : str = 'conn'
+	none : None = None
+
 	# cli : str = 'cli'
 
 # T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
-T_ModTypes = Literal['params', 'conn']
+T_ModTypes = Literal['params', 'conn', 'none']
 
 # ModTypes = Literal[
 # 	'params',
@@ -78,10 +80,9 @@ NormalDistTuple = NamedTuple(
 
 DistTuple = Union[RangeTuple,NormalDistTuple]
 
-
-
 ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
+ModParamsHashable = Tuple[Tuple[ModParam, float], ...]
 ModParamsRanges = Dict[ModParam, RangeTuple]
 ModParamsDists = Dict[ModParam, DistTuple]
 
