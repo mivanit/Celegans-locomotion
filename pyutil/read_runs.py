@@ -54,13 +54,20 @@ ENABLE_RUNCOMPONENTS : Dict[str, List[RunComponent]] = {
 		'pos_all',
 		'act_all',
 	],
-	'short' : [
+	'short-act' : [
 		'params',
 		'collobjs',
 		'log',
 		'fitness',
 		'pos_head',
 		'act_head',
+	],
+	'short' : [
+		'params',
+		'collobjs',
+		'log',
+		'fitness',
+		'pos_head',
 	],
 	'min' : [
 		'params',
@@ -214,7 +221,7 @@ def validate_params(rootdir : Path, level : Literal["error", "warn", "quiet"] = 
 		if level == "error":
 			raise e
 		elif level == "warn":
-			print(f'WARNING: missing one of two params files in {rootdir}: {e}')
+			print(f'WARNING: missing one of two params files in {rootdir}: {e}\n')
 
 		return False
 
@@ -258,11 +265,11 @@ def load_single_run(
 		if run_component in enable:
 			try:
 				run_data[run_component] = READ_RUNCOMP_MAP[run_component](rootdir)
-			except (FileNotFoundError,ValueError) as e:
+			except (FileNotFoundError,ValueError,IOError) as e:
 				if strict:
 					raise e
 				else:
-					print(f'WARNING: {e}')
+					print(f'WARNING: {e}\n')
 					run_data[run_component] = None
 	
 	return run_data
@@ -304,7 +311,7 @@ def load_eval_run(
 		validate_mode : Literal["error", "warn", "quiet", "none"] = "none",
 	) -> Dict[Union[RunComponent, str], Any]:
 
-	output : Dict[ModParamsHashable, Any] = dict()
+	output : Dict[Union[RunComponent, str], Any] = dict()
 
 	# load fitness data, if needed
 	if 'fitness' in enable:
@@ -359,8 +366,9 @@ def load_recursive_allevals(
 
 	output : Dict[str, Any] = dict()
 	for idx,subdir in enumerate(alldirs):
-		print(f'\t> loading eval run {idx+1} / {len_alldirs}\t{subdir}' + ' '*30, end = '\r')
-		output[subdir] = load_eval_run(
+		subdir_unix : Path = unixPath(subdir)
+		print(f'    > loading eval run  {idx+1} / {len_alldirs}\t{subdir_unix}' + ' '*5, end = '\r')
+		output[subdir_unix] = load_eval_run(
 			rootdir = subdir,
 			strict = False,
 			enable = enable,
