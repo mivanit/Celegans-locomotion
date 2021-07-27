@@ -11,12 +11,16 @@ from nptyping import NDArray,StructuredType # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 from matplotlib import cm # type: ignore
 
-if TYPE_CHECKING or (__name__ == 'pyutil.plot_gene'):
-	from pyutil.util import *
-	from pyutil.params import *
-else:
-	from util import *
-	from params import *
+__EXPECTED_PATH__ : str = 'pyutil.plot.gene'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import *
+from pyutil.params import *
+
 """
 from pyutil.util import (
 	Path,joinPath,unixPath,GeneRunID,

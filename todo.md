@@ -7,10 +7,11 @@
    - [ ] individual id
    - [ ] eval runs params
 ## reading existing runs
- - [ ] move stuff from `util` and `plot_act` into `read_runs`
- - [ ] name `extract_run_data` something more meaningful
- - [ ] save into json/msgpack
- - [ ] figure out how to deal nicely with mutliple runs per eval?
+ - [x] move stuff from `util` and `plot_act` into `read_runs`
+ - [x] name `extract_run_data` something more meaningful
+ - [x] save into json/msgpack
+ - [x] figure out how to deal nicely with mutliple runs per eval?
+ - [ ] error checking in validating params
 
 
 

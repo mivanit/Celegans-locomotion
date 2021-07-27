@@ -14,10 +14,14 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-if TYPE_CHECKING or (__name__ == 'pyutil.params'):
-	from pyutil.util import *
-else:
-	from util import *
+__EXPECTED_PATH__ : str = 'pyutil.params'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import *
 
 """
 
@@ -37,10 +41,12 @@ Valid_Neurons = str
 class ModTypes(Enum):
 	params : str = 'params'
 	conn : str = 'conn'
+	none : None = None
+
 	# cli : str = 'cli'
 
 # T_ModTypes = Literal[tuple(e.value for e in ModTypes)]
-T_ModTypes = Literal['params', 'conn']
+T_ModTypes = Literal['params', 'conn', 'none']
 
 # ModTypes = Literal[
 # 	'params',
@@ -74,10 +80,9 @@ NormalDistTuple = NamedTuple(
 
 DistTuple = Union[RangeTuple,NormalDistTuple]
 
-
-
 ParamsDict = Dict[str, Any]
 ModParamsDict = Dict[ModParam, float]
+ModParamsHashable = Tuple[Tuple[ModParam, float], ...]
 ModParamsRanges = Dict[ModParam, RangeTuple]
 ModParamsDists = Dict[ModParam, DistTuple]
 
