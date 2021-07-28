@@ -1,3 +1,28 @@
+# master TODO list
+## critical
+- [ ] fix bug with data not being saved
+- [ ] double check implementation of output level flags
+## org
+- [ ] fix and incorporate TODO scraper
+- [ ] get docs working
+- [ ] reorg source files into `src/` dir?
+## params writing
+ - [ ] save genetic run info to `params.json` when generating:
+   - [ ] ModParams
+   - [ ] genetic run id
+   - [ ] generation id
+   - [ ] individual id
+   - [ ] eval runs params
+## reading existing runs
+ - [ ] error checking in validating params
+
+
+
+
+
+
+# OLD
+
 # 2021-07-24 17:04
 ## params writing
  - [ ] save genetic run info to `params.json` when generating:
