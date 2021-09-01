@@ -265,7 +265,7 @@ def load_single_run(
 		if run_component in enable:
 			try:
 				run_data[run_component] = READ_RUNCOMP_MAP[run_component](rootdir)
-			except (FileNotFoundError,ValueError,IOError) as e:
+			except (FileNotFoundError,ValueError,IOError,KeyError) as e:
 				if strict:
 					raise e
 				else:
