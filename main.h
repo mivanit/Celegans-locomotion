@@ -19,6 +19,8 @@
 // NOTE: checking for only one output flag passed is done only if _OUT_NONE is passed
 #ifdef _OUT_NONE
 
+    #pragma message "enabling no output mode `_OUT_NONE`"
+
     #ifdef _OUT_MIN
         #error both `_OUT_NONE` and `_OUT_MIN` passed, expect only one
     #endif
@@ -33,7 +35,9 @@
 #endif
 
 #ifdef _OUT_MIN
-    #define OUT_ANY 1
+    #pragma message "enabling minimal output mode `_OUT_MIN`"
+
+    #define _OUT_ANY
     
     #define _OUTW_POS_ANY
     #define _OUTW_POS_HEAD
@@ -42,7 +46,9 @@
 #endif
 
 #ifdef _OUT_SHORT
-    #define OUT_ANY 1
+    #pragma message "enabling short output mode `_OUT_SHORT`"
+
+    #define _OUT_ANY
     #define _OUTW_POS_ANY
     #define _OUTW_POS_HEAD
 
@@ -59,7 +65,9 @@
 #endif
 
 #ifdef _OUT_FULL
-    #define OUT_ANY 1
+    #pragma message "enabling full output mode `_OUT_FULL`"
+
+    #define _OUT_ANY
     
     #define _OUTW_POS_ANY
     #define _OUTW_POS_HEAD
