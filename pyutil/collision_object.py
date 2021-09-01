@@ -1,18 +1,20 @@
 import sys
+import os
 from enum import Enum
 from typing import *
 
 import numpy as np # type: ignore
-from nptyping import NDArray
+from nptyping import NDArray # type: ignore
 
-print(__name__)
+__EXPECTED_PATH__ : str = 'pyutil.collision_object'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
 
-if TYPE_CHECKING or (__name__ == 'pyutil.collision_object'):
-	from pyutil.util import Path
-elif (__name__ == 'Izq_locomotion.pyutil.collision_object'):
-	import Izq_locomotion.pyutil.Path
-else:
-	from util import Path
+from pyutil.util import Path
+
 
 AxBounds = Tuple[float,float]
 BoundingBox = Dict[str,float]

@@ -16,12 +16,16 @@ if TYPE_CHECKING:
 else:
 	Arg = lambda t,s : t
 
-if TYPE_CHECKING or (__name__ == 'pyutil.extract_run_data'):
-	from pyutil.util import *
-	from pyutil.params import *
-else:
-	from util import *
-	from params import *
+__EXPECTED_PATH__ : str = 'pyutil.eval_run'
+if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
+	sys.path.append(os.path.join(
+		sys.path[0], 
+		'../' * __EXPECTED_PATH__.count('.'),
+	))
+
+from pyutil.util import *
+from pyutil.params import *
+from pyutil.read_runs import read_body_data
 
 
 """
