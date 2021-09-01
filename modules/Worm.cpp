@@ -7,6 +7,7 @@
 //
 
 #include "Worm.h"
+#include "output_macros.h"
 
 #define HEADSR
 #define VNCSR
