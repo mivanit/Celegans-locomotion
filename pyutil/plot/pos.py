@@ -613,6 +613,7 @@ class Plotters(object):
 		):
 		
 		#@Yash: debug root directory
+		# TODO: @Yash this function is improperly reading `lst_dirs`, see if you can fix it
 		dbg(rootdir)
 		dbg(joinPath(rootdir,bodydat))
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
