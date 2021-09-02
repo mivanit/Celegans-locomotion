@@ -14,6 +14,8 @@ import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 # from numpy.typing import NDArray
 
+# TODO: get rid of msgpack dependency unless we need it
+
 import msgpack
 import msgpack_numpy
 msgpack_numpy.patch()
