@@ -40,7 +40,7 @@ if __name__ == '__main__':
 	import fire # type: ignore
 	fire.Fire({
 		'run' : run_genetic_algorithm,
-		'run_json' : run_genetic_algorithm_loadJSON,
+		# 'run_json' : run_genetic_algorithm_loadJSON,
 		'continue' : continue_genetic_algorithm,
 	})
 

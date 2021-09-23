@@ -69,6 +69,12 @@ struct VecXY
 		y = in_y;
 	}
 
+	VecXY(const VecXY & in_vec)
+	{
+		x = in_vec.x;
+		y = in_vec.y;
+	}
+
 	VecXY()
 	{
 		x = 0.0;
@@ -105,6 +111,15 @@ struct VecXY
 	}
 };
 
+VecXY add_vecs(const VecXY & a, const VecXY & b) //addition operator overloaded function
+{
+	VecXY output(a);
+	output.x += b.x;
+	output.y += b.y;
+
+	return output;
+}
+
 // func prototypes
 
 // simple funcs
@@ -115,10 +130,14 @@ double dist_sqrd(VecXY a, VecXY b);
 // the more complicated ones
 std::vector<CollisionObject> load_objects(std::string collide_file);
 void save_objects(std::string collide_file, std::vector<CollisionObject> & CollObjs);
-VecXY do_collide(CollisionObject obj, VecXY pos);
+inline VecXY do_collide(CollisionObject & obj, VecXY pos);
 
 
 // TODO: do_collide_friction function
+
+// loop over all the objects and all the points
+// and check for collisions
+inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec);
 
 #endif
 

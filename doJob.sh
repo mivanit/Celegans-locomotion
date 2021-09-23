@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=HH
+#SBATCH --job-name=CE-learn
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=1g
@@ -8,4 +8,4 @@
 #SBATCH --partition=standard
 #SBATCH --mail-type=NONE
 
-python optimize_params.py run 
+python optimize_params.py run --rootdir $1

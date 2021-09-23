@@ -1,1 +1,2 @@
-module load gcc/9.2.0
+python3.8-anaconda
+gcc/9.2.0

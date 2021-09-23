@@ -23,7 +23,7 @@ from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
 import pandas as pd # type: ignore
-from pydbg import dbg # type: ignore
+# from pydbg import dbg # type: ignore
 
 
 __EXPECTED_PATH__ : str = 'pyutil.plot.pos'
@@ -36,7 +36,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath,
 	CoordsArr,CoordsRotArr,
-	get_last_dir_name,
+	get_last_dir_name,pdbg,
 )
 
 from pyutil.read_runs import read_body_data
@@ -589,13 +589,13 @@ class Plotters(object):
 	
 	@staticmethod
 	def pos_multi(
-			*args,
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
-			bodydat : Path = 'body.dat',
-			collobjs : Path = 'coll_objs.tsv',
-			params : Optional[Path] = 'params.json',
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : Optional[float] = None,
 			pad_frac : Optional[float] = None,
@@ -604,16 +604,19 @@ class Plotters(object):
 			show : bool = True,
 			only_final : bool = False,
 		):
-		
-		dbg(rootdir)
-		dbg(joinPath(rootdir,bodydat))
-		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		if not isinstance(rootdir, Path):
+			rootdir = Path(rootdir)
+
+		pdbg(rootdir)
+		pdbg(bodydat)
+		pdbg(rootdir / '**' / bodydat)
+		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
 		lst_dirs : List[Path] = [ 
 			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 
-		dbg(lst_dirs)
+		pdbg(lst_dirs)
 		if not lst_dirs:
 			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
@@ -650,6 +653,7 @@ class Plotters(object):
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
+		ax.set_title(rootdir / '**' / '')
 		plt.legend()
 
 		if show:
