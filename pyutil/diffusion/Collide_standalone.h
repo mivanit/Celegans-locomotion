@@ -2,14 +2,111 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <iostream>
+#include <iomanip>
 
-#include "Collide.h"
 
-// #define COLLIDE_DEBUG
+const double EPSILON = 0.00000000001;
 
-#ifdef COLLIDE_DEBUG
-	#include <iostream>
-#endif
+enum CollisionType
+{
+	Box_Ax,
+	Disc,
+};
+
+// collision object stuff
+// REVIEW: this would be cleaner if I used polymorphism properly lol
+struct CollisionObject
+{
+	CollisionType coll_type;
+
+	// bounding box always used
+	double bound_min_x;
+	double bound_min_y;
+
+	double bound_max_x;
+	double bound_max_y;
+
+	// only used if Box
+	double fvec_x;
+	double fvec_y;
+
+	// only used if disc
+	double centerpos_x;
+	double centerpos_y;
+
+	double force;
+	double radius_inner;
+	double radius_outer;
+
+	double angle_min;
+	double angle_max;
+
+};
+
+// x-y vector stuff
+struct VecXY
+{
+	double x;
+	double y;
+
+	VecXY(double in_x, double in_y)
+	{
+		x = in_x;
+		y = in_y;
+	}
+
+	VecXY(VecXY & in_vec)
+	{
+		x = in_vec.x;
+		y = in_vec.y;
+	}
+
+	VecXY()
+	{
+		x = 0.0;
+		y = 0.0;
+	}
+
+	bool is_nonzero()
+	{
+        return ((fabs(x) > EPSILON) || (fabs(y) > EPSILON));
+		// NOTE: this printf statement is cursed. somehow `(fabs(y) > EPSILON) ? "true" : "false"` evaluated to "sin" before causing a segfault. no clue what was going on.
+		// printf(
+		// 	"is_nonzero:\t%f,%f,%f\t%s,%s\n", 
+		// 	fabs(x), fabs(y), EPSILON,
+		// 	(fabs(x) > EPSILON) ? "true" : "false", 
+		// 	(fabs(y) > EPSILON) ? "true" : "false"
+		// );
+		// NOTE: for some reason, abs() doesnt work and casts things to ints
+		// std::cout << std::fixed;
+		// std::cout << std::setprecision(5) << "is_nonzero:\t" << fabs(x) << "," << fabs(y) << ","  << EPSILON << ","  << ((fabs(x) > EPSILON) ? "true" : "false") << ","  << ((fabs(y) > EPSILON) ? "true" : "false") << std::endl;
+    }
+
+	inline double mag()
+	{
+		return pow(
+			( pow(x, 2.0) + pow(y, 2.0) ), 
+			0.5
+		);
+	}
+
+	void scale(double c)
+	{
+		x *= c;
+		y *= c;
+	}
+};
+
+VecXY add_vecs(VecXY & a, VecXY & b) //addition operator overloaded function
+{
+	VecXY output(a);
+	output.x += b.x;
+	output.y += b.y;
+
+	return output;
+}
 
 VecXY get_displacement(VecXY a, VecXY b)
 {
@@ -34,6 +131,17 @@ double dist_sqrd(VecXY a, VecXY b)
 		+ pow(a.y - b.y, 2.0)
 	);
 }
+
+
+
+// func prototypes
+
+// simple funcs
+VecXY get_displacement(VecXY a, VecXY b);
+double dist(VecXY a, VecXY b);
+double dist_sqrd(VecXY a, VecXY b);
+
+// the more complicated ones
 
 std::vector<CollisionObject> load_objects(std::string collide_file)
 {
@@ -103,6 +211,7 @@ std::vector<CollisionObject> load_objects(std::string collide_file)
 }
 
 
+
 void save_objects(std::string collide_file, std::vector<CollisionObject> & CollObjs)
 {
     // open file
@@ -149,6 +258,7 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
 }
 
 
+
 inline VecXY do_collide(CollisionObject & obj, VecXY pos)
 {
 	// forces on elements
@@ -190,7 +300,10 @@ inline VecXY do_collide(CollisionObject & obj, VecXY pos)
 }
 
 
-inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
+// loop over all the objects and all the points
+// and check for collisions
+
+inline std::vector<VecXY> do_collide_vec(inline std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
 {
 	std::vector<VecXY> coll_vec;
 	for (VecXY pos : pos_vec)
@@ -206,3 +319,25 @@ inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vect
 	return coll_vec;
 }
 
+
+// TODO: do_collide_friction function
+
+
+
+
+
+
+/* 
+collision code originally from:
+@article{Boyle_Berri_Cohen_2012, 
+ 	title={Gait Modulation in C. elegans: An Integrated Neuromechanical Model}, 
+	volume={6}, 
+	ISSN={1662-5188}, 
+	url={https://www.frontiersin.org/articles/10.3389/fncom.2012.00010/full#h8}, 
+ 	DOI={10.3389/fncom.2012.00010}, 
+	journal={Frontiers in Computational Neuroscience}, 
+	publisher={Frontiers}, 
+	author={Boyle, Jordan Hylke and Berri, Stefano and Cohen, Netta}, 
+	year={2012}
+modified by github.com/mivanit
+} */
