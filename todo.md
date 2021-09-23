@@ -1,9 +1,13 @@
 # master TODO list
 ## critical
-- [ ] fix bug with data not being saved
-- [ ] double check implementation of output level flags
+- [x] fix bug with data not being saved
+- [x] double check implementation of output level flags
+- [x] fix `pyutil/plot/pos.py pos_multi`
+- [ ] write & test angle fitness function
+- [ ] fix code for running on cluster
+- [ ] get diffusion stuff working
 ## org
-- [ ] fix and incorporate TODO scraper
+- [x] fix and incorporate TODO scraper
 - [ ] get docs working
 - [ ] reorg source files into `src/` dir?
 ## params writing
@@ -15,7 +19,6 @@
    - [ ] eval runs params
 ## reading existing runs
  - [ ] error checking in validating params
-
 
 
 
