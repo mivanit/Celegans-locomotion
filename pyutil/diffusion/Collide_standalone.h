@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -53,20 +54,20 @@ struct VecXY
 
 	VecXY(double in_x, double in_y)
 	{
-		x = in_x;
-		y = in_y;
+		this->x = in_x;
+		this->y = in_y;
 	}
 
-	VecXY(VecXY & in_vec)
-	{
-		x = in_vec.x;
-		y = in_vec.y;
-	}
+	// VecXY(VecXY & in_vec)
+	// {
+	// 	this->x = in_vec.x;
+	// 	this->y = in_vec.y;
+	// }
 
 	VecXY()
 	{
-		x = 0.0;
-		y = 0.0;
+		this->x = 0.0;
+		this->y = 0.0;
 	}
 
 	bool is_nonzero()
@@ -106,6 +107,8 @@ inline VecXY from_rtheta(double r, double theta)
 		r * cos(theta),
 		r * sin(theta)
 	);
+
+	// return v;
 }
 
 inline VecXY add_vecs(VecXY & a, VecXY & b) //addition operator overloaded function
@@ -118,14 +121,14 @@ inline VecXY add_vecs(VecXY & a, VecXY & b) //addition operator overloaded funct
 }
 
 //addition operator overloaded function for vectors of positions
-std::vector<VecXY> add_vecs(std::vector<VecXY> & a, std::vector<VecXY> & b) 
+inline std::vector<VecXY> add_vecs(std::vector<VecXY> & a, std::vector<VecXY> & b) 
 {
 	assert(a.size() == b.size());
 	std::vector<VecXY> output(a.size());
 
-	for (int i = 0; i < a.size(); i++)
+	for (size_t i = 0; i < a.size(); i++)
 	{
-		output[i] = add_vecs(a[i], b[i]));
+		output[i] = add_vecs(a[i], b[i]);
 	}
 
 	return output;
@@ -141,7 +144,7 @@ std::pair<std::vector<double>, std::vector<size_t>> serialize(std::vector<VecXY>
 	std::vector<size_t> output_dims = { n_particles, 2 };
 
 	// serialize
-	for (int i = 0; i < n_particles; i++)
+	for (size_t i = 0; i < n_particles; i++)
 	{
 		output_x[i] = positions[i].x;
 		output_y[i] = positions[i].y;
@@ -161,7 +164,7 @@ std::pair<std::vector<double>, std::vector<size_t>> serialize(std::vector<std::v
 	// check number of particles is constant
 	size_t tsteps = position_steps.size();
 	size_t n_particles = position_steps[0].size();
-	for (int i = 1; i < tsteps; i++)
+	for (size_t i = 1; i < tsteps; i++)
 	{
 		assert(position_steps[i].size() == n_particles);
 	}
@@ -171,9 +174,9 @@ std::pair<std::vector<double>, std::vector<size_t>> serialize(std::vector<std::v
 	std::vector<size_t> output_dims = { tsteps, n_particles, 2 };
 
 	// serialize
-	for (int i = 0; i < tsteps; i++)
+	for (size_t i = 0; i < tsteps; i++)
 	{
-		std::vector<VecXY> tstep_data = serialize(position_steps[i]).first;
+		std::vector<double> tstep_data = serialize(position_steps[i]).first;
 		output_data.insert( output_data.end(), tstep_data.begin(), tstep_data.end() );
 	}
 
@@ -294,7 +297,7 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
         exit(EXIT_FAILURE);
     }
 
-	PRINTF_DEBUG("    >> elements in CollObjs vec: %ld\n", CollObjs.size())
+	// PRINTF_DEBUG("    >> elements in CollObjs vec: %ld\n", CollObjs.size())
 
 	for (CollisionObject obj : CollObjs)
 	{
@@ -376,7 +379,7 @@ inline VecXY do_collide(CollisionObject & obj, VecXY pos)
 // loop over all the objects and all the points
 // and check for collisions
 
-inline std::vector<VecXY> do_collide_vec(inline std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
+inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
 {
 	std::vector<VecXY> coll_vec;
 	for (VecXY pos : pos_vec)

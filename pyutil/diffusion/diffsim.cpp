@@ -19,14 +19,18 @@ std::vector<CollisionObject> COLL_OBJS;
 std::vector<double> get_angle(int size)
 {
 	std::vector<double> vec(size);
-    std::generate(vec.begin(), vec.end(), [&]{ return dist_angle(generator);});
+    std::generate(vec.begin(), vec.end(), [&]{ 
+		return dist_angle(generator);
+	});
 	return vec;
 }
 
 std::vector<double> get_traveldist(int size)
 {
 	std::vector<double> vec(size);
-	std::generate(vec.begin(), vec.end(), [&]{ return dist_exponential(generator)});
+	std::generate(vec.begin(), vec.end(), [&]{
+		return dist_exponential(generator);
+	});
 	return vec;
 }
 
@@ -46,10 +50,8 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 		
 		for (int i = 0; i < positions.size(); i++)
 		{
-			newpos[i] = add_vecs(
-				positions[i], 
-				from_rtheta(pd_distances[i], pd_angles[i]
-			);
+			VecXY pos_delts = from_rtheta(pd_distances[i], pd_angles[i]);
+			newpos[i] = add_vecs(positions[i], pos_delts);
 		}
 	}
 
@@ -60,12 +62,20 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 }
 
 
-std::vector<VecXY> do_sim(VecXY pos, long unsigned size, long unsigned tsteps)
-{
+std::vector<VecXY> do_sim(
+	VecXY pos, 
+	long unsigned size, 
+	long unsigned tsteps,
+	int print_every = 100
+){
 	std::vector<VecXY> positions = initialize_particles(pos, size);
 	for (long unsigned i = 0; i < tsteps; i++)
 	{
 		positions = iterate_particles(positions);
+		if (i % print_every == 0)
+		{
+			std::cout << "> iteration\t" << i << std::endl;
+		}
 	}
 	return positions;
 }
@@ -76,7 +86,7 @@ VecXY get_foodPos(cxxopts::ParseResult & cmd)
 {
     // get food position
 
-	string str_foodpos = cmd["foodPos"].as<std::string>();
+	std::string str_foodpos = cmd["foodPos"].as<std::string>();
 
 	int idx_comma = str_foodpos.find(',');
 	double foodpos_x = std::stod(str_foodpos.substr(0,idx_comma));
@@ -94,13 +104,13 @@ int main (int argc, const char* argv[])
         ("c,coll", "collision tsv file", 
             cxxopts::value<std::string>())
         ("o,output", "output file", 
-            cxxopts::value<string>())
+            cxxopts::value<std::string>())
         ("d,duration", "sim duration in timeteps", 
             cxxopts::value<long unsigned>())
 		("n,nparticles", "number of particles", 
             cxxopts::value<long unsigned>())
         ("f,foodPos", "food position (comma separated)", 
-            cxxopts::value<string>())
+            cxxopts::value<std::string>())
         // ("r,rand", "random initialization seed based on time", 
         //     cxxopts::value<bool>())
         // ("s,seed", "set random initialization seed. takes priority over `rand`. seed is 0 by default.", 
@@ -119,13 +129,23 @@ int main (int argc, const char* argv[])
 	// get parameters
     long unsigned duration = cmd["duration"].as<long unsigned>();
 	long unsigned nparticles = cmd["nparticles"].as<long unsigned>();
-	string output_file = cmd["output"].as<string>();
-	string collision_file = cmd["coll"].as<string>();
+	std::string output_file = cmd["output"].as<std::string>();
+	std::string collision_file = cmd["coll"].as<std::string>();
 	VecXY foodpos = get_foodPos(cmd);
+
+	std::cout << "read parameters:"
+		<< "\n\tduration:\t" << duration
+		<< "\n\tnparticles:\t" << nparticles
+		<< "\n\toutput_file:\t" << output_file
+		<< "\n\tcollision_file:\t" << collision_file
+		<< "\n\tfoodpos:\t" << foodpos.x << ", " << foodpos.y
+		<< std::endl;
 
 	// load collision objects
 	COLL_OBJS = load_objects(collision_file);
 
+	std::cout << "loaded objects count:\t" << COLL_OBJS.size() << std::endl;
+	
 	// run simulation
 	std::vector<VecXY> final_positions = do_sim(
 		foodpos,
@@ -133,14 +153,16 @@ int main (int argc, const char* argv[])
 		duration
 	);
 
+	std::cout << "\n\nsim complete!" << std::endl;
+
 	// save data in numpy format
 	std::pair<std::vector<double>, std::vector<size_t>> data = serialize(final_positions);
 	
-	npt::SaveArrayAsNumpy(
+	npy::SaveArrayAsNumpy(
 		output_file, // filename
 		false, // fortran_order
-		data.second.size(), // n_dims
-		data.second.data(), // shape
+		(unsigned int) data.second.size(), // n_dims
+		(unsigned long *) data.second.data(), // shape
 		data.first // data
 	);
 }
@@ -149,7 +171,7 @@ int main (int argc, const char* argv[])
 
 int test_save(void) {
   const long unsigned leshape [] = {2,3};
-  vector<double> data {1, 2, 3, 4, 5, 6};
+  std::vector<double> data {1, 2, 3, 4, 5, 6};
   npy::SaveArrayAsNumpy("data/out.npy", false, 2, leshape, data);
 
   const long unsigned leshape2 [] = {6};
