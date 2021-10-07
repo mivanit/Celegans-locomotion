@@ -8,6 +8,7 @@ singlerun
 sim
 
 # data
+pyutil/diffusion/data/**
 data/run/**
 data/coll/*.tsv
 data/prof/**/*.dat

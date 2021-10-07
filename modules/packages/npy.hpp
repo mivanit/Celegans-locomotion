@@ -580,6 +580,26 @@ inline void SaveArrayAsNumpy( const std::string& filename, bool fortran_order, u
     stream.write(reinterpret_cast<const char*>(data.data()), sizeof(Scalar) * size);
 }
 
+template<typename Scalar>
+inline void SaveArrayAsNumpy( const std::string& filename, bool fortran_order, std::vector<size_t> shape, const std::vector<Scalar>& data)
+{
+    static_assert(has_typestring<Scalar>::value, "scalar type not understood");
+    dtype_t dtype = has_typestring<Scalar>::dtype;
+
+    std::ofstream stream( filename, std::ofstream::binary);
+    if(!stream) {
+        throw std::runtime_error("io error: failed to open a file.");
+    }
+
+    std::vector<ndarray_len_t> shape_v(shape.begin(), shape.end());
+    header_t header {dtype, fortran_order, shape_v};
+    write_header(stream, header);
+
+    auto size = static_cast<size_t>(comp_size(shape_v));
+
+    stream.write(reinterpret_cast<const char*>(data.data()), sizeof(Scalar) * size);
+}
+
 
 template<typename Scalar>
 inline void LoadArrayFromNumpy(const std::string& filename, std::vector<unsigned long>& shape, std::vector<Scalar>& data)

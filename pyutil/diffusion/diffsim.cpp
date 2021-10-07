@@ -158,24 +158,20 @@ int main (int argc, const char* argv[])
 	// save data in numpy format
 	std::pair<std::vector<double>, std::vector<size_t>> data = serialize(final_positions);
 	
+	// new modified interface
 	npy::SaveArrayAsNumpy(
 		output_file, // filename
 		false, // fortran_order
-		(unsigned int) data.second.size(), // n_dims
-		(unsigned long *) data.second.data(), // shape
+		data.second, // shape
 		data.first // data
 	);
-}
 
-
-
-int test_save(void) {
-  const long unsigned leshape [] = {2,3};
-  std::vector<double> data {1, 2, 3, 4, 5, 6};
-  npy::SaveArrayAsNumpy("data/out.npy", false, 2, leshape, data);
-
-  const long unsigned leshape2 [] = {6};
-  npy::SaveArrayAsNumpy("data/out2.npy", false, 1, leshape2, data);
-
-  return 0;
+	// old interface
+	// npy::SaveArrayAsNumpy(
+	// 	output_file, // filename
+	// 	false, // fortran_order
+	// 	(unsigned int) data.second.size(), // n_dims
+	// 	(unsigned long *) data.second.data(), // shape
+	// 	data.first // data
+	// );
 }

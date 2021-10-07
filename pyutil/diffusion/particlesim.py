@@ -7,16 +7,12 @@ import matplotlib.pyplot as plt
 
 import numba
 
-import cppyy
-cppyy.include('Collide_standalone.h')
+# import cppyy
+# cppyy.include('Collide_standalone.h')
 
 ParticlePositions = NDArray[(Any, 2), float]
 
-DEFAULT_PHYSICAL_PARAMS : Dict[str, Any] = {
-
-}
-
-
+DEFAULT_PHYSICAL_PARAMS : Dict[str, Any] = {}
 
 
 def initialize_particles(pos : Tuple[float,float], n : int) -> ParticlePositions:
@@ -206,9 +202,28 @@ def run_particlesim_wrapper(
 		plt.show()
 
 
+def read_and_plot(filename : str):
+	data = np.load(filename)
+
+	# assume that there are more than 2 particles, lol
+	# and use this to fix the shape
+	# since `positions_to_heatmap()` assumes first idx is particle idx, second is x/y
+	if data.shape[0] == 2:
+		data = data.T
+
+	print(data.shape)
+	print(data)
+
+	positions_to_heatmap(data)
+	plt.show()
+
+
 if __name__ == '__main__':
 	import fire
-	fire.Fire(run_particlesim_wrapper)
+	fire.Fire({
+		'runsim' : run_particlesim_wrapper,
+		'plot' : read_and_plot,
+	})
 
 
 
