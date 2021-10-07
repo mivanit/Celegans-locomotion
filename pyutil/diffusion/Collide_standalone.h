@@ -99,13 +99,86 @@ struct VecXY
 	}
 };
 
-VecXY add_vecs(VecXY & a, VecXY & b) //addition operator overloaded function
+
+inline VecXY from_rtheta(double r, double theta)
+{
+	return VecXY(
+		r * cos(theta),
+		r * sin(theta)
+	);
+}
+
+inline VecXY add_vecs(VecXY & a, VecXY & b) //addition operator overloaded function
 {
 	VecXY output(a);
 	output.x += b.x;
 	output.y += b.y;
 
 	return output;
+}
+
+//addition operator overloaded function for vectors of positions
+std::vector<VecXY> add_vecs(std::vector<VecXY> & a, std::vector<VecXY> & b) 
+{
+	assert(a.size() == b.size());
+	std::vector<VecXY> output(a.size());
+
+	for (int i = 0; i < a.size(); i++)
+	{
+		output[i] = add_vecs(a[i], b[i]));
+	}
+
+	return output;
+}
+
+
+std::pair<std::vector<double>, std::vector<size_t>> serialize(std::vector<VecXY> & positions)
+{
+	// init
+	size_t n_particles = positions.size();
+	std::vector<double> output_x(n_particles);
+	std::vector<double> output_y(n_particles);
+	std::vector<size_t> output_dims = { n_particles, 2 };
+
+	// serialize
+	for (int i = 0; i < n_particles; i++)
+	{
+		output_x[i] = positions[i].x;
+		output_y[i] = positions[i].y;
+	}
+
+	// concatenate
+	std::vector<double> output_data;
+	output_data.reserve(2 * n_particles);
+	output_data.insert( output_data.end(), output_x.begin(), output_x.end() );
+	output_data.insert( output_data.end(), output_y.begin(), output_y.end() );
+
+	return std::make_pair(output_data, output_dims);
+}
+
+std::pair<std::vector<double>, std::vector<size_t>> serialize(std::vector<std::vector<VecXY>> & position_steps)
+{
+	// check number of particles is constant
+	size_t tsteps = position_steps.size();
+	size_t n_particles = position_steps[0].size();
+	for (int i = 1; i < tsteps; i++)
+	{
+		assert(position_steps[i].size() == n_particles);
+	}
+
+	// init
+	std::vector<double> output_data;
+	std::vector<size_t> output_dims = { tsteps, n_particles, 2 };
+
+	// serialize
+	for (int i = 0; i < tsteps; i++)
+	{
+		std::vector<VecXY> tstep_data = serialize(position_steps[i]).first;
+		output_data.insert( output_data.end(), tstep_data.begin(), tstep_data.end() );
+	}
+
+	// return
+	return std::make_pair(output_data, output_dims);
 }
 
 VecXY get_displacement(VecXY a, VecXY b)

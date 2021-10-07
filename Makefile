@@ -139,6 +139,12 @@ prof:
 	@echo "# Writing analysis of 'gmon.out' file to 'prof.txt':"
 	gprof sim.exe gmon.out > prof.txt
 
+.PHONY: diffsim
+diffsim:
+	@echo "# compiling diffusion simulation"
+	cd pyutil/diffusion; \
+		gcc diffsim.cpp -Wall -o diffsim.exe
+
 # listing targets, from stackoverflow
 # https://stackoverflow.com/questions/4219255/how-do-you-get-the-list-of-targets-in-a-makefile
 .PHONY: help
