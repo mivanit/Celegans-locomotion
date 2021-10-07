@@ -44,19 +44,31 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 {
 	// update positions
 	std::vector<VecXY> newpos(positions.size());
-	{
-		std::vector<double> pd_angles = get_angle(positions.size());
-		std::vector<double> pd_distances = get_traveldist(positions.size());
+
+	std::vector<double> pd_angles = get_angle(positions.size());
+	std::vector<double> pd_distances = get_traveldist(positions.size());
+
+	std::cout << "angles: " << pd_angles[0] << "\tdistances: " << pd_distances[0] << std::endl;
+	// std::cout << "positions: " << positions << std::endl;
+
 		
-		for (int i = 0; i < positions.size(); i++)
+	for (int i = 0; i < positions.size(); i++)
+	{
+		VecXY pos_delts = from_rtheta(pd_distances[i], pd_angles[i]);
+		if (i == 0)
 		{
-			VecXY pos_delts = from_rtheta(pd_distances[i], pd_angles[i]);
-			newpos[i] = add_vecs(positions[i], pos_delts);
+			std::cout << "delta: " << pos_delts.x << "," << pos_delts.y << std::endl;
 		}
+		newpos[i] = add_vecs(positions[i], pos_delts);
 	}
 
+	std::cout << "newpos: " << newpos[0].x << "," << newpos[0].y << std::endl;
+
 	// do collisions
-	newpos = do_collide_vec(newpos, COLL_OBJS);
+	std::vector<VecXY> coll_delta = do_collide_vec(newpos, COLL_OBJS);
+	newpos = add_vecs(newpos, coll_delta);
+
+	std::cout << "newpos (collide): " << newpos[0].x << "," << newpos[0].y << std::endl;
 
 	return newpos;
 }

@@ -142,7 +142,8 @@ prof:
 .PHONY: diffsim
 diffsim:
 	@echo "# compiling diffusion simulation"
-	$(CXX) $(GCCFLAGS) pyutil/diffusion/diffsim.cpp -o pyutil/diffusion/diffsim.exe
+	$(CXX) -std=c++17 pyutil/diffusion/diffsim.cpp -o pyutil/diffusion/diffsim.exe
+# $(CXX) $(GCCFLAGS) pyutil/diffusion/diffsim.cpp -o pyutil/diffusion/diffsim.exe
 
 # listing targets, from stackoverflow
 # https://stackoverflow.com/questions/4219255/how-do-you-get-the-list-of-targets-in-a-makefile
