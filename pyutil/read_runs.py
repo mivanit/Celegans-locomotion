@@ -14,9 +14,15 @@ import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 # from numpy.typing import NDArray
 
-import msgpack # type: ignore
-import msgpack_numpy # type: ignore
-msgpack_numpy.patch()
+try:
+  import msgpack # type: ignore
+  import msgpack_numpy # type: ignore
+  msgpack_numpy.patch()
+except (ImportError,ModuleNotFoundError) as e:
+  print(e)
+  print('replacing msgpack with json')
+  import json as msgpack
+  
 
 import yaml # type: ignore
 
