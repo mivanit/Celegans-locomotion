@@ -1,0 +1,54 @@
+config:
+  file_in: itodo.yml
+  file_out: null
+searchDir: 
+ - ../modules
+ - ../pyutil
+file_todo: todo-inline.md
+verbose: false
+read:
+  tags:
+    list:
+    - CRIT
+    - TODO
+    - FIXME
+    - FIX
+    - BUG
+    - DEBUG
+    - UGLY
+    - HACK
+    - NOTE
+    - IDEA
+    - REVIEW
+    - OPTIMIZE
+    - CONFIG
+    - '!!!'
+    - OLD
+  SOURCE_FILES:
+  - c
+  - cpp
+  - h
+  - hpp
+  - py
+  - m
+  - tex
+  - sh
+  - java
+  - js
+  EXCLUDE:
+  - inline_todo.py
+  - todo-inline.md
+  - itodo.yml
+  - F:\projects\CE-learn\Izq_locomotion\docs\inline_todo.py
+  MAX_SEARCH_LEN: 15
+  context:
+    enabled: true
+    lines: 5
+write:
+  attr_sort_order:
+  - tag
+  - file
+  - lineNum
+  item_format: md_det
+inline_todo:
+  py: null
