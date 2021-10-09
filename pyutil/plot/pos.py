@@ -600,7 +600,7 @@ class Plotters(object):
 			#@Yash: no idea
 			params : Optional[Path] = 'params.json',
 			#@Yash: maybe a variable that stores a start and stop time of experiment? 
-			time_window : Tuple[OptInt,OptInt] = (None,None),
+			time_window : Tuple[OptInt,OptInt] = (None, None),
 			#@Yash: no idea
 			figsize_scalar : Optional[float] = None,
 			#@Yash: no idea
@@ -616,7 +616,9 @@ class Plotters(object):
 		# TODO: @Yash this function is improperly reading `lst_dirs`, see if you can fix it
 		dbg(rootdir)
 		dbg(joinPath(rootdir,bodydat))
+		#test
 		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		print(lst_bodydat)
 		lst_dirs : List[Path] = [ 
 			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
@@ -626,7 +628,7 @@ class Plotters(object):
 		dbg(lst_dirs)
 		#@Yash: if lst_dirs does not exist, throw this exception
 		if not lst_dirs:
-			raise FileNotFoundError('Could not find any matching files')
+			raise FileNotFoundError('Could not find any matching files..')
 		#@Yash: default directory is the first in lst_dirs	
 		default_dir : Path = lst_dirs[0]
 		#@Yash: print which directory is the default
