@@ -23,7 +23,7 @@ from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
 import pandas as pd # type: ignore
-# from pydbg import dbg # type: ignore
+from pydbg import dbg # type: ignore
 
 
 __EXPECTED_PATH__ : str = 'pyutil.plot.pos'
@@ -36,7 +36,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath,
 	CoordsArr,CoordsRotArr,
-	get_last_dir_name,pdbg,
+	get_last_dir_name,
 )
 
 from pyutil.read_runs import read_body_data
@@ -589,9 +589,9 @@ class Plotters(object):
 	
 	@staticmethod
 	def pos_multi(
+			*args,
 			# search in this directory
 			rootdir : Path,
-			*args,
 			# args passed down to `_draw_setup()`
 			#@Yash: Path to file with data about worm's body
 			bodydat : Path = 'body.dat',
@@ -611,22 +611,24 @@ class Plotters(object):
 			show : bool = True,
 			only_final : bool = False,
 		):
-		if not isinstance(rootdir, Path):
-			rootdir = Path(rootdir)
-
-		pdbg(rootdir)
-		pdbg(bodydat)
-		pdbg(rootdir / '**' / bodydat)
-		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
+		
+		#@Yash: debug root directory
+		# TODO: @Yash this function is improperly reading `lst_dirs`, see if you can fix it
+		dbg(rootdir)
+		dbg(joinPath(rootdir,bodydat))
+		#test
+		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
+		print(lst_bodydat)
 		lst_dirs : List[Path] = [ 
 			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 
-		pdbg(lst_dirs)
-
-  if not lst_dirs:
-			raise FileNotFoundError('Could not find any matching files')
+		#@Yash: debug lst_dirs
+		dbg(lst_dirs)
+		#@Yash: if lst_dirs does not exist, throw this exception
+		if not lst_dirs:
+			raise FileNotFoundError('Could not find any matching files..')
 		#@Yash: default directory is the first in lst_dirs	
 		default_dir : Path = lst_dirs[0]
 		#@Yash: print which directory is the default
@@ -673,7 +675,6 @@ class Plotters(object):
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
-		ax.set_title(rootdir / '**' / '')
 		plt.legend()
 		#@Yash: show, by default is set to true, so this will likely run
 		if show:

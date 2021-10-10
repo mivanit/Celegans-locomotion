@@ -149,7 +149,7 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
 }
 
 
-inline VecXY do_collide(CollisionObject & obj, VecXY pos)
+VecXY do_collide(CollisionObject obj, VecXY pos)
 {
 	// forces on elements
 	if (obj.coll_type == Box_Ax)
@@ -188,21 +188,3 @@ inline VecXY do_collide(CollisionObject & obj, VecXY pos)
 	// if no collisions found, return zero vec
 	return VecXY();
 }
-
-
-inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
-{
-	std::vector<VecXY> coll_vec;
-	for (VecXY pos : pos_vec)
-	{
-		VecXY net_force = VecXY();
-		for (CollisionObject obj : objs_vec)
-		{
-			VecXY obj_force = do_collide(obj, pos);
-			net_force = add_vecs(net_force, obj_force);
-		}
-		coll_vec.push_back(net_force);
-	}
-	return coll_vec;
-}
-

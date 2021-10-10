@@ -8,21 +8,15 @@ import json
 import pickle
 import gzip
 
-from pydbg import dbg # type: ignore
+from pydbg import dbg
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
 # from numpy.typing import NDArray
 
-try:
-  import msgpack # type: ignore
-  import msgpack_numpy # type: ignore
-  msgpack_numpy.patch()
-except (ImportError,ModuleNotFoundError) as e:
-  print(e)
-  print('replacing msgpack with json')
-  import json as msgpack
-  
+import msgpack
+import msgpack_numpy
+msgpack_numpy.patch()
 
 import yaml # type: ignore
 
@@ -271,7 +265,7 @@ def load_single_run(
 		if run_component in enable:
 			try:
 				run_data[run_component] = READ_RUNCOMP_MAP[run_component](rootdir)
-			except (FileNotFoundError,ValueError,IOError,KeyError) as e:
+			except (FileNotFoundError,ValueError,IOError) as e:
 				if strict:
 					raise e
 				else:
@@ -312,7 +306,7 @@ def transform_dirname_evalruns(runs : List[str]) -> Dict[str, str]:
 def load_eval_run(
 		rootdir : Path,
 		*,
-		enable : Iterable[RunComponent] = LST_RunComponents,
+		enable : Iterable[RunComponent] = {x for x in LST_RunComponents},
 		strict : bool = False,
 		validate_mode : Literal["error", "warn", "quiet", "none"] = "none",
 	) -> Dict[Union[RunComponent, str], Any]:
@@ -320,7 +314,7 @@ def load_eval_run(
 	output : Dict[Union[RunComponent, str], Any] = dict()
 
 	# load fitness data, if needed
-	if 'fitness' in enable: 
+	if 'fitness' in enable:
 		enable = {x for x in enable if x != 'fitness'}
 		try:
 			output['fitness'] = READ_RUNCOMP_MAP['fitness'](rootdir)				
@@ -363,7 +357,7 @@ def load_eval_run(
 
 def load_recursive_allevals(
 		rootdir : Path,
-		enable : Iterable[RunComponent] = LST_RunComponents,
+		enable : Iterable[RunComponent] = {x for x in LST_RunComponents},
 	) -> Dict[str, Any]:
 	print(f'> searching in {rootdir}')
 	alldirs : List[Path] = glob.glob(joinPath(rootdir,'**/h*/'), recursive=True)
@@ -470,9 +464,7 @@ def scrape_runinfo_interface(
 		filename = joinPath(rootdir, f'runinfo_data.{fmt}')
 
 
-	# file_open_func : Callable[[str, str], TextIOWrapper] = open
-	file_open_func : Callable = open
-
+	file_open_func : Callable[[str, str], TextIOWrapper] = open
 	
 	# if zipping, adjust things
 	if zip:
@@ -504,8 +496,7 @@ SAVE_MODES : Dict[str,str] = {
 	"yaml" : "wt",
 }
 
-# SAVE_FUNCS : Dict[str, Callable[[Any, str], None]] = {
-SAVE_FUNCS : Dict[str, Callable] = {
+SAVE_FUNCS : Dict[str, Callable[[Any, str], None]] = {
 	'json': lambda x,f,**kw: json.dump(x, f, cls = NumpyEncoder, **kw),
 	'mpk': msgpack.dump,
 	'pkl' : pickle.dump,
@@ -514,7 +505,7 @@ SAVE_FUNCS : Dict[str, Callable] = {
 
 def cli_wrapper_runloaders(
 		func_load : Callable,
-	) -> Callable:
+	) -> None:
 	
 	def newfunc(
 			rootdir : Path,
@@ -536,8 +527,7 @@ def cli_wrapper_runloaders(
 		if filename is None:
 			filename = joinPath(rootdir, f'data_{enable}.{fmt}')
 
-		# file_open_func : Callable[[str, str], TextIOWrapper] = open
-		file_open_func : Callable = open
+		file_open_func : Callable[[str, str], TextIOWrapper] = open
 		
 		# if zipping, adjust things
 		if zip:
@@ -553,7 +543,7 @@ def cli_wrapper_runloaders(
 	return newfunc
 	
 if __name__ == '__main__':
-	import fire # type: ignore
+	import fire
 
 	fire.Fire({
 		'single' : cli_wrapper_runloaders(load_single_run),
