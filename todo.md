@@ -1,3 +1,20 @@
+# 2021-10-07 todo for Yash
+
+[`mutli_run.py:300`](multi_run.py) contains the function `sweep_param()`. modify the input parameters `param_key_in` and `param_range`
+
+
+- fixed initial heading, fixed food location, vary random seed (40 times)
+- plots of varying angle (all else fixed, food in default location)
+- plots of varying angle, food moved further away
+- plots of varying angle, food moved closer
+
+
+- `param_key_in` would need to be set to something like `"simulation.angle"`
+- `param_range` format is `<start>,<stop>,<log/lin>,<n_points>`
+  - for example: `'0.0,1.0,lin,3'`
+
+
+
 # master TODO list
 ## critical
 - [x] fix bug with data not being saved
