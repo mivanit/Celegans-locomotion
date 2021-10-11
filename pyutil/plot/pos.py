@@ -624,11 +624,18 @@ class Plotters(object):
 			for p in lst_bodydat
 		]
 
+<<<<<<< Updated upstream
 		#@Yash: debug lst_dirs
 		dbg(lst_dirs)
 		#@Yash: if lst_dirs does not exist, throw this exception
 		if not lst_dirs:
 			raise FileNotFoundError('Could not find any matching files..')
+=======
+		pdbg(lst_dirs)
+
+		if not lst_dirs:
+			raise FileNotFoundError('Could not find any matching files')
+>>>>>>> Stashed changes
 		#@Yash: default directory is the first in lst_dirs	
 		default_dir : Path = lst_dirs[0]
 		#@Yash: print which directory is the default
