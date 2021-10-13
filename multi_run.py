@@ -392,7 +392,7 @@ class Launchers(object):
 						stderr = subprocess.STDOUT,
 						stdout = f_log,
 					)
-
+			
 			count += 1
 	
 
@@ -401,3 +401,4 @@ class Launchers(object):
 if __name__ == "__main__":
 	import fire # type: ignore
 	fire.Fire(Launchers)
+

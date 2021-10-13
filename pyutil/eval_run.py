@@ -392,4 +392,5 @@ def extract_combined_grad_angle(
 		ret_nan : bool = False,
 	) -> NDArray[Any,float]:
 	# TODO
+	raise NotImplementedError(f'{extract_combined_grad_angle=}')
 
