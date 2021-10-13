@@ -293,6 +293,7 @@ class Launchers(object):
 			param_key : Union[tuple,str] = 'ChemoReceptors.alpha',
 			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
+			multi_food : bool = False,
 			ASK_CONTINUE : bool = True,
 			**kwargs,
 		):
@@ -319,14 +320,14 @@ class Launchers(object):
 		param_key_sdot : str = '.'.join(param_key_tup)
 
 		# convert into a dict
-		param_range = strList_to_dict(
+		param_range_dict : Dict[str,Any] = strList_to_dict(
 			in_data = param_range,
 			keys_list = ['min', 'max', 'scale', 'npts'],
 			type_map = {'min' : float, 'max' : float, 'npts' : int},
 		)
 
 		print(f'>> parameter to modify: {param_key_sdot}')
-		print(f'>> range of values: {param_range}')
+		print(f'>> range of values: {param_range_dict}')
 	
 		param_fin_dict : dict = params_data
 		param_fin_key : str = ''
@@ -338,10 +339,10 @@ class Launchers(object):
 			exit(1)
 
 		# figure out the range of values to try
-		param_vals : NDArray = SPACE_GENERATOR_MAPPING[param_range['scale']](
-			param_range['min'], 
-			param_range['max'], 
-			param_range['npts'],
+		param_vals : NDArray = SPACE_GENERATOR_MAPPING[param_range_dict['scale']](
+			param_range_dict['min'], 
+			param_range_dict['max'], 
+			param_range_dict['npts'],
 		)
 		
 		count : int = 1
@@ -369,11 +370,28 @@ class Launchers(object):
 				json.dump(params_data, fout, indent = '\t')
 
 			# run
-			Launchers.multi_food_run(
-				rootdir = outpath,
-				params = outpath_params,
-				**kwargs
-			)
+			if multi_food:
+				Launchers.multi_food_run(
+					rootdir = outpath,
+					params = outpath_params,
+					**kwargs
+				)
+			else:
+				cmd : str = genCmd_singlerun(
+					output = outpath,
+					params = outpath_params,
+					**kwargs,
+				)
+
+				print(cmd)
+
+				# run the process, write stderr and stdout to the log file
+				with open(outpath + 'log.txt', 'w') as f_log:
+					p = subprocess.Popen(
+						cmd, 
+						stderr = subprocess.STDOUT,
+						stdout = f_log,
+					)
 
 			count += 1
 	
