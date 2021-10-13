@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import os
+import sys
 import math
 from typing import *
 from copy import Error, deepcopy
 from enum import Enum
+import inspect
 # from collections import namedtuple
 # from dataclasses import dataclass
 from functools import wraps as functools_wraps
 
 import json
 
-from pydbg import dbg # type: ignore
+# from pydbg import dbg # type: ignore
 
 import numpy as np # type: ignore
 import numpy.lib.recfunctions as recfunctions
@@ -29,7 +31,19 @@ import pandas as pd # type: ignore
  #      #    #   #   #    #
  #      #    #   #   #    #
 """
-Path = str
+# Path = str
+
+class Path(str):
+	def __truediv__(self, other : Path):
+		if other.startswith('/'):
+			raise ValueError(f'trying to append rootpath {other} to path')
+		if self.endswith('/'):
+			return Path(self + other)
+		else:
+			return Path(self + '/' + other)
+
+	def unixPath(self):
+		return Path(self.replace('\\', '/'))
 
 def unixPath(in_path : Path) -> Path:
 	return in_path.replace("\\", "/")
@@ -95,6 +109,8 @@ ShapeAnnotation = NewType("ShapeAnnotation", Tuple[str,...])
 CoordsArr = np.dtype([ ('x','f8'), ('y','f8')])
 CoordsRotArr = np.dtype([ ('x','f8'), ('y','f8'), ('phi','f8') ])
 
+# CoordsArrUnion = Union[CoordsArr, CoordsRotArr]
+
 VecXY = NamedTuple(
 	'VecXY',
 	[
@@ -102,6 +118,14 @@ VecXY = NamedTuple(
 		('y', float),
 	],
 )
+
+def angle_between_VecXY(u : VecXY, v : VecXY) -> float:
+	"""compute the angle from point `u` to point `v`"""
+	return np.arctan2(v.y - u.y, v.x - u.x)
+
+# def angle_between_starr(u : CoordsArrUnion, v : CoordsArrUnion) -> float:
+# 	"""compute the angle from point `u` to point `v`"""
+# 	return np.arctan2(v['y'] - u['y'], v['x'] - u['x'])
 
 def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 	with open(joinPath(path, file), 'w') as log_out:
@@ -123,6 +147,23 @@ def norm_prob(arr : NDArray) -> NDArray:
 
 def raise_(ex):
     raise ex
+
+_ExpType = TypeVar('_ExpType')
+def pdbg(exp: _ExpType) -> _ExpType:
+    for frame in inspect.stack():
+        line = frame.code_context[0]
+        if "pdbg" in line:
+            start = line.find('(') + 1
+            end =  line.rfind(')')
+            if end == -1:
+                end = len(line)
+            print(
+                f"[{os.path.basename(frame.filename)}:{frame.lineno}] {line[start:end]} = {exp!r}",
+                file=sys.stderr,
+            )
+            break
+
+    return exp
 
 """
 ########  ####  ######  ########

@@ -111,12 +111,12 @@ class Launchers(object):
 			mkdir(out_path)
 
 			# set up the command by passing kwargs down
-			cmd : str = genCmd_singlerun(
+			cmd : List[str] = genCmd_singlerun(
 				output = out_path,
 				foodPos = foodPos,
 				angle = angle,
 				**kwargs,
-			)
+			).split(' ')
 
 			print(cmd)
 
