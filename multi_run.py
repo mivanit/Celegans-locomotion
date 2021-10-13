@@ -290,7 +290,7 @@ class Launchers(object):
 	@staticmethod
 	def sweep_param(
 			rootdir : Path = 'data/run/',
-			param_key_in : Union[tuple,str] = 'ChemoReceptors.alpha',
+			param_key : Union[tuple,str] = 'ChemoReceptors.alpha',
 			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
 			params : Path = 'input/params.json',
 			ASK_CONTINUE : bool = True,
@@ -311,10 +311,12 @@ class Launchers(object):
 		# (useful as shorthand when using python-fire CLI)
 
 		# split up path to parameter by dot
-		if not isinstance(param_key_in, str):
-			param_key : List[str] = list(param_key_in)
-		else:
-			param_key = list(param_key_in.split('.'))
+		param_key_tup : Tuple[str,...] = (
+			tuple(param_key.split('.'))
+			if isinstance(param_key, str)
+			else tuple(param_key)
+		)
+		param_key_sdot : str = '.'.join(param_key_tup)
 
 		# convert into a dict
 		param_range = strList_to_dict(
@@ -323,15 +325,15 @@ class Launchers(object):
 			type_map = {'min' : float, 'max' : float, 'npts' : int},
 		)
 
-		print(f'>> parameter to modify: {param_key}')
+		print(f'>> parameter to modify: {param_key_sdot}')
 		print(f'>> range of values: {param_range}')
 	
 		param_fin_dict : dict = params_data
 		param_fin_key : str = ''
 		try:
-			param_fin_dict,param_fin_key = keylist_access_nested_dict(params_data, param_key)
+			param_fin_dict,param_fin_key = keylist_access_nested_dict(params_data, param_key_tup)
 		except KeyError as ex:
-			print(f'\n{param_key} was not a valid parameter for the params file read from {params}. Be sure that the parameter you want to modify exists in the json file.\n')
+			print(f'\n{param_key_sdot} was not a valid parameter for the params file read from {params}. Be sure that the parameter you want to modify exists in the json file.\n')
 			raise ex
 			exit(1)
 
@@ -345,7 +347,7 @@ class Launchers(object):
 		count : int = 1
 		count_max : int = len(param_vals)
 
-		print(f'> will modify parameter: {param_key}\n\t>>  {param_fin_dict}\t-->\t{param_fin_key}')
+		print(f'> will modify parameter: {param_key_sdot}\n\t>>  {param_fin_dict}\t-->\t{param_fin_key}')
 		print(f'> will try {len(param_vals)} values:\n\t>>  {param_vals}')
 		if ASK_CONTINUE:
 			input('press enter to continue...')
@@ -355,7 +357,7 @@ class Launchers(object):
 			print(f'> running for param val {pv} \t ({count} / {count_max})')
 
 			# make dir
-			outpath : str = f"{rootdir}{param_key}_{pv:.5}/"
+			outpath : str = f"{rootdir}{param_key_sdot}_{pv:.5}/"
 			outpath_params : str = joinPath(outpath,'in-params.json')
 			mkdir(outpath)
 
