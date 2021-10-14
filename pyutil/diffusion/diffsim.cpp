@@ -7,11 +7,14 @@
 
 
 const double PI = 3.14159265358979323846;
-const double TRAVELDIST_LAMBDA = 0.00001;
+
+// NOTE: this gets overwritten by the command line arguments
+// diffusion factor is nan for this reason
+double diffusion_factor = std::nan("");
 
 static std::default_random_engine generator;
 static std::uniform_real_distribution dist_angle(0.0, 2.0*PI);
-// static std::exponential_distribution<double> dist_exponential(TRAVELDIST_LAMBDA);
+// static std::exponential_distribution<double> dist_exponential(diffusion_factor);
 
 std::vector<CollisionObject> COLL_OBJS;
 
@@ -52,7 +55,7 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 	for (int i = 0; i < positions.size(); i++)
 	{
 		// VecXY pos_delts = from_rtheta(pd_distances[i], pd_angles[i]);
-		VecXY pos_delts = from_rtheta(TRAVELDIST_LAMBDA, pd_angles[i]);
+		VecXY pos_delts = from_rtheta(diffusion_factor, pd_angles[i]);
 		newpos[i] = add_vecs(positions[i], pos_delts);
 	}
 
@@ -108,17 +111,15 @@ int main (int argc, const char* argv[])
         ("o,output", "output file", 
             cxxopts::value<std::string>())
         ("d,duration", "sim duration in timeteps", 
-            cxxopts::value<long unsigned>()->default_value(1000))
+            cxxopts::value<long unsigned>()->default_value("1000"))
 		("n,nparticles", "number of particles", 
-            cxxopts::value<long unsigned>()->default_value(1000))
+            cxxopts::value<long unsigned>()->default_value("1000"))
         ("f,foodPos", "food position (comma separated)", 
             cxxopts::value<std::string>()->default_value("0,0"))
 		("s,saveevery", "num timesteps between saving. -1 (default) implies only final step saved", 
-			cxxopts::value<long int>()->default_value(-1))
-        // ("r,rand", "random initialization seed based on time", 
-        //     cxxopts::value<bool>())
-        // ("s,seed", "set random initialization seed. takes priority over `rand`. seed is 0 by default.", 
-        //     cxxopts::value<long>())
+			cxxopts::value<long int>()->default_value("-1"))
+		("a,diffusion_factor", "diffusion step size",
+			cxxopts::value<double>()->default_value("0.001"))
         ("h,help", "print usage")
     ;
 
@@ -133,6 +134,7 @@ int main (int argc, const char* argv[])
 	// get parameters
     long unsigned duration = cmd["duration"].as<long unsigned>();
 	long unsigned nparticles = cmd["nparticles"].as<long unsigned>();
+	diffusion_factor = cmd["diffusion_factor"].as<double>();
 	
 	long int saveevery = cmd["saveevery"].as<long int>();
 	if (saveevery == -1) { saveevery = duration; }

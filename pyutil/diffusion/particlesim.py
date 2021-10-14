@@ -1,4 +1,6 @@
 from typing import *
+import os
+import sys
 
 import numpy as np
 from nptyping import NDArray
@@ -6,6 +8,12 @@ from nptyping import NDArray
 import matplotlib.pyplot as plt
 
 import numba
+
+sys.path.append('../..')
+from pyutil.collision_object import read_collobjs_tsv,CollisionObject
+from pyutil.plot.pos import (
+	_plot_collobjs,_get_fig_bounds_box,get_bounds,_combine_bounds,BoundingBox
+)
 
 # import cppyy
 # cppyy.include('Collide_standalone.h')
@@ -149,13 +157,14 @@ def run_particlesim_inline(
 
 def positions_to_heatmap(
 		positions : ParticlePositions,
-		bounds : Optional[Tuple[float,float]] = None,
+		bounds_tup : Optional[Tuple[float,float]] = None,
 		gridpoints : int = 100,
 		plot : bool = True,
+		collobjs : Optional[str] = '../../input/objs/maze.tsv',
 	) -> NDArray:
 
-	if bounds is None:
-		bounds = (
+	if bounds_tup is None:
+		bounds_tup = (
 			np.min(positions),
 			np.max(positions),
 		)
@@ -164,15 +173,42 @@ def positions_to_heatmap(
 		positions[:,0],
 		positions[:,1],
 		bins = gridpoints,
-		range = (bounds, bounds),
+		range = (bounds_tup, bounds_tup),
 	)
 
+
 	if plot:
-		plt.imshow(
+		# collision object stuff for bounds
+		lst_collision_objects : List[CollisionObject] = list()
+		if (collobjs is not None) and os.path.isfile(collobjs):
+			lst_collision_objects = read_collobjs_tsv(collobjs)
+		else:
+			print(f'  >> WARNING: could not find file, skipping: {collobjs}')
+
+		bounds_objs : BoundingBox = get_bounds(lst_collision_objects)
+
+		# get bounds and set up figure
+		bounds : BoundingBox = _combine_bounds([
+			{
+				'bound_min_x' : bounds_tup[0], 'bound_max_x' : bounds_tup[1],
+				'bound_min_y' : bounds_tup[0], 'bound_max_y' : bounds_tup[1],
+			},
+			bounds_objs,
+		])
+		fig, ax = plt.subplots(1,1, figsize = _get_fig_bounds_box(bounds))
+		ax.axis('equal')
+		
+		# plot diffusion
+		ax.imshow(
 			H,
 			extent = (xedges[0], xedges[1], yedges[0], yedges[1]),
 			interpolation = 'bilinear',
 		)
+		
+		# plot objects
+		_plot_collobjs(ax, lst_collision_objects)
+		
+		fig.show()
 
 	return H
 
@@ -210,7 +246,7 @@ def run_particlesim_wrapper(
 
 def read_and_plot(
 		filename : str,
-		bounds : Optional[Tuple[float,float]] = None,
+		bounds_tup : Optional[Tuple[float,float]] = None,
 		gridpoints : int = 50,
 	):
 	data = np.load(filename)
@@ -226,7 +262,7 @@ def read_and_plot(
 
 	positions_to_heatmap(
 		positions = data,
-		bounds = bounds,
+		bounds_tup = bounds_tup,
 		gridpoints = gridpoints,
 	)
 	plt.show()

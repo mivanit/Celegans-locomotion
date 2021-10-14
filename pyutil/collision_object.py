@@ -17,7 +17,11 @@ from pyutil.util import Path
 
 
 AxBounds = Tuple[float,float]
-BoundingBox = Dict[str,float]
+BoundsKey = Literal[
+	'bound_min_x', 'bound_min_y',
+	'bound_max_x', 'bound_max_y',
+]
+BoundingBox = Dict[BoundsKey,float]
 
 def BOUNDS_TEMPLATE() -> BoundingBox:
 	return {
