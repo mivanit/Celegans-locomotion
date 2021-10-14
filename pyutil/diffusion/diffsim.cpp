@@ -104,15 +104,17 @@ int main (int argc, const char* argv[])
     cxxopts::Options options("diffsim.cpp", "particle diffusion sim with collisions");
     options.add_options()
         ("c,coll", "collision tsv file", 
-            cxxopts::value<std::string>())
+            cxxopts::value<std::string>()->default_value("../../input/objs/maze.tsv"))
         ("o,output", "output file", 
             cxxopts::value<std::string>())
         ("d,duration", "sim duration in timeteps", 
-            cxxopts::value<long unsigned>())
+            cxxopts::value<long unsigned>()->default_value(1000))
 		("n,nparticles", "number of particles", 
-            cxxopts::value<long unsigned>())
+            cxxopts::value<long unsigned>()->default_value(1000))
         ("f,foodPos", "food position (comma separated)", 
-            cxxopts::value<std::string>())
+            cxxopts::value<std::string>()->default_value("0,0"))
+		("s,saveevery", "num timesteps between saving. -1 (default) implies only final step saved", 
+			cxxopts::value<long int>()->default_value(-1))
         // ("r,rand", "random initialization seed based on time", 
         //     cxxopts::value<bool>())
         // ("s,seed", "set random initialization seed. takes priority over `rand`. seed is 0 by default.", 
@@ -131,6 +133,10 @@ int main (int argc, const char* argv[])
 	// get parameters
     long unsigned duration = cmd["duration"].as<long unsigned>();
 	long unsigned nparticles = cmd["nparticles"].as<long unsigned>();
+	
+	long int saveevery = cmd["saveevery"].as<long int>();
+	if (saveevery == -1) { saveevery = duration; }
+
 	std::string output_file = cmd["output"].as<std::string>();
 	std::string collision_file = cmd["coll"].as<std::string>();
 	VecXY foodpos = get_foodPos(cmd);
