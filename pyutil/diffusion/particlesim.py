@@ -149,10 +149,16 @@ def run_particlesim_inline(
 
 def positions_to_heatmap(
 		positions : ParticlePositions,
-		bounds : Tuple[float,float] = (-50,50),
-		gridpoints : int = 50,
+		bounds : Optional[Tuple[float,float]] = None,
+		gridpoints : int = 100,
 		plot : bool = True,
 	) -> NDArray:
+
+	if bounds is None:
+		bounds = (
+			np.min(positions),
+			np.max(positions),
+		)
 
 	H,xedges,yedges = np.histogram2d(
 		positions[:,0],
@@ -202,7 +208,11 @@ def run_particlesim_wrapper(
 		plt.show()
 
 
-def read_and_plot(filename : str):
+def read_and_plot(
+		filename : str,
+		bounds : Optional[Tuple[float,float]] = None,
+		gridpoints : int = 50,
+	):
 	data = np.load(filename)
 
 	# assume that there are more than 2 particles, lol
@@ -214,7 +224,11 @@ def read_and_plot(filename : str):
 	print(data.shape)
 	print(data)
 
-	positions_to_heatmap(data)
+	positions_to_heatmap(
+		positions = data,
+		bounds = bounds,
+		gridpoints = gridpoints,
+	)
 	plt.show()
 
 

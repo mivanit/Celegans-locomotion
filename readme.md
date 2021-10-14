@@ -49,6 +49,16 @@ make prof
 A file called `prof.txt` with useful info should be generated. You can also look in [`data/prof/prof.txt`](data/prof/prof.txt) for an already generated file. If you optimize the code, label the new `prof.txt` with a commit hash or date.
 
 
+# Diffusion simulation
+```bash
+make diffsim
+cd pyutil/diffusion/
+./diffsim.exe --coll ../../input/objs/maze.tsv --output data/test_7.npy --duration 100 --nparticles 1000 --foodPos 0,0
+
+```
+
+
+
 # Documentation
 documentation for the python code can be build automatically using [`pdoc`](https://pdoc3.github.io/pdoc/)
 to build, do

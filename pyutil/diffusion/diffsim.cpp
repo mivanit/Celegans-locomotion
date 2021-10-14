@@ -11,12 +11,12 @@ const double TRAVELDIST_LAMBDA = 0.00001;
 
 static std::default_random_engine generator;
 static std::uniform_real_distribution dist_angle(0.0, 2.0*PI);
-static std::exponential_distribution<double> dist_exponential(TRAVELDIST_LAMBDA);
+// static std::exponential_distribution<double> dist_exponential(TRAVELDIST_LAMBDA);
 
 std::vector<CollisionObject> COLL_OBJS;
 
 
-std::vector<double> get_angle(int size)
+inline std::vector<double> get_angle(int size)
 {
 	std::vector<double> vec(size);
     std::generate(vec.begin(), vec.end(), [&]{ 
@@ -25,12 +25,13 @@ std::vector<double> get_angle(int size)
 	return vec;
 }
 
-std::vector<double> get_traveldist(int size)
+inline std::vector<double> get_traveldist(int size)
 {
+	// TODO: this isnt working properly, disabled
 	std::vector<double> vec(size);
-	std::generate(vec.begin(), vec.end(), [&]{
-		return dist_exponential(generator);
-	});
+	// std::generate(vec.begin(), vec.end(), [&]{
+	// 	return dist_exponential(generator);
+	// });
 	return vec;
 }
 
@@ -51,7 +52,7 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 	for (int i = 0; i < positions.size(); i++)
 	{
 		// VecXY pos_delts = from_rtheta(pd_distances[i], pd_angles[i]);
-		VecXY pos_delts = from_rtheta(0.01, pd_angles[i]);
+		VecXY pos_delts = from_rtheta(TRAVELDIST_LAMBDA, pd_angles[i]);
 		newpos[i] = add_vecs(positions[i], pos_delts);
 	}
 
