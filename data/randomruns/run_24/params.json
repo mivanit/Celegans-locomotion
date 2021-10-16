@@ -388,11 +388,11 @@
 		}
 	},
 	"simulation": {
-		"angle": -1.5,
-		"coll": "input/objs_yash.tsv",
-		"duration": 68.0,
+		"angle": 0.5,
+		"coll": "input/objs_empty.tsv",
+		"duration": 20.0,
 		"output": "data/randomruns/run_24/",
-		"seed": 1633641335,
-		"src-params": "input/params_new.json"
+		"seed": 1633993907,
+		"src-params": "input/params.json"
 	}
 }

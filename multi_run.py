@@ -290,9 +290,9 @@ class Launchers(object):
 	@staticmethod
 	def sweep_param(
 			rootdir : Path = 'data/run/',
-			param_key_in : Union[tuple,str] = 'ChemoReceptors.alpha',
+			param_key_in : Union[tuple,str] = 'simulation.angle',
 			param_range : Union[dict,tuple,str] = '0.0,1.0,lin,3',
-			params : Path = 'input/params.json',
+			params : Path = 'input/params_new.json',
 			ASK_CONTINUE : bool = True,
 			**kwargs,
 		):

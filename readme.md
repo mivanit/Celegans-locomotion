@@ -73,6 +73,8 @@ Whenever I can get automatic generation of documentation for the C++ code to wor
   - can take out --rootdir=
 - to plot `./sim.exe --params input/params.json --output data/randomruns/run_n --rand --coll input/objs_yash.tsv`
 
+-  `python multi_run.py sweep_param --rootdir=data/anglesweep/ --param_key_in='simulation.angle' --param_range=-3.14,3.14,lin,40 --params=input/params_new.json`
+- do the same from 0 to 2pi
 <!-- requirements:
 
  - make

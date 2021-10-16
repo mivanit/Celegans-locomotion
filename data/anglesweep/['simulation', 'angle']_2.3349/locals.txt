@@ -1,0 +1,1 @@
+{'rootdir': "data/anglesweep/['simulation', 'angle']_2.3349/", 'foodPos': (-0.003, 0.005), 'angle': 1.57, 'kwargs': {'params': "data/anglesweep/['simulation', 'angle']_2.3349/in-params.json"}, 'food_x': 0.003, 'food_y': 0.005}
