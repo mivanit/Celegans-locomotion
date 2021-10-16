@@ -220,19 +220,19 @@ def extract_food_dist(
 	"""
 	if ret_nan:
 		return float('nan')
-	else:
-		# get head pos
-		bodydata : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
-		pos_head : VecXY = VecXY( bodydata['x'], bodydata['y'] )
 
-		# get food pos
-		pos_food : VecXY = VecXY(
-			params['ChemoReceptors']['foodPos']['x'],
-			params['ChemoReceptors']['foodPos']['y'],
-		)
+	# get head pos
+	bodydata : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[-1,0]
+	pos_head : VecXY = VecXY( bodydata['x'], bodydata['y'] )
 
-		# return distance
-		return dist(pos_head, pos_food)
+	# get food pos
+	pos_food : VecXY = VecXY(
+		params['ChemoReceptors']['foodPos']['x'],
+		params['ChemoReceptors']['foodPos']['y'],
+	)
+
+	# return distance
+	return dist(pos_head, pos_food)
 
 def extract_food_dist_inv(
 		datadir : Path,
@@ -296,9 +296,101 @@ def calcmean_symmetric(data : Dict[str,float]) -> float:
 	return sum(per_angle_min.values()) / len(per_angle_min.values())
 
 
+def extract_food_angle_align(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> NDArray[Any,float]:
+	"""extract mean alignment towards food position
+	
+	### Parameters:
+	 - `datadir : Path`   
+	 - `params : ParamsDict`   
+	 - `ret_nan : bool`   
+	   (defaults to `False`)
+	
+	### Returns:
+	 - `float` 
+	"""
+
+	# get head pos
+	arr_pos_head : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[:,0]
+
+	# get food pos
+	pos_food : VecXY = VecXY(
+		params['ChemoReceptors']['foodPos']['x'],
+		params['ChemoReceptors']['foodPos']['y'],
+	)
+
+	# at each timestep, get angle to food position from current position
+	align_angle : NDArray[Any, float] = np.full_like(arr_pos_head['phi'], np.nan)
+
+	if ret_nan:
+		return align_angle
+
+	for i,pos_head in enumerate(arr_pos_head):
+		# get angle to food
+		food_angle : float = angle_between_starr(pos_head, pos_food)
+		align_angle[i] = food_angle - pos_head['phi']
+
+	return align_angle
+
+
+def extract_food_angle_align_mean(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> float:
+	"""extract mean alignment towards food position
+	
+	### Parameters:
+	 - `datadir : Path`   
+	 - `params : ParamsDict` 
+	 - `ret_nan : bool`   
+	   (defaults to `False`)
+	
+	### Returns:
+	 - `float` 
+	"""
+	if ret_nan:
+		return float('nan')
+
+	# get the angle
+	angle_align : NDArray[Any,float] = extract_food_angle_align(datadir, params)
+
+	# return mean
+	return np.mean(np.abs(angle_align))
 
 
 
+def extract_gradient_deriv(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> NDArray[Any,float]:
+	"""compute the change in food concentration at every timestep for head position
+	
+	### Parameters:
+	 - `datadir : Path`   
+	   [description]
+	 - `params : ParamsDict`   
+	   [description]
+	 - `ret_nan : bool`   
+	   [description]
+	   (defaults to `False`)
+	
+	### Returns:
+	 - `NDArray[Any,float]` 
+	   [description]
+	"""
+	# TODO
 
 
+def extract_combined_grad_angle(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> NDArray[Any,float]:
+	# TODO
+	raise NotImplementedError(f'{extract_combined_grad_angle=}')
 

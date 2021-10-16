@@ -23,7 +23,7 @@ from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
 import pandas as pd # type: ignore
-from pydbg import dbg # type: ignore
+# from pydbg import dbg # type: ignore
 
 
 __EXPECTED_PATH__ : str = 'pyutil.plot.pos'
@@ -36,7 +36,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath,
 	CoordsArr,CoordsRotArr,
-	get_last_dir_name,
+	get_last_dir_name,pdbg,
 )
 
 from pyutil.read_runs import read_body_data
@@ -589,53 +589,40 @@ class Plotters(object):
 	
 	@staticmethod
 	def pos_multi(
-			*args,
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
-			#@Yash: Path to file with data about worm's body
-			bodydat : Path = 'body.dat',
-			#@Yash: Path to a file, which lists numbers - the coordinates of collision objects? 
-			collobjs : Path = 'coll_objs.tsv',
-			#@Yash: no idea
-			params : Optional[Path] = 'params.json',
-			#@Yash: maybe a variable that stores a start and stop time of experiment? 
-			time_window : Tuple[OptInt,OptInt] = (None, None),
-			#@Yash: no idea
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
+			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : Optional[float] = None,
-			#@Yash: no idea
 			pad_frac : Optional[float] = None,
 			# args specific to this plotter
-			#@Yash: no idea about these. show being true might mean the program prints it 
 			idx : int = 0,
 			show : bool = True,
 			only_final : bool = False,
 		):
-		
-		#@Yash: debug root directory
-		# TODO: @Yash this function is improperly reading `lst_dirs`, see if you can fix it
-		dbg(rootdir)
-		dbg(joinPath(rootdir,bodydat))
-		#test
-		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
-		print(lst_bodydat)
+		if not isinstance(rootdir, Path):
+			rootdir = Path(rootdir)
+
+		pdbg(rootdir)
+		pdbg(bodydat)
+		pdbg(rootdir / '**' / bodydat)
+		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
 		lst_dirs : List[Path] = [ 
 			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 
-		#@Yash: debug lst_dirs
-		dbg(lst_dirs)
-		#@Yash: if lst_dirs does not exist, throw this exception
+		pdbg(lst_dirs)
 		if not lst_dirs:
-			raise FileNotFoundError('Could not find any matching files..')
-		#@Yash: default directory is the first in lst_dirs	
+			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
-		#@Yash: print which directory is the default
 		print(f'> using as default: {default_dir}')
 
 		fig,ax,data_default,bounds = _draw_setup(
-			#@Yash: maybe creating local variables and assigning them to existing ones
 			rootdir = default_dir,
 			bodydat = bodydat,
 			collobjs = collobjs,
@@ -645,41 +632,33 @@ class Plotters(object):
 			pad_frac = figsize_scalar,
 		)
 
-		#@Yash: looping through lst_dirs
 		for x_dir in lst_dirs:
-			#@Yash: create x_bodydat string that combines the paths of the current directory and bodydat
+			
 			x_bodydat : str = joinPath(x_dir, bodydat)
-			#@Yash: do the same with x_params and params
 			x_params : str = joinPath(x_dir, params)
-
-			#@Yash: call a function to read the body data. read_body_data takes in body data file and spits out a 
-			#structured array. This line then assigns that to a numpy array 			
+						
 			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
-			#@Yash: out of the ndarray data, this pulls head data from the end of the array
+			
 			head_data : NDArray[Any, CoordsRotArr] = data[-1,idx]
-			#@Yash: only_final is false, so this if condition should return true
 			if not only_final:
-				#@Yash: i'm guessing this means we don't ONLY want the final value in data. so we take more info from 
-				#the data array and assign it to head_data
 				head_data = data[:,idx]
-			#@Yash: print body data
+
 			print(x_bodydat)
-			#@Yash: print shape and data type of head_data array (the part that says Any)
 			print(head_data.shape, head_data.dtype)
-			#@Yash: if we DO only want the final value in ndarray data, plot with circle markers
+
 			if only_final:
 				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
-			#@Yash: otherwise plot with the default format. Either way plot the worm's head data (single point)
 			else:
 				ax.plot(head_data['x'], head_data['y'], label = x_dir)
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
+		ax.set_title(rootdir / '**' / '')
 		plt.legend()
-		#@Yash: show, by default is set to true, so this will likely run
+
 		if show:
-			#@Yash: show the plot that was just created
 			plt.show()
+
 	
 	@staticmethod
 	def pos_gener(
