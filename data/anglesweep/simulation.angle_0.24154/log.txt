@@ -1,0 +1,7 @@
+> loading configs:
+  > params json from:  	data/anglesweep/simulation.angle_0.24154/in-params.json
+  > read command line args
+  >> set rand seed to 1631207313
+  >> set duration to 68.000000
+  >> set angle to 0.241538
+  >> set foodPos to 0.005000, 0.000300

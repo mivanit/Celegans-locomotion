@@ -1,1 +1,1 @@
-{'rootdir': 'data/anglesweep/', 'param_key_in': 'simulation.angle', 'param_range': (-3.14, 3.14, 'lin', 40), 'params': 'input/params_new.json', 'ASK_CONTINUE': True, 'kwargs': {}}
+{'rootdir': 'data/anglesweep/', 'param_key': 'simulation.angle', 'param_range': (-3.14, 3.14, 'lin', 40), 'params': 'input/params_new.json', 'multi_food': False, 'ASK_CONTINUE': True, 'kwargs': {}}
