@@ -28,7 +28,7 @@ import pandas as pd # type: ignore
 
 __EXPECTED_PATH__ : str = 'pyutil.plot.pos'
 if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
-	sys.path.append(os.path.join(
+	sys.path.append(os.path.join( 
 		sys.path[0], 
 		'../' * __EXPECTED_PATH__.count('.'),
 	))
@@ -36,7 +36,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath,
 	CoordsArr,CoordsRotArr,
-	get_last_dir_name,pdbg,
+	get_last_dir_name, #pdbg,
 )
 
 from pyutil.read_runs import read_body_data
@@ -607,16 +607,16 @@ class Plotters(object):
 		if not isinstance(rootdir, Path):
 			rootdir = Path(rootdir)
 
-		pdbg(rootdir)
-		pdbg(bodydat)
-		pdbg(rootdir / '**' / bodydat)
-		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
+		#pdbg(rootdir) #changed from pdbg
+		#pdbg(bodydat) #changed from pdbg
+		#pdbg(rootdir / '**' / bodydat) #changed from pdbg
+		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True) 
 		lst_dirs : List[Path] = [ 
 			unixPath(os.path.dirname(p)) + '/'
 			for p in lst_bodydat
 		]
 
-		pdbg(lst_dirs)
+		#pdbg(lst_dirs) #changed from pdbg
 		if not lst_dirs:
 			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
