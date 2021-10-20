@@ -71,10 +71,10 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 }
 
 
-	std::pair<
-		std::vector<std::vector<VecXY>>, 
-		std::vector<int>
-	> do_sim(
+std::pair<
+	std::vector<std::vector<VecXY>>, 
+	std::vector<int>
+> do_sim(
 	VecXY pos, 
 	long unsigned size, 
 	long unsigned tsteps,
@@ -88,21 +88,25 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 
 	// pos_current will store the current state only
 	std::vector<VecXY> pos_current = initialize_particles(pos, size);
-	for (long unsigned i = 0; i < tsteps; i++)
+	std::cout << std::endl;
+	for (long unsigned i = 0; i < tsteps+1; i++)
 	{
 		pos_current = iterate_particles(pos_current);
 		if (i % print_every == 0)
 		{
-			std::cout << "> iteration\t" << i << std::endl;
+			std::cout << "> iteration\t" << i << "\r";
+			std::cout.flush();
 		}
 		if (
 			( (i % save_every == 0) && (i > 0) )
-			|| (i == tsteps-1)
+			|| (i == tsteps)
 		){
 			pos_store.push_back(pos_current);
 			tstep_store.push_back(i);
 		}
 	}
+	std::cout << std::endl;
+	
 	return std::make_pair(pos_store, tstep_store);
 }
 
@@ -172,10 +176,6 @@ int main (int argc, const char* argv[])
 		<< "\n\tfoodPos:\t" << foodPos.x << ", " << foodPos.y
 		<< std::endl;
 
-
-	// metadata
-	// json test = { {"a",1}, {"b",2} };
-
 	json metadata = {
 		{"duration", duration},
 		{"nparticles", nparticles},
@@ -196,7 +196,7 @@ int main (int argc, const char* argv[])
 		coll_objs_map.push_back(obj.as_umap());
 	}
 
-	std::cout << "loaded objects count:\t" << COLL_OBJS.size() << std::endl;
+	std::cout << "\tobjects_count:\t" << COLL_OBJS.size() << std::endl;
 
 	metadata["collision_data"] = coll_objs_map;
 	

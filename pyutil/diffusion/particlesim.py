@@ -1,6 +1,7 @@
 from typing import *
 import os
 import sys
+import json
 
 import numpy as np
 from nptyping import NDArray
@@ -244,26 +245,127 @@ def run_particlesim_wrapper(
 		plt.show()
 
 
+# PositionData = NDArray[[Any,2], float]
+PositionData = NDArray[float]
+
+class DiffusionDataSet(object):
+	def __init__(
+			self,
+			posdata : Dict[int,PositionData],
+			metadata : Dict[str, Any],
+		):
+		self.posdata : PositionData = posdata
+		self.metadata : Dict[str,Any] = metadata
+
+	def __getitem__(self, key : str) -> Any:
+		return self.metadata[key]
+
+	@staticmethod
+	def read_from_basename(
+			file_base : str,
+			delete_old_type : bool = True,
+			augment_final_timestep : bool = True,
+		) -> 'DiffusionDataSet':
+		"""reads from a base file
+		
+		### Parameters:
+		- `file_base : str`   
+		base file name -- `.npy` will be appended for pos data, `.json` for metadata
+		
+		### Returns:
+		- `Dict[int,NDArray]`
+		dict mappting iteration number to data, where first axis is particle idx and second is x/y
+		"""
+
+		fname_pos : str = file_base + '.npy'
+		fname_meta : str = file_base + '.json'
+
+		# load position data, and process
+		posdata_raw : NDArray = np.load(fname_pos)
+		# print(f'{posdata=}, {type(posdata)=}')
+
+		# if old format, extend to 3rd dimension (0th idx is timestep)
+		if len(posdata_raw.shape) == 2:
+			posdata_raw = np.array([posdata_raw])
+
+		# assume that there are more than 2 particles, lol
+		# and use this to fix the shape
+		# since `positions_to_heatmap()` assumes second idx is particle idx, third is x/y
+		if posdata_raw.shape[1] == 2:
+			posdata_raw[:] = posdata_raw[:].T
+
+		# load metadata
+		with open(fname_meta, 'r') as f:
+			metadata : Dict[str,Any] = json.load(f)
+
+		# split up the position data by timestep
+		if len(metadata['tsteps']) != posdata_raw.shape[0]:
+			raise ValueError(f"expected {len(metadata['tsteps'])} timesteps (from json metadata), got {posdata_raw.shape[0]} timesteps")
+
+		posdata : Dict[int,PositionData] = {
+			t : posdata_raw[idx]
+			for idx,t in enumerate(metadata['tsteps'])
+		}
+		# augment: -1 maps to final timestep
+		if augment_final_timestep:
+			posdata[-1] = posdata[max(posdata.keys())]
+
+		# process collision objects
+		metadata['collision_data'] = [
+			CollisionObject.deserialize_json_dict(x)
+			for x in metadata['collision_data']
+		]
+
+		return DiffusionDataSet(posdata, metadata)
+
+
+def plot_distributions_axis(
+		basename : str,
+		n_bins : int = 50,
+		axis : int = 0,
+	) -> None:
+	"""plots the distribution of positions for all timesteps along the given axis
+	
+	### Parameters:
+	 - `basename : str`   
+	 - `n_bins : int` 
+	   (defaults to `50`)
+	 - `axis : int`   
+	   0 for x, 1 for y
+	   (defaults to `0`)
+	"""
+
+	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
+
+	for t,pos in data.posdata.items():
+		if t < 0:
+			continue
+		hist,bins = np.histogram(pos[:,axis], bins = n_bins)
+		# get the centers of the bins
+		bins = np.array([
+			(bins[idx] + bins[idx+1]) / 2.0
+			for idx in range(len(bins)-1)
+		])
+
+		plt.plot(
+			bins,
+			hist,
+			'.-',
+			label = f'{t=}',
+		)
+	plt.legend()
+	plt.show()
+
 def read_and_plot(
-		filename : str,
+		basename : str,
 		bounds_tup : Optional[Tuple[float,float]] = None,
 		gridpoints : int = 50,
 	):
-	data = np.load(filename)
-	print(f'{data=}, {type(data)=}')
+	
+	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
 
-	# if old format, extend to 3rd dimension (0th idx is timestep)
-	if len(data.shape) == 2:
-		data = np.array([data])
-
-	# assume that there are more than 2 particles, lol
-	# and use this to fix the shape
-	# since `positions_to_heatmap()` assumes first idx is particle idx, second is x/y
-	if data.shape[1] == 2:
-		data[:] = data[:].T
-
-	print(data.shape)
-	print(data) 
+	print(data.posdata[-1].shape)
+	print(data.posdata[-1])
 
 	for x in data:
 		positions_to_heatmap(
@@ -279,6 +381,7 @@ if __name__ == '__main__':
 	fire.Fire({
 		'runsim' : run_particlesim_wrapper,
 		'plot' : read_and_plot,
+		'plot_ax' : plot_distributions_axis,
 	})
 
 

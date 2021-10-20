@@ -2,6 +2,7 @@ import sys
 import os
 from enum import Enum
 from typing import *
+from matplotlib.pyplot import install_repl_displayhook
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
@@ -88,10 +89,13 @@ class CollisionObject(object):
 
 	@staticmethod
 	def get_attr_list(x : CollisionType):
-		return (
-			CollisionObject.ATTRIBUTES[CollisionType.BASE]
-			+ CollisionObject.ATTRIBUTES[x]
-		)
+		if x in CollisionObject.ATTRIBUTES:
+			return (
+				CollisionObject.ATTRIBUTES[CollisionType.BASE]
+				+ CollisionObject.ATTRIBUTES[x]
+			)
+		else:
+			return CollisionObject.ATTRIBUTES[CollisionType.BASE]
 
 
 	def __init__(self, **kwargs) -> None:
@@ -196,7 +200,7 @@ class CollisionObject(object):
 
 
 	@staticmethod
-	def deserialize_tsv(line : str, delim = '\t'):
+	def deserialize_tsv(line : str, delim : str = '\t') -> 'CollisionObject':
 		line_lst = line.split(delim)
 
 		# HACK: at some point, the C++ code was producing collision object tsv
@@ -221,6 +225,95 @@ class CollisionObject(object):
 		})
 
 		return output
+
+
+	@staticmethod
+	def fixkeys_serialized_json(data : Dict[str,Any], delete_old_type : bool = True) -> Dict[str,Any]:
+		"""ix a dict read from a hacky json format
+		
+		why is the key so hacky? because I want to return a simple `<string,double>` hash map in the C++ code, not a `json` object or multi-type hash map. So, we have to iterate thru the keys to find the hash map type.
+
+		We split up the `'__type__'` style keys to get the collision object type, then add that key explicitly to the output and remove the old one
+
+		examples:
+		{
+			"__type__:Box_Ax": 1.0,
+			"bound_max_x": -0.0005,
+			"bound_max_y": 0.0054798,
+			"bound_min_x": -0.0006,
+			"bound_min_y": 0.000979796,
+			"coll_type": 0.0,
+			"fvec_x": 5e-07,
+			"fvec_y": 0.0
+		}
+
+		```json
+		{
+			"coll_type" : "Box_Ax",
+			"bound_max_x": -0.0005,
+			"bound_max_y": 0.0054798,
+			"bound_min_x": -0.0006,
+			"bound_min_y": 0.000979796,
+			"coll_type": 0.0,
+			"fvec_x": 5e-07,
+			"fvec_y": 0.0
+		}
+		```
+
+		```json
+		{
+			"__type__:Disc": 1.0,
+			"angle_max": 1.07915,
+			"angle_min": 2.06244,
+			"bound_max_x": 0.0012,
+			"bound_max_y": 0.0012,
+			"bound_min_x": -0.0012,
+			"bound_min_y": -0.0012,
+			"centerpos_x": 0.0,
+			"centerpos_y": 0.0,
+			"coll_type": 1.0,
+			"force": -5e-07,
+			"radius_inner": 0.0011,
+			"radius_outer": 0.0012
+		}
+		```
+		"""
+		colltype_key : Optional[str] = None
+		# first, look for a real key
+		if 'coll_type' not in data:
+			# get the hacky key
+			for key in data:
+				if key.startswith('__type__:'):
+					if colltype_key is None:
+						colltype_key = key.split(':')[1]
+					else:
+						raise KeyError(f'dict passed to `deserialize_json` has multiple keys starting with `__type__:`, cannot infer `CollisionType`\n\n{data}')
+		
+			# set the new key
+			data['coll_type'] = colltype_key
+
+		if delete_old_type:
+			for k in data.keys():
+				if k.startswith('__type__:'):
+					del data[k]
+		
+		return data
+
+	@staticmethod
+	def deserialize_json_dict(data : Dict[str,Any], delete_old_type : bool = True) -> 'CollisionObject':
+		"""deserialize a dict read from a maybe-hacky json format
+		
+		will call `fixkeys_serialized_json()` if it detects the dict might be hacky
+
+		### Returns:
+		 - `CollisionObject` 
+		   read object
+		"""
+		# first, fix the keys if needed
+		if 'coll_type' not in data:
+			data = CollisionObject.fixkeys_serialized_json(data, delete_old_type)
+
+		return CollisionObject(**data)
 
 	@staticmethod
 	def create_box( 
