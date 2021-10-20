@@ -103,7 +103,7 @@ cleanob:
 	-rm *.o
 
 .PHONY: cleanall
-cleangh:
+cleanall:
 	@echo "# cleaning up compiled files, including .gch precompiled package headers"
 	-rm *.o *.exe $(PACKAGES_DIR)/*.gch
 
