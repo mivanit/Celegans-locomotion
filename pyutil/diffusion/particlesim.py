@@ -250,22 +250,28 @@ def read_and_plot(
 		gridpoints : int = 50,
 	):
 	data = np.load(filename)
+	print(f'{data=}, {type(data)=}')
+
+	# if old format, extend to 3rd dimension (0th idx is timestep)
+	if len(data.shape) == 2:
+		data = np.array([data])
 
 	# assume that there are more than 2 particles, lol
 	# and use this to fix the shape
 	# since `positions_to_heatmap()` assumes first idx is particle idx, second is x/y
-	if data.shape[0] == 2:
-		data = data.T
+	if data.shape[1] == 2:
+		data[:] = data[:].T
 
 	print(data.shape)
-	print(data)
+	print(data) 
 
-	positions_to_heatmap(
-		positions = data,
-		bounds_tup = bounds_tup,
-		gridpoints = gridpoints,
-	)
-	plt.show()
+	for x in data:
+		positions_to_heatmap(
+			positions = x,
+			bounds_tup = bounds_tup,
+			gridpoints = gridpoints,
+		)
+		plt.show()
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
-
+#include <unordered_map>
 
 const double EPSILON = 0.00000000001;
 
@@ -44,6 +44,40 @@ struct CollisionObject
 	double angle_min;
 	double angle_max;
 
+	std::unordered_map<std::string, double> as_umap()
+	{
+		std::unordered_map<std::string, double> ret;
+		
+		ret["coll_type"] = coll_type;
+		ret["bound_min_x"] = bound_min_x;
+		ret["bound_min_y"] = bound_min_y;
+		ret["bound_max_x"] = bound_max_x;
+		ret["bound_max_y"] = bound_max_y;
+
+		if (coll_type == Box_Ax)
+		{
+			ret["__type__:Box_Ax"] = 1.0;
+
+			ret["fvec_x"] = fvec_x;
+			ret["fvec_y"] = fvec_y;
+		}
+		else if (coll_type == Disc)
+		{
+			ret["__type__:Disc"] = 1.0;
+
+			ret["centerpos_x"] = centerpos_x;
+			ret["centerpos_y"] = centerpos_y;
+
+			ret["force"] = force;
+			ret["radius_inner"] = radius_inner;
+			ret["radius_outer"] = radius_outer;
+			
+			ret["angle_min"] = angle_min;
+			ret["angle_max"] = angle_max;
+		}
+
+		return ret;
+	}
 };
 
 // x-y vector stuff
@@ -97,6 +131,21 @@ struct VecXY
 	{
 		x *= c;
 		y *= c;
+	}
+
+	std::vector<double> as_vec()
+	{
+		return std::vector<double>{x, y};
+	}
+
+	std::unordered_map<std::string, double> as_umap()
+	{
+		std::unordered_map<std::string, double> ret;
+		
+		ret["x"] = x;
+		ret["y"] = y;
+
+		return ret;
 	}
 };
 

@@ -5,6 +5,9 @@
 #include "../../modules/packages/cxxopts.hpp"
 #include "../../modules/packages/npy.hpp"
 
+#include "../../modules/packages/json.hpp"
+using json = nlohmann::json;
+// using vector = std::vector;
 
 const double PI = 3.14159265358979323846;
 
@@ -14,6 +17,7 @@ double diffusion_factor = std::nan("");
 
 static std::default_random_engine generator;
 static std::uniform_real_distribution dist_angle(0.0, 2.0*PI);
+// TODO: fix this bit with the randomized travel distance
 // static std::exponential_distribution<double> dist_exponential(diffusion_factor);
 
 std::vector<CollisionObject> COLL_OBJS;
@@ -67,22 +71,39 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 }
 
 
-std::vector<VecXY> do_sim(
+	std::pair<
+		std::vector<std::vector<VecXY>>, 
+		std::vector<int>
+	> do_sim(
 	VecXY pos, 
 	long unsigned size, 
 	long unsigned tsteps,
+	long int save_every,
 	int print_every = 100
 ){
-	std::vector<VecXY> positions = initialize_particles(pos, size);
+	// pos_store will be returned
+	std::vector<std::vector<VecXY>> pos_store;
+	pos_store.reserve(tsteps/save_every);
+	std::vector<int> tstep_store;
+
+	// pos_current will store the current state only
+	std::vector<VecXY> pos_current = initialize_particles(pos, size);
 	for (long unsigned i = 0; i < tsteps; i++)
 	{
-		positions = iterate_particles(positions);
+		pos_current = iterate_particles(pos_current);
 		if (i % print_every == 0)
 		{
 			std::cout << "> iteration\t" << i << std::endl;
 		}
+		if (
+			( (i % save_every == 0) && (i > 0) )
+			|| (i == tsteps-1)
+		){
+			pos_store.push_back(pos_current);
+			tstep_store.push_back(i);
+		}
 	}
-	return positions;
+	return std::make_pair(pos_store, tstep_store);
 }
 
 
@@ -91,13 +112,13 @@ VecXY get_foodPos(cxxopts::ParseResult & cmd)
 {
     // get food position
 
-	std::string str_foodpos = cmd["foodPos"].as<std::string>();
+	std::string str_foodPos = cmd["foodPos"].as<std::string>();
 
-	int idx_comma = str_foodpos.find(',');
-	double foodpos_x = std::stod(str_foodpos.substr(0,idx_comma));
-	double foodpos_y = std::stod(str_foodpos.substr(idx_comma+1, std::string::npos));
+	int idx_comma = str_foodPos.find(',');
+	double foodPos_x = std::stod(str_foodPos.substr(0,idx_comma));
+	double foodPos_y = std::stod(str_foodPos.substr(idx_comma+1, std::string::npos));
 
-	return VecXY(foodpos_x, foodpos_y);
+	return VecXY(foodPos_x, foodPos_y);
 }
 
 
@@ -116,7 +137,7 @@ int main (int argc, const char* argv[])
             cxxopts::value<long unsigned>()->default_value("1000"))
         ("f,foodPos", "food position (comma separated)", 
             cxxopts::value<std::string>()->default_value("0,0"))
-		("s,saveevery", "num timesteps between saving. -1 (default) implies only final step saved", 
+		("s,save_every", "num timesteps between saving. -1 (default) implies only final step saved", 
 			cxxopts::value<long int>()->default_value("-1"))
 		("a,diffusion_factor", "diffusion step size",
 			cxxopts::value<double>()->default_value("0.001"))
@@ -136,41 +157,75 @@ int main (int argc, const char* argv[])
 	long unsigned nparticles = cmd["nparticles"].as<long unsigned>();
 	diffusion_factor = cmd["diffusion_factor"].as<double>();
 	
-	long int saveevery = cmd["saveevery"].as<long int>();
-	if (saveevery == -1) { saveevery = duration; }
+	long int save_every = cmd["save_every"].as<long int>();
+	if (save_every == -1) { save_every = duration; }
 
-	std::string output_file = cmd["output"].as<std::string>();
+	std::string output_basename = cmd["output"].as<std::string>();
 	std::string collision_file = cmd["coll"].as<std::string>();
-	VecXY foodpos = get_foodPos(cmd);
+	VecXY foodPos = get_foodPos(cmd);
 
 	std::cout << "read parameters:"
 		<< "\n\tduration:\t" << duration
 		<< "\n\tnparticles:\t" << nparticles
-		<< "\n\toutput_file:\t" << output_file
+		<< "\n\toutput_basename:\t" << output_basename
 		<< "\n\tcollision_file:\t" << collision_file
-		<< "\n\tfoodpos:\t" << foodpos.x << ", " << foodpos.y
+		<< "\n\tfoodPos:\t" << foodPos.x << ", " << foodPos.y
 		<< std::endl;
+
+
+	// metadata
+	// json test = { {"a",1}, {"b",2} };
+
+	json metadata = {
+		{"duration", duration},
+		{"nparticles", nparticles},
+		{"output_basename", output_basename},
+		{"collision_file", collision_file},
+		{"foodPos", foodPos.as_umap()},
+		{"diffusion_factor", diffusion_factor},
+		{"save_every", save_every} 
+	};
+
 
 	// load collision objects
 	COLL_OBJS = load_objects(collision_file);
+	std::vector<std::unordered_map<std::string, double>> coll_objs_map;
+	coll_objs_map.reserve(COLL_OBJS.size());
+	for (CollisionObject obj : COLL_OBJS)
+	{
+		coll_objs_map.push_back(obj.as_umap());
+	}
 
 	std::cout << "loaded objects count:\t" << COLL_OBJS.size() << std::endl;
+
+	metadata["collision_data"] = coll_objs_map;
 	
 	// run simulation
-	std::vector<VecXY> final_positions = do_sim(
-		foodpos,
+	std::pair<
+		std::vector<std::vector<VecXY>>, 
+		std::vector<int>
+	> positions = do_sim(
+		foodPos,
 		nparticles,
-		duration
+		duration,
+		save_every
 	);
 
 	std::cout << "\n\nsim complete!" << std::endl;
 
+	metadata["tsteps"] = positions.second;
+
+	// save metadata
+	std::ofstream ofs(output_basename + ".json");
+	ofs << std::setw(4) << metadata << std::endl;
+	ofs.flush(); ofs.close();
+
 	// save data in numpy format
-	std::pair<std::vector<double>, std::vector<size_t>> data = serialize(final_positions);
+	std::pair<std::vector<double>, std::vector<size_t>> data = serialize(positions.first);
 	
-	// new modified interface
+	// NOTE: new modified interface -- NOT standard
 	npy::SaveArrayAsNumpy(
-		output_file, // filename
+		output_basename + ".npy", // filename
 		false, // fortran_order
 		data.second, // shape
 		data.first // data
@@ -178,7 +233,7 @@ int main (int argc, const char* argv[])
 
 	// old interface
 	// npy::SaveArrayAsNumpy(
-	// 	output_file, // filename
+	// 	output_basename, // filename
 	// 	false, // fortran_order
 	// 	(unsigned int) data.second.size(), // n_dims
 	// 	(unsigned long *) data.second.data(), // shape

@@ -94,18 +94,18 @@ sim.o: modules/Worm.h modules/WormBody.h modules/StretchReceptor.h modules/Muscl
 # cleaning up
 .PHONY: clean
 clean:
-	@echo "# cleaning up compiled files"
-	-rm *.o *.exe $(PACKAGES_DIR)/*.gch
+	@echo "# cleaning up compiled files (skip .gch)"
+	-rm *.o *.exe
 
 .PHONY: cleanob
 cleanob:
 	@echo "# cleaning up object files only"
 	-rm *.o
 
-.PHONY: cleangh
+.PHONY: cleanall
 cleangh:
-	@echo "# cleaning up compiled files, but leaving .gch precompiled package headers"
-	-rm *.o *.exe
+	@echo "# cleaning up compiled files, including .gch precompiled package headers"
+	-rm *.o *.exe $(PACKAGES_DIR)/*.gch
 
 
 # building documentation
