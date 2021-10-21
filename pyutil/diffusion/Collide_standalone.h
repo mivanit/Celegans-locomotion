@@ -48,7 +48,7 @@ struct CollisionObject
 	{
 		std::unordered_map<std::string, double> ret;
 		
-		ret["coll_type"] = coll_type;
+		ret["_HACKY_coll_type"] = coll_type;
 		ret["bound_min_x"] = bound_min_x;
 		ret["bound_min_y"] = bound_min_y;
 		ret["bound_max_x"] = bound_max_x;
@@ -56,14 +56,14 @@ struct CollisionObject
 
 		if (coll_type == Box_Ax)
 		{
-			ret["__type__:Box_Ax"] = 1.0;
+			ret["__type__:Box_Ax"] = coll_type;
 
 			ret["fvec_x"] = fvec_x;
 			ret["fvec_y"] = fvec_y;
 		}
 		else if (coll_type == Disc)
 		{
-			ret["__type__:Disc"] = 1.0;
+			ret["__type__:Disc"] = coll_type;
 
 			ret["centerpos_x"] = centerpos_x;
 			ret["centerpos_y"] = centerpos_y;
@@ -131,6 +131,15 @@ struct VecXY
 	{
 		x *= c;
 		y *= c;
+	}
+
+	void normalize()
+	{
+		double mag = this->mag();
+		if (mag > EPSILON)
+		{
+			this->scale(1.0 / mag);
+		}
 	}
 
 	std::vector<double> as_vec()
@@ -443,6 +452,25 @@ inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vect
 	}
 	return coll_vec;
 }
+
+
+inline std::vector<VecXY> do_collide_vec_particles(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec, double force_scalar)
+{
+	std::vector<VecXY> coll_vec;
+	for (VecXY pos : pos_vec)
+	{
+		VecXY net_force = VecXY();
+		for (CollisionObject obj : objs_vec)
+		{
+			VecXY obj_force = do_collide(obj, pos);
+			obj_force.scale(force_scalar / obj_force.mag());
+			net_force = add_vecs(net_force, obj_force);
+		}
+		coll_vec.push_back(net_force);
+	}
+	return coll_vec;
+}
+
 
 
 // TODO: do_collide_friction function

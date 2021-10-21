@@ -64,7 +64,7 @@ std::vector<VecXY> iterate_particles(std::vector<VecXY> positions)
 	}
 
 	// do collisions
-	std::vector<VecXY> coll_delta = do_collide_vec(newpos, COLL_OBJS);
+	std::vector<VecXY> coll_delta = do_collide_vec_particles(newpos, COLL_OBJS, diffusion_factor);
 	newpos = add_vecs(newpos, coll_delta);
 
 	return newpos;

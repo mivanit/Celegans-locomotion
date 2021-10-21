@@ -280,7 +280,8 @@ class CollisionObject(object):
 		"""
 		colltype_key : Optional[str] = None
 		# first, look for a real key
-		if 'coll_type' not in data:
+		# NOTE: this ignores floating point keys that expect to be cast to int
+		if ('coll_type' not in data) or (not isinstance(data['coll_type'], str)):
 			# get the hacky key
 			for key in data:
 				if key.startswith('__type__:'):
@@ -293,9 +294,12 @@ class CollisionObject(object):
 			data['coll_type'] = colltype_key
 
 		if delete_old_type:
+			to_del : Set[str] = set()
 			for k in data.keys():
 				if k.startswith('__type__:'):
-					del data[k]
+					to_del.add(k)
+			for k in to_del:
+				del data[k]
 		
 		return data
 

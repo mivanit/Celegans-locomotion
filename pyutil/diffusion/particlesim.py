@@ -155,106 +155,13 @@ def run_particlesim_inline(
 
 
 
-
-def positions_to_heatmap(
-		positions : ParticlePositions,
-		bounds_tup : Optional[Tuple[float,float]] = None,
-		gridpoints : int = 100,
-		plot : bool = True,
-		collobjs : Optional[str] = '../../input/objs/maze.tsv',
-	) -> NDArray:
-
-	if bounds_tup is None:
-		bounds_tup = (
-			np.min(positions),
-			np.max(positions),
-		)
-
-	H,xedges,yedges = np.histogram2d(
-		positions[:,0],
-		positions[:,1],
-		bins = gridpoints,
-		range = (bounds_tup, bounds_tup),
-	)
-
-
-	if plot:
-		# collision object stuff for bounds
-		lst_collision_objects : List[CollisionObject] = list()
-		if (collobjs is not None) and os.path.isfile(collobjs):
-			lst_collision_objects = read_collobjs_tsv(collobjs)
-		else:
-			print(f'  >> WARNING: could not find file, skipping: {collobjs}')
-
-		bounds_objs : BoundingBox = get_bounds(lst_collision_objects)
-
-		# get bounds and set up figure
-		bounds : BoundingBox = _combine_bounds([
-			{
-				'bound_min_x' : bounds_tup[0], 'bound_max_x' : bounds_tup[1],
-				'bound_min_y' : bounds_tup[0], 'bound_max_y' : bounds_tup[1],
-			},
-			bounds_objs,
-		])
-		fig, ax = plt.subplots(1,1, figsize = _get_fig_bounds_box(bounds))
-		ax.axis('equal')
-		
-		# plot diffusion
-		ax.imshow(
-			H,
-			extent = (xedges[0], xedges[1], yedges[0], yedges[1]),
-			interpolation = 'bilinear',
-		)
-		
-		# plot objects
-		_plot_collobjs(ax, lst_collision_objects)
-		
-		fig.show()
-
-	return H
-
-
-
-def run_particlesim_wrapper(
-		n_particles : int = 1000000,
-		mean_dist : float = 1.0,
-		p_static : float = 0.2, 
-		initial_pos : Tuple[float,float] = (0,0),
-		n_iterations : int = 1000,
-		save_every : int = 50,
-	):
-
-	# initial positions
-	positions : ParticlePositions = np.full(
-		(n_particles, 2), 
-		fill_value = initial_pos,
-		dtype = np.float32,
-	)
-
-	data = run_particlesim_inline(
-		positions,
-		n_particles,
-		mean_dist,
-		p_static,
-		n_iterations,
-		save_every,
-	)
-
-	for x in data:
-		positions_to_heatmap(x)
-		plt.show()
-
-
-# PositionData = NDArray[[Any,2], float]
-PositionData = NDArray[float]
-
 class DiffusionDataSet(object):
 	def __init__(
 			self,
-			posdata : Dict[int,PositionData],
+			posdata : Dict[int,ParticlePositions],
 			metadata : Dict[str, Any],
 		):
-		self.posdata : PositionData = posdata
+		self.posdata : ParticlePositions = posdata
 		self.metadata : Dict[str,Any] = metadata
 
 	def __getitem__(self, key : str) -> Any:
@@ -302,7 +209,7 @@ class DiffusionDataSet(object):
 		if len(metadata['tsteps']) != posdata_raw.shape[0]:
 			raise ValueError(f"expected {len(metadata['tsteps'])} timesteps (from json metadata), got {posdata_raw.shape[0]} timesteps")
 
-		posdata : Dict[int,PositionData] = {
+		posdata : Dict[int,ParticlePositions] = {
 			t : posdata_raw[idx]
 			for idx,t in enumerate(metadata['tsteps'])
 		}
@@ -317,6 +224,101 @@ class DiffusionDataSet(object):
 		]
 
 		return DiffusionDataSet(posdata, metadata)
+
+
+
+def positions_to_heatmap(
+		positions : ParticlePositions,
+		bounds_tup : Optional[Tuple[float,float]] = None,
+		gridpoints : int = 100,
+		plot : bool = True,
+		coll_objs : Optional[List[CollisionObject]] = None,
+		tstep : Optional[int] = None,
+	) -> NDArray:
+
+	if bounds_tup is None:
+		bounds_tup = (
+			np.min(positions),
+			np.max(positions),
+		)
+
+	H,xedges,yedges = np.histogram2d(
+		positions[:,0],
+		positions[:,1],
+		bins = gridpoints,
+		range = (bounds_tup, bounds_tup),
+	)
+
+
+	if plot:
+		if coll_objs is None:
+			coll_objs = list()
+
+		for x in coll_objs:
+			print(x.data)
+
+		# collision object stuff for bounds
+		bounds_objs : BoundingBox = get_bounds(coll_objs)
+
+		# get bounds and set up figure
+		bounds : BoundingBox = _combine_bounds([
+			{
+				'bound_min_x' : bounds_tup[0], 'bound_max_x' : bounds_tup[1],
+				'bound_min_y' : bounds_tup[0], 'bound_max_y' : bounds_tup[1],
+			},
+			bounds_objs,
+		])
+		fig, ax = plt.subplots(1,1, figsize = _get_fig_bounds_box(bounds))
+		ax.axis('equal')
+
+		if tstep is not None:
+			ax.set_title(f'{tstep=}')
+		
+		# plot diffusion
+		ax.imshow(
+			H,
+			extent = (xedges[0], xedges[-1], yedges[0], yedges[-1]),
+			interpolation = 'bilinear',
+		)
+		
+		# plot objects
+		_plot_collobjs(ax, coll_objs)
+		
+		fig.show()
+
+	return H
+
+
+
+def run_particlesim_wrapper(
+		n_particles : int = 1000000,
+		mean_dist : float = 1.0,
+		p_static : float = 0.2, 
+		initial_pos : Tuple[float,float] = (0,0),
+		n_iterations : int = 1000,
+		save_every : int = 50,
+	):
+
+	# initial positions
+	positions : ParticlePositions = np.full(
+		(n_particles, 2), 
+		fill_value = initial_pos,
+		dtype = np.float32,
+	)
+
+	data = run_particlesim_inline(
+		positions,
+		n_particles,
+		mean_dist,
+		p_static,
+		n_iterations,
+		save_every,
+	)
+
+	for x in data:
+		positions_to_heatmap(x)
+		plt.show()
+
 
 
 def plot_distributions_axis(
@@ -360,6 +362,7 @@ def read_and_plot(
 		basename : str,
 		bounds_tup : Optional[Tuple[float,float]] = None,
 		gridpoints : int = 50,
+		tsteps : Union[List[int],str,int] = None,
 	):
 	
 	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
@@ -367,11 +370,22 @@ def read_and_plot(
 	print(data.posdata[-1].shape)
 	print(data.posdata[-1])
 
-	for x in data:
+	if tsteps is None:
+		tsteps = list(data.posdata.keys())
+	elif isinstance(tsteps, str):
+		tsteps = [ int(x) for x in tsteps.split(',') ]
+	elif isinstance(tsteps, int):
+		tsteps = [ tsteps ]
+
+	for t,x in data.posdata.items():
+		if t not in tsteps:
+			continue
 		positions_to_heatmap(
 			positions = x,
+			coll_objs = data.metadata['collision_data'],
 			bounds_tup = bounds_tup,
 			gridpoints = gridpoints,
+			tstep = t,
 		)
 		plt.show()
 
