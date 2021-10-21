@@ -111,14 +111,15 @@ struct VecXY
 	}
 };
 
-VecXY add_vecs(const VecXY & a, const VecXY & b) //addition operator overloaded function
-{
-	VecXY output(a);
-	output.x += b.x;
-	output.y += b.y;
+// CRIT: the linker gets very mad about this function, no idea why
+// VecXY add_vecs(const VecXY & a, const VecXY & b) //addition operator overloaded function
+// {
+// 	VecXY output(a);
+// 	output.x += b.x;
+// 	output.y += b.y;
 
-	return output;
-}
+// 	return output;
+// }
 
 // func prototypes
 
@@ -130,7 +131,7 @@ double dist_sqrd(VecXY a, VecXY b);
 // the more complicated ones
 std::vector<CollisionObject> load_objects(std::string collide_file);
 void save_objects(std::string collide_file, std::vector<CollisionObject> & CollObjs);
-inline VecXY do_collide(CollisionObject & obj, VecXY pos);
+VecXY do_collide(CollisionObject & obj, VecXY pos);
 
 
 // TODO: do_collide_friction function
