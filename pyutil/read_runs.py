@@ -563,7 +563,8 @@ def cli_wrapper_runloaders(
 	
 if __name__ == '__main__':
 	import fire # type: ignore
-
+	# Make Python Fire not use a pager when it prints a help text
+	fire.core.Display = lambda lines, out: print(*lines, file=out)
 	fire.Fire({
 		'single' : cli_wrapper_runloaders(load_single_run),
 		'eval' : cli_wrapper_runloaders(load_eval_run),

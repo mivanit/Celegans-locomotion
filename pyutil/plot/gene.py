@@ -239,6 +239,8 @@ def generational_histogram(
 
 if __name__ == '__main__':
 	import fire # type: ignore
+	# Make Python Fire not use a pager when it prints a help text
+	fire.core.Display = lambda lines, out: print(*lines, file=out)
 	data = fire.Fire({
 		"list" : wrapper_printdict(scrape_extracted_cache),
 		"hist" : generational_histogram,

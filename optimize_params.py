@@ -30,6 +30,7 @@ def run_genetic_algorithm_loadJSON(cfgfile : Path):
 
 if __name__ == '__main__':
 	import fire # type: ignore
+	fire.core.Display = lambda lines, out: print(*lines, file=out) # Make Python Fire not use a pager when it prints a help text
 	fire.Fire({
 		'run' : run_genetic_algorithm,
 		# 'run_json' : run_genetic_algorithm_loadJSON,

@@ -110,4 +110,6 @@ def plot_net(
 
 if __name__ == '__main__':
 	import fire # type: ignore
+	# Make Python Fire not use a pager when it prints a help text
+	fire.core.Display = lambda lines, out: print(*lines, file=out)
 	fire.Fire(plot_net)
