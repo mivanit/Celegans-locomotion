@@ -7,6 +7,7 @@ import numpy as np
 from nptyping import NDArray
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 import numba
 
@@ -233,7 +234,7 @@ def positions_to_heatmap(
 		gridpoints : int = 100,
 		plot : bool = True,
 		coll_objs : Optional[List[CollisionObject]] = None,
-		tstep : Optional[int] = None,
+		tsteps : Optional[int] = None,
 	) -> NDArray:
 
 	if bounds_tup is None:
@@ -254,9 +255,6 @@ def positions_to_heatmap(
 		if coll_objs is None:
 			coll_objs = list()
 
-		for x in coll_objs:
-			print(x.data)
-
 		# collision object stuff for bounds
 		bounds_objs : BoundingBox = get_bounds(coll_objs)
 
@@ -271,14 +269,14 @@ def positions_to_heatmap(
 		fig, ax = plt.subplots(1,1, figsize = _get_fig_bounds_box(bounds))
 		ax.axis('equal')
 
-		if tstep is not None:
-			ax.set_title(f'{tstep=}')
+		if tsteps is not None:
+			ax.set_title(f'{tsteps=}')
 		
 		# plot diffusion
 		ax.imshow(
 			H,
 			extent = (xedges[0], xedges[-1], yedges[0], yedges[-1]),
-			interpolation = 'bilinear',
+			# interpolation = 'bilinear',
 		)
 		
 		# plot objects
@@ -339,6 +337,13 @@ def plot_distributions_axis(
 
 	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
 
+	colors_list : list = plt.cm.viridis(np.linspace(0, 1, len(data.posdata)))
+	colors_map : dict = {
+		t : colors_list[idx]
+		for idx,t in enumerate(sorted(data.metadata['tsteps']))
+		if t > 0
+	}
+
 	for t,pos in data.posdata.items():
 		if t < 0:
 			continue
@@ -353,6 +358,7 @@ def plot_distributions_axis(
 			bins,
 			hist,
 			'.-',
+			color = colors_map[t],
 			label = f'{t=}',
 		)
 	plt.legend()
@@ -362,7 +368,7 @@ def read_and_plot(
 		basename : str,
 		bounds_tup : Optional[Tuple[float,float]] = None,
 		gridpoints : int = 50,
-		tsteps : Union[List[int],str,int] = None,
+		tsteps : Union[List[int],str,int,None] = None,
 	):
 	
 	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
@@ -385,8 +391,28 @@ def read_and_plot(
 			coll_objs = data.metadata['collision_data'],
 			bounds_tup = bounds_tup,
 			gridpoints = gridpoints,
-			tstep = t,
+			tsteps = t,
 		)
+		plt.show()
+
+def plot_raw(
+		basename : str,
+		tsteps : Union[List[int],str,int,None] = None,
+	):
+	
+	data : DiffusionDataSet = DiffusionDataSet.read_from_basename(basename)
+
+	if tsteps is None:
+		tsteps = list(data.posdata.keys())
+	elif isinstance(tsteps, str):
+		tsteps = [ int(x) for x in tsteps.split(',') ]
+	elif isinstance(tsteps, int):
+		tsteps = [ tsteps ]
+
+	for t,x in data.posdata.items():
+		if t not in tsteps:
+			continue
+		plt.plot(x[:,0], x[:,1], '.')
 		plt.show()
 
 
@@ -396,6 +422,7 @@ if __name__ == '__main__':
 		'runsim' : run_particlesim_wrapper,
 		'plot' : read_and_plot,
 		'plot_ax' : plot_distributions_axis,
+		'plot_raw' : plot_raw,
 	})
 
 

@@ -158,6 +158,14 @@ struct VecXY
 	}
 };
 
+VecXY scale(VecXY pos, double c)
+{
+	return VecXY(
+		pos.x * c,
+		pos.y * c
+	);
+}
+
 
 inline VecXY from_rtheta(double r, double theta)
 {
@@ -393,45 +401,55 @@ void save_objects(std::string collide_file, std::vector<CollisionObject> & CollO
 
 
 
+inline bool in_bbox(CollisionObject & obj, VecXY pos)
+{
+	return (
+		   (pos.x >= obj.bound_min_x)
+		&& (pos.x <= obj.bound_max_x)
+		&& (pos.y >= obj.bound_min_y)
+		&& (pos.y <= obj.bound_max_y)
+	);
+}
+
+
 inline VecXY do_collide(CollisionObject & obj, VecXY pos)
 {
-	// forces on elements
-	if (obj.coll_type == Box_Ax)
-	{			
-		if (
-			(pos.x > obj.bound_min_x)
-			&& (pos.x < obj.bound_max_x)
-			&& (pos.y > obj.bound_min_y)
-			&& (pos.y < obj.bound_max_y)
-		){
+	if (in_bbox(obj, pos))
+	{
+		// forces on elements
+		if (obj.coll_type == Box_Ax)
+		{			
 			return VecXY(obj.fvec_x, obj.fvec_y);
 		}
-	}
-	else if (obj.coll_type == Disc)
-	{
-		VecXY disc_center = VecXY(obj.centerpos_x, obj.centerpos_y);
-		VecXY offset = get_displacement(pos, disc_center);
-		double offset_mag = offset.mag();
-		// compare to radius
-		if (
-			( offset_mag > obj.radius_inner) 
-			&& (offset_mag < obj.radius_outer)
-		)
+		else if (obj.coll_type == Disc)
 		{
-			// check wedge angles
-			double angle = atan2(offset.y, offset.x);			
-			if ( !( (obj.angle_min > angle) && (angle > obj.angle_max) ) )
+			VecXY disc_center = VecXY(obj.centerpos_x, obj.centerpos_y);
+			VecXY offset = get_displacement(pos, disc_center);
+			double offset_mag = offset.mag();
+			// compare to radius
+			if (
+				( offset_mag > obj.radius_inner) 
+				&& (offset_mag < obj.radius_outer)
+			)
 			{
-				// get the collision vector by normalizing and scaling offset
-				offset.scale(obj.force / offset_mag);
-				return offset;
+				// check wedge angles
+				double angle = atan2(offset.y, offset.x);			
+				if ( !( (obj.angle_min > angle) && (angle > obj.angle_max) ) )
+				{
+					// get the collision vector by normalizing and scaling offset
+					offset.scale(obj.force / offset_mag);
+					return offset;
+				}
 			}
 		}
 	}
-
-	// if no collisions found, return zero vec
-	return VecXY();
+	else
+	{
+		return VecXY();
+	}
+	VecXY();
 }
+
 
 
 // loop over all the objects and all the points
@@ -454,7 +472,68 @@ inline std::vector<VecXY> do_collide_vec(std::vector<VecXY> & pos_vec, std::vect
 }
 
 
-inline std::vector<VecXY> do_collide_vec_particles(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec, double force_scalar)
+
+inline VecXY collide_movepos_particles(CollisionObject & obj, VecXY pos)
+{
+	if (in_bbox(obj, pos))
+	{
+		if (obj.coll_type == Box_Ax)
+		{			
+			// give the closest point on the appropriate side
+			if (obj.fvec_x > EPSILON)
+			{
+				pos.x = std::max(pos.x, obj.bound_max_x);
+			}
+			else if (obj.fvec_x < -EPSILON)
+			{
+				pos.x = std::min(pos.x, obj.bound_min_x);
+			}
+
+			if (obj.fvec_y > EPSILON)
+			{
+				pos.y = std::max(pos.y, obj.bound_max_y);
+			}
+			else if (obj.fvec_y < -EPSILON)
+			{
+				pos.y = std::min(pos.y, obj.bound_min_y);
+			}
+		}
+		else if (obj.coll_type == Disc)
+		{
+			VecXY disc_center = VecXY(obj.centerpos_x, obj.centerpos_y);
+			VecXY offset = get_displacement(pos, disc_center);
+			double offset_mag = offset.mag();
+			// compare to radius
+			if (
+				( offset_mag > obj.radius_inner) 
+				&& (offset_mag < obj.radius_outer)
+			)
+			{
+				// check wedge angles
+				double angle = atan2(offset.y, offset.x);			
+				if ( !( (obj.angle_min > angle) && (angle > obj.angle_max) ) )
+				{
+					VecXY offset_scaled;
+					// get the new position by moving pos to either inner or outer radius
+					if (obj.force > 0)
+					{
+						// force is outward, move to outer radius
+						offset_scaled = scale(offset, obj.radius_outer / offset_mag);
+					}
+					else
+					{
+						// force is inward, move to inner radius
+						offset_scaled = scale(offset, obj.radius_inner / offset_mag);
+					}
+					pos = add_vecs(disc_center, offset_scaled);
+				}
+			}
+		}
+	}
+	return pos;
+}
+
+inline std::vector<VecXY> do_collide_vec_particles(std::vector<VecXY> & pos_vec, std::vector<CollisionObject> & objs_vec)
 {
 	std::vector<VecXY> coll_vec;
 	for (VecXY pos : pos_vec)
@@ -462,9 +541,8 @@ inline std::vector<VecXY> do_collide_vec_particles(std::vector<VecXY> & pos_vec,
 		VecXY net_force = VecXY();
 		for (CollisionObject obj : objs_vec)
 		{
-			VecXY obj_force = do_collide(obj, pos);
-			obj_force.scale(force_scalar / obj_force.mag());
-			net_force = add_vecs(net_force, obj_force);
+			VecXY displacement = get_displacement(collide_movepos_particles(obj, pos), pos);
+			net_force = add_vecs(net_force, displacement);
 		}
 		coll_vec.push_back(net_force);
 	}
