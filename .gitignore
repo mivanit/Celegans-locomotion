@@ -17,6 +17,7 @@ data/collision_objs.tsv
 !data/coll/demo/**
 data/geno_sweep/
 data/selected_geno/**/*.dat
+data/misc/**
 
 # docs
 docs/pyutil/**

@@ -328,10 +328,11 @@ def extract_food_angle_align(
 	if ret_nan:
 		return align_angle
 
-	for i,pos_head in enumerate(arr_pos_head):
+	for i,pos_head_np in enumerate(arr_pos_head):
 		# get angle to food
-		food_angle : float = angle_between_starr(pos_head, pos_food)
-		align_angle[i] = food_angle - pos_head['phi']
+		pos_head_vxy : VecXY = VecXY(pos_head_np['x'], pos_head_np['y'])
+		food_angle : float = angle_between_VecXY(pos_head_vxy, pos_food)
+		align_angle[i] = food_angle - pos_head_np['phi']
 
 	return align_angle
 
@@ -359,7 +360,7 @@ def extract_food_angle_align_mean(
 	angle_align : NDArray[Any,float] = extract_food_angle_align(datadir, params)
 
 	# return mean
-	return np.mean(np.abs(angle_align))
+	return 1 / np.mean(np.abs(angle_align))
 
 
 

@@ -101,7 +101,16 @@ def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	- `NDArray[(Any, Any), CoordsRotArr]` 
 	"""
 	# read in
-	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+	data_raw : Optional[NDArray] = None
+	
+	try:
+		data_raw = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+	except ValueError as e:
+		print(e)
+		print(f'failed to read {filename}')
+		print(f'contents read: {data_raw=}')
+		print('returning an NaN array, this might get ugly')
+		return np.full((1, 1), np.nan, dtype = CoordsRotArr)
 
 	# trim first variable (time)
 	data_raw = data_raw[:,1:]
