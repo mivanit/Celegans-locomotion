@@ -474,7 +474,7 @@ void Worm::DumpBodyState(ofstream &ofs, int skips)
     #ifdef _OUTW_POS_BODY
         static int N_toprint = N_rods;
     #else
-        #ifdef _OUTW_POS_BODY
+        #ifdef _OUTW_POS_HEAD
             static int N_toprint = 1;
         #endif
     #endif
