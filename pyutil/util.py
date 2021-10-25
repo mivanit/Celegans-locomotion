@@ -123,9 +123,9 @@ def angle_between_VecXY(u : VecXY, v : VecXY) -> float:
 	"""compute the angle from point `u` to point `v`"""
 	return np.arctan2(v.y - u.y, v.x - u.x)
 
-# def angle_between_starr(u : CoordsArrUnion, v : CoordsArrUnion) -> float:
-# 	"""compute the angle from point `u` to point `v`"""
-# 	return np.arctan2(v['y'] - u['y'], v['x'] - u['x'])
+def angle_between_starr(u : CoordsArr, v : CoordsArr) -> float:
+	"""compute the angle from point `u` to point `v`"""
+	return np.arctan2(v['y'] - u['y'], v['x'] - u['x'])
 
 def dump_state(dict_locals : dict, path : Path, file : Path = 'locals.txt'):
 	with open(joinPath(path, file), 'w') as log_out:

@@ -804,7 +804,7 @@ def run_genetic_algorithm(
 		mutprob : float = 0.05,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
-		func_extract : ExtractorFunc = extract_food_dist_inv,
+		func_extract : ExtractorFunc = extract_food_angle_align_mean,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,

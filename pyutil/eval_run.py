@@ -384,6 +384,7 @@ def extract_gradient_deriv(
 	   [description]
 	"""
 	# TODO
+	raise NotImplementedError()
 
 
 def extract_combined_grad_angle(
@@ -392,4 +393,5 @@ def extract_combined_grad_angle(
 		ret_nan : bool = False,
 	) -> NDArray[Any,float]:
 	# TODO
+	raise NotImplementedError()
 

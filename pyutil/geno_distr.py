@@ -276,4 +276,8 @@ DEFAULT_EVALRUNS : List[ModParamsDict] = [
 	{ ModParam("params",   "simulation.angle") : -1.0 },
 	{ ModParam("params",   "simulation.angle") : 0.2 },
 	{ ModParam("params",   "simulation.angle") : -0.2 },
+	{ ModParam("params",   "simulation.angle") : 2.0 },
+	{ ModParam("params",   "simulation.angle") : -2.0 },
+	{ ModParam("params",   "simulation.angle") : 3.0 },
+	{ ModParam("params",   "simulation.angle") : -3.0 },
 ]
