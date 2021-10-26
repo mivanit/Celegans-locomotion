@@ -34,9 +34,9 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 	))
 
 from pyutil.util import (
-	Path,joinPath,unixPath,
-	CoordsArr,CoordsRotArr,
-	get_last_dir_name,pdbg,
+	Path,joinPath,unixPath, get_last_dir_name,
+	get_dirs_containing_file, deco_str_to_path_kwargs,
+	CoordsArr,CoordsRotArr, pdbg,
 )
 
 from pyutil.read_runs import read_body_data
@@ -497,9 +497,11 @@ class Plotters(object):
 	##     ## ######## ##     ## ########
 	"""
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos(
 			# args passed down to `_draw_setup()`
 			rootdir : Path,
+			*args,
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
 			params : Optional[Path] = 'params.json',
@@ -528,11 +530,13 @@ class Plotters(object):
 
 		if show:
 			plt.show()
-		
+	
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_foodmulti(
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -588,6 +592,7 @@ class Plotters(object):
 			plt.show()
 	
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_multi(
 			# search in this directory
 			rootdir : Path,
@@ -604,21 +609,9 @@ class Plotters(object):
 			show : bool = True,
 			only_final : bool = False,
 		):
-		if not isinstance(rootdir, Path):
-			rootdir = Path(rootdir)
 
-		pdbg(rootdir)
-		pdbg(bodydat)
-		pdbg(rootdir / '**' / bodydat)
-		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
-		lst_dirs : List[Path] = [ 
-			unixPath(os.path.dirname(p)) + '/'
-			for p in lst_bodydat
-		]
+		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
 
-		pdbg(lst_dirs)
-		if not lst_dirs:
-			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 
@@ -653,21 +646,22 @@ class Plotters(object):
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
-		ax.set_title(rootdir / '**' / '')
+		ax.set_title( rootdir / Path('**') / Path('') )
 		plt.legend()
 
 		if show:
 			plt.show()
 	
 	@staticmethod
+	@deco_str_to_path_kwargs(['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_gener(
-			*args,
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
-			bodydat : Path = 'body.dat',
-			collobjs : Path = 'coll_objs.tsv',
-			params : Optional[Path] = 'params.json',
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : Optional[float] = None,
 			pad_frac : Optional[float] = None,
@@ -677,13 +671,36 @@ class Plotters(object):
 			max_gen : int = 5,
 			gen_n_step : int = 1,
 		):
+		"""plot end head position scatterplot per generation
+		
+		### Parameters:
+		 - `rootdir : Path`   
+		   expected to contain `g<n>/` subdirectories, where `n` is the generation number
+		 - `bodydat : Path`   
+		   (defaults to `'body.dat'`)
+		 - `collobjs : Path`   
+		   (defaults to `'coll_objs.tsv'`)
+		 - `params : Optional[Path]`   
+		   (defaults to `'params.json'`)
+		 - `time_window : Tuple[OptInt,OptInt]`   
+		   (defaults to `(None,None)`)
+		 - `figsize_scalar : Optional[float]`   
+		   (defaults to `None`)
+		 - `pad_frac : Optional[float]`   
+		   (defaults to `None`)
+		 - `idx : int`   
+		   segment index (I think..)
+		   (defaults to `0`)
+		 - `show : bool`   
+		   (defaults to `True`)
+		 - `max_gen : int`   
+		   (defaults to `5`)
+		 - `gen_n_step : int`   
+		    step for which generations to plot -- will plot from `range(0,max_gen+1,gen_n_step)`
+		   (defaults to `1`)
+		"""
 
-		# setup
-		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
-		lst_dirs : List[Path] = [ 
-			joinPath(os.path.dirname(p),'') 
-			for p in lst_bodydat
-		]
+		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
 
 		default_dir : Path = lst_dirs[0]
 
@@ -736,13 +753,15 @@ class Plotters(object):
 	##     ## ##    ## #### ##     ##
 	"""
 
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params', 'output'], do_posargs = True)
 	@staticmethod
 	def anim(
-			rootdir : Path = 'data/run/',
-			bodydat : Path = 'body.dat',
-			collobjs : Path = 'coll_objs.tsv',
-			params : Optional[Path] = 'params.json',
-			output : Path = 'worm.mp4',
+			rootdir : Path,
+			*args,
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
+			output : Path = Path('worm.mp4'),
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : float = 6.0,
 			fps : int = 30, bitrate : int = 1800,
@@ -751,7 +770,7 @@ class Plotters(object):
 		https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
 		credit to the above for info on how to use FuncAnimation
 		"""
-		output = rootdir + output
+		output = rootdir / output
 		# idk what this does tbh
 		matplotlib.use("Agg")
 		

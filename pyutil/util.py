@@ -6,11 +6,11 @@ import math
 from typing import *
 from copy import Error, deepcopy
 from enum import Enum
+import glob
 import inspect
 # from collections import namedtuple
 # from dataclasses import dataclass
 from functools import wraps as functools_wraps
-
 import json
 
 # from pydbg import dbg # type: ignore
@@ -46,7 +46,7 @@ class Path(str):
 		return Path(self.replace('\\', '/'))
 
 def unixPath(in_path : Path) -> Path:
-	return in_path.replace("\\", "/")
+	return Path(in_path.replace("\\", "/"))
 
 def mkdir(p : Path):
 	if not os.path.isdir(p):
@@ -75,6 +75,91 @@ def read_file(path : Path) -> str:
 # 		('h', int),
 # 	],
 # )
+
+
+def get_dirs_containing_file(rootdir : Path, wanted_file : Path) -> List[Path]:
+	"""returns a list of all dirs in `rootdir` containing `wanted_file`
+	
+	### Parameters:
+	 - `rootdir : Path`   
+	 - `wanted_file : Path`   
+	
+	### Returns:
+	 - `List[Path]` 
+	
+	### Raises:
+	 - `FileNotFoundError` : if no suitable directories found
+	"""	
+
+	if not isinstance(rootdir, Path):
+		rootdir = Path(rootdir)
+	if not isinstance(wanted_file, Path):
+		wanted_file = Path(wanted_file)
+
+	# check for wildcards in `rootdir`
+	rootdir = unixPath(rootdir)
+	if '*' in rootdir:
+		rootdir_split : List[Path] = rootdir.split('/')
+		
+		# check wildcards only in the final part of the path
+		if (
+				all(c == '*' for c in rootdir_split[-1])
+				and all('*' not in x for x in rootdir_split[:-1])
+			):
+			# get rid of them, cause we will add them later
+			rootdir = '/'.join(rootdir_split[:-1])
+		else:
+			Warning(f'unexpected wildcard in rootdir, this might break: {rootdir=}')
+
+	# get all instances of the wanted file
+	lst_wanted : List[Path] = glob.glob(rootdir / Path('**') / wanted_file, recursive = True)
+	# get the containing directories
+	lst_dirs : List[Path] = [ 
+		unixPath(os.path.dirname(p)).rstrip('/') + '/'
+		for p in lst_wanted
+	]
+
+	# make the error less confusing
+	if len(lst_dirs) == 0:
+		raise FileNotFoundError(f'Could not find any matching files: \n\t{rootdir=}\n\t{lst_wanted=}\n\t{lst_dirs=}')
+
+	return lst_dirs
+
+def deco_str_to_path_kwargs(keywords : Iterable[str], do_posargs : bool = False) -> Callable[[Callable], Callable]:
+	"""wraps `func` such that args in `keywords` are converted to `Path` (from `str`)
+	
+	### Parameters:
+	 - `keywords : Iterable[str]`
+	 	keywords to convert
+	 - `do_posargs : bool`
+	 	whether to also convert (all) positional arguments
+	   (default: `False`)
+	
+	### Returns:
+	 - `Callable[[Callable], Callable]` 
+	"""	
+
+	def _deco(func : Callable) -> Callable:
+
+		@functools_wraps(func)
+		def wrapped(*args, **kwargs):
+			
+			print(f'converting: {keywords=} {do_posargs=} {args=} {kwargs=}')
+
+			for kw in keywords:
+				if kw in kwargs:
+					kwargs[kw] = Path(kwargs[kw])
+			
+			if do_posargs:
+				args = tuple( Path(x) for x in args )
+
+			print(f'converted: {tuple(type(x) for x in args)=} {args=} {kwargs=}')
+
+			return func(*args, **kwargs)
+		
+		return wrapped
+	
+	return _deco
 
 class GeneRunID(NamedTuple):
 	gen : int
