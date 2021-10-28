@@ -87,7 +87,14 @@ ENABLE_RUNCOMPONENTS : Dict[str, List[RunComponent]] = {
 # BodyData = NDArray[(Any, Any), CoordsRotArr]
 # BodyData = Annotated[NDArray[(Any, Any), CoordsRotArr], ShapeAnnotation(('timestep', 'segment')) ]
 
-@functools.cache
+# HACK: portability (`functools.cache` only added in 3.9)
+
+if sys.version_info[1] < 9:
+	functools_cache : Callable = functools.lru_cache(maxsize=None)
+else:
+	functools_cache = functools.cache
+
+@functools_cache
 def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	"""reads given tsv file into a numpy array
 	
