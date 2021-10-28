@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import namedtuple
 
 import os
 import sys
@@ -250,6 +251,22 @@ def pdbg(exp: _ExpType) -> _ExpType:
 
     return exp
 
+
+def isinstance_namedtuple(x):
+	"""checks if `x` is a `namedtuple`
+
+	credit to https://stackoverflow.com/questions/2166818/how-to-check-if-an-object-is-an-instance-of-a-namedtuple
+	"""
+	t = type(x)
+	b = t.__bases__
+	if len(b) != 1 or b[0] != tuple:
+		return False
+	f = getattr(t, '_fields', None)
+	if not isinstance(f, tuple):
+		return False
+	return all(type(n)==str for n in f)
+
+
 """
 ########  ####  ######  ########
 ##     ##  ##  ##    ##    ##
@@ -422,6 +439,87 @@ def dict_hash(data : dict, hash_len_mod : int = int(10**8)) -> int:
 	return hash(tuple(data.items())) % hash_len_mod
 
 
+def arbit_obj_serializer_hashable_4json(obj : Any) -> Union[bool,int,float,str]:
+	"""serialize an object to a hashable type for json serialization
+	
+	### Parameters:
+	 - `obj : Any`   
+	
+	### Returns:
+	 - `Union[bool,int,float,str]`
+	"""	
+	
+	if isinstance(obj, (bool,int,float,str)):
+		return obj
+	else:
+		return str(obj)
+
+
+
+
+SERIALIZER_SPECIAL_KEYS : List[str] = [
+	'__name__',
+	'__doc__',
+	'__module__',
+	'__class__',
+]
+
+SERIALIZER_SPECIAL_FUNCS : Dict[str,Callable] = {
+	'str' : str,
+	'type' : lambda x : type(x).__name__,
+	'repr' : lambda x : repr(x),
+	'code' : lambda x : inspect.getsource(x),
+	'sourcefile' : lambda x : inspect.getsourcefile(x),
+}
+
+def arbit_obj_serializer_4json(obj : Any, depth : int = -1 ) -> Any:
+	
+	try:
+		# if primitive type, just add it
+		if isinstance(obj, (bool,int,float,str)):
+			return obj
+
+		# if max depth is reached, return the object as a string and dont recurse
+		if depth == 0:
+			return str(obj)
+		
+		if isinstance(obj, dict):
+			# if dict, recurse
+			out_dict : Dict[str,Any] = dict()
+			for k,v in obj.items():
+				out_dict[str(k)] = arbit_obj_serializer_4json(v, depth-1)
+			return out_dict
+
+		elif isinstance_namedtuple(obj):
+			# if namedtuple, treat as dict
+			return arbit_obj_serializer_4json(dict(obj._asdict()))
+
+		elif isinstance(obj, (set,list,tuple)):
+			# if iterable, recurse
+			return [
+				arbit_obj_serializer_4json(x) for x in obj
+			]
+
+		else:
+			# if not basic type, serialize it
+			return {
+				**{
+					k : str(getattr(obj, k, None))
+					for k in SERIALIZER_SPECIAL_KEYS
+				},
+				**{
+					k : str(f(obj))
+					for k,f in SERIALIZER_SPECIAL_FUNCS.items()
+				},
+				# **{
+				# 	str(k) : str(v) if str(k).startswith('_')
+				# 	else arbit_obj_serializer_4json(v)
+				# 	for k,v in obj.__dict__.items()
+				# },
+			}
+	except Exception as e:
+		# print(f'error serializing {obj}')
+		return str(obj)
 
 """
  ######  ##     ## ########

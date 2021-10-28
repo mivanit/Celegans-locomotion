@@ -7,6 +7,7 @@ import glob
 import json
 import pickle
 import gzip
+import functools
 
 from pydbg import dbg # type: ignore
 
@@ -86,6 +87,7 @@ ENABLE_RUNCOMPONENTS : Dict[str, List[RunComponent]] = {
 # BodyData = NDArray[(Any, Any), CoordsRotArr]
 # BodyData = Annotated[NDArray[(Any, Any), CoordsRotArr], ShapeAnnotation(('timestep', 'segment')) ]
 
+@functools.cache
 def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	"""reads given tsv file into a numpy array
 	

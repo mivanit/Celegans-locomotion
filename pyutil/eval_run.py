@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 from typing import *
 import subprocess
@@ -362,6 +363,75 @@ def extract_food_angle_align_mean(
 	# return mean
 	return 1 / np.mean(np.abs(angle_align))
 
+
+
+def extract_path_length(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> NDArray[Any,float]:
+
+	# get head pos
+	arr_pos_head : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[:,0]
+
+	# extract the total path length travelled
+	seg_lengths_x : NDArray[Any,float] = np.diff(arr_pos_head['x'])
+	seg_lengths_y : NDArray[Any,float] = np.diff(arr_pos_head['y'])
+	seg_lengths_xy : NDArray[Any,float] = np.sqrt(seg_lengths_x**2 + seg_lengths_y**2)
+
+	# return total path length
+	return np.sum(seg_lengths_xy)
+
+
+def extract_path_speed(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> NDArray[Any,float]:
+
+	# get head pos
+	arr_pos_head : NDArray[Any, CoordsRotArr] = read_body_data(joinPath(datadir,'body.dat'))[:,0]
+
+	# get total path length travelled
+	path_length : float = extract_path_length(datadir, params)
+
+	# NOTE: expected speed from some trials ranges from `7.0-06` to `7.3-06`, approximately
+	return path_length / arr_pos_head.shape[0]
+
+
+
+def extract_foodDist_angleAlign_composite(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> float:
+
+	if ret_nan:
+		return float('nan')
+	
+	dist : float = extract_food_dist_inv(datadir, params, ret_nan)
+	align : float = extract_food_angle_align_mean(datadir, params, ret_nan)
+
+	# NOTE: copilot suggests `return dist * align` here...maybe?
+	# although it seems like the problem is minimization of angle misalignments by 0 movement, which would result in 0 error
+	# so sticking with addition for now
+	return dist + align
+
+
+def extract_foodDist_angleAlign_pathspeed_composite(
+		datadir : Path,
+		params : ParamsDict,
+		ret_nan : bool = False,
+	) -> float:
+
+	if ret_nan:
+		return float('nan')
+	
+	dist : float = extract_food_dist_inv(datadir, params, ret_nan)
+	align : float = extract_food_angle_align_mean(datadir, params, ret_nan)
+	path_speed : float = extract_path_speed(datadir, params, ret_nan)
+
+	return dist * align * path_speed
 
 
 def extract_gradient_deriv(

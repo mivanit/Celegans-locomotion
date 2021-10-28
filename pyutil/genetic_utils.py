@@ -7,6 +7,7 @@ from math import dist,isnan
 import random
 import glob
 import json
+import time
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
@@ -284,6 +285,8 @@ def generation_reproduction(
 		# chance_direct_progression : float = 0.2,
 		min_fitness : float = 0.0,
 	) -> Population:
+
+	# OPTIMIZE: this code is maybe running slowly? not sure
 
 	popsize_old : int = len(pop)
 	newpop : Population = list()
@@ -792,19 +795,19 @@ def load_population(
 # UGLY: this function should just call the continuation function after initialization
 def run_genetic_algorithm(
 		# for setup
-		rootdir : Path = "data/geno_sweep/",
+		rootdir : Path = Path("data/geno_sweep/"),
 		dists : ModParamsDists = DEFAULT_DISTS,
-		first_gen_size : int = 50,
-		gen_count : int = 20,
-		factor_cull : float = 0.5,
+		first_gen_size : int = 5000,
+		gen_count : int = 5,
+		factor_cull : float = 0.25,
 		factor_repro : float = 2.0,
 		# passed to `run_generation`
-		path_params_base : Path = "input/chemo_v15.json",
-		mut_sigma : float = 0.05,
-		mutprob : float = 0.05,
+		path_params_base : Path = Path("input/chemo_v15.json"),
+		mut_sigma : float = 0.2,
+		mutprob : float = 0.2,
 		eval_runs : List[ModParamsDict] = DEFAULT_EVALRUNS,
 		calc_mean : Callable[[List[float]], float] = lambda x : min(x),
-		func_extract : ExtractorFunc = extract_food_angle_align_mean,
+		func_extract : ExtractorFunc = extract_foodDist_angleAlign_pathspeed_composite,
 		gene_combine : GenoCombineFunc = combine_geno_select,
 		gene_combine_kwargs : Dict[str,Any] = dict(),
 		verbose : bool = False,
@@ -868,7 +871,9 @@ def run_genetic_algorithm(
 	   verbose output printing (hashes and fitnesses for every individual)
 	   (defaults to `False`)
 	"""	
-
+	if not isinstance(rootdir, Path):
+		rootdir = Path(rootdir)
+	
 	params_base : ParamsDict = load_params(path_params_base)
 	params_base["simulation"]["src-params"] = path_params_base
 
@@ -877,6 +882,11 @@ def run_genetic_algorithm(
 		print('# info for run', file = info_fout)
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
+
+	# 1609459200 = 2021-01-01 00:00:00
+	dumped_json : str = json.dumps(arbit_obj_serializer_4json(locals()), indent = '\t')
+	with open(rootdir / Path(f'runinfo_{int(time.time()) - 1609459200}.json'), 'w') as info_json:
+		print(dumped_json, file = info_json)
 
 	# compute population sizes
 	# TODO: `pop_sizes` should be an input parameter
@@ -970,13 +980,22 @@ def continue_genetic_algorithm(
 
 	params_base : ParamsDict = load_params(path_params_base)
 
+	if not isinstance(rootdir, Path):
+		rootdir = Path(rootdir)
+
 	if not os.path.isdir(rootdir):
 		FileNotFoundError(f'directory to continue run from does not exist: {rootdir}')
 
+	# dump run info
 	with open(joinPath(rootdir, '.runinfo'), 'a') as info_fout:
 		print('# info for run (continued)', file = info_fout)
 		print(locals(), file = info_fout)
 		print('\n\n', file = info_fout)
+	
+	with open(rootdir / Path(f'runinfo_{int(time.time()) - 1609459200}.json'), 'w') as info_json:
+		# 1609459200 = 2021-01-01 00:00:00
+		json.dump(arbit_obj_serializer_4json(locals()), info_json, indent = '\t')
+
 
 	# load starting population (pick largest generation number)
 	generation_dirs : Dict[int, Path] = {
