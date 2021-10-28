@@ -797,7 +797,7 @@ def run_genetic_algorithm(
 		# for setup
 		rootdir : Path = Path("data/geno_sweep/"),
 		dists : ModParamsDists = DEFAULT_DISTS,
-		first_gen_size : int = 5000,
+		first_gen_size : int = 512,
 		gen_count : int = 5,
 		factor_cull : float = 0.25,
 		factor_repro : float = 2.0,

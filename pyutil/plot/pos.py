@@ -700,6 +700,8 @@ class Plotters(object):
 		   (defaults to `1`)
 		"""
 
+		# OPTIMIZE: this can be made to take advantage of caching functionality built in `gene.scrape_extracted_cache()`
+
 		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
 
 		default_dir : Path = lst_dirs[0]
