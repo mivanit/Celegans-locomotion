@@ -18,6 +18,7 @@ data/collision_objs.tsv
 data/geno_sweep/
 data/selected_geno/**/*.dat
 data/misc/**
+data/sfn21/**
 
 # docs
 docs/pyutil/**

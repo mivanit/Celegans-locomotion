@@ -534,6 +534,11 @@ def arbit_obj_serializer_4json(obj : Any, depth : int = -1 ) -> Any:
 SCRIPTNAME_KEY = "__main__"
 COMMAND_DANGERS = [';', 'rm', 'sudo']
 
+COMMAND_ARGS_CONVERTERS : Dict[str,Callable] = {
+	'foodPos' : lambda x : ','.join(str(y) for y in x) if isinstance(x,tuple) else x,
+}
+
+
 def _make_cmd_arg(arg : str, val : Optional[Any]) -> str:
 	if val is None:
 		return ""
@@ -545,6 +550,12 @@ def _make_cmd_arg(arg : str, val : Optional[Any]) -> str:
 def _command_assembler(**kwargs) -> str:
 	output : List[str] = [ kwargs[SCRIPTNAME_KEY] ]
 
+	# convert keyword args, if required
+	for k,v in kwargs.items():
+		if k in COMMAND_ARGS_CONVERTERS:
+			kwargs[k] = COMMAND_ARGS_CONVERTERS[k](v)
+
+	# filter items to remove what's not needed
 	for key,val in kwargs.items():
 		if key != SCRIPTNAME_KEY:
 			if val is not None:
@@ -606,6 +617,9 @@ def genCmd_singlerun(
 	 - `str` 
 	   shell command
 	"""
+
+	# REVIEW: is using '**locals()' a good idea here?
+	# REVIEW: `duration`, possily other things not properly overriding defaults from loaded params.json
 
 	cmd : str = _command_assembler(**{
 		SCRIPTNAME_KEY : "./sim.exe",

@@ -18,6 +18,7 @@ from nptyping import NDArray,StructuredType # type: ignore
 
 import matplotlib # type: ignore 
 import matplotlib.pyplot as plt # type: ignore
+import matplotlib.colors as mcolors # type: ignore
 import matplotlib.animation as animation # type: ignore
 from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
@@ -36,7 +37,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath, get_last_dir_name,
 	get_dirs_containing_file, deco_str_to_path_kwargs,
-	CoordsArr,CoordsRotArr, pdbg,
+	CoordsArr,CoordsRotArr, pdbg, VecXY,
 )
 
 from pyutil.read_runs import read_body_data
@@ -298,6 +299,55 @@ def _plot_collobjs(ax : Axes, collobjs : List[CollisionObject]):
 
 	ax.add_collection(pc)
 
+def trunc_cmap(
+		cmap_name : str, 
+		bounds : Tuple[float,float], 
+		n_bins : int = 100,
+		flip : bool = False,
+	) -> mcolors.LinearSegmentedColormap:
+	cmap = plt.get_cmap(cmap_name)
+	flip_int : int = -1 if flip else None
+	new_cmap : mcolors.LinearSegmentedColormap = mcolors.LinearSegmentedColormap.from_list(
+		f'trunc({cmap.name},{bounds[0]:.2f},{bounds[1]:.2f})',
+		cmap(np.linspace(bounds[0], bounds[1], n_bins)[::flip_int]),
+	)
+	return new_cmap
+
+def _plot_concentration(ax : Axes, params : dict, n_bins : int = 500):
+	# conservatively get grid bounds based on distance from start position
+	foodPos : Dict[str,float] = params['ChemoReceptors']['foodPos']
+	cr_radius : float = 1.1 * max(
+		foodPos['x'],
+		foodPos['y'],
+	)
+
+	# get the grid bounds
+	xedges : NDArray[n_bins, float] = np.linspace(
+		- cr_radius + foodPos['x'], cr_radius + foodPos['x'],
+		n_bins, endpoint = True,
+	)
+	yedges : NDArray[n_bins, float] = np.linspace(
+		- cr_radius + foodPos['y'], cr_radius + foodPos['y'], 
+		n_bins, endpoint = True,
+	)
+
+	# get the grid
+	X, Y = np.meshgrid(xedges, yedges)
+
+	# get the grid values
+	# (unscaled) concentration at a point is exp(dist(food,pt))
+	Z = - np.exp(np.sqrt((X-foodPos['x'])**2 + (Y-foodPos['y'])**2))
+	Z = - np.float_power(np.abs(Z) - 1, 0.1)
+	print(f'{np.max(Z)=} {np.min(Z)=}')
+
+	# plot the grid	
+	ax.imshow(
+		Z,
+		extent = (xedges[0], xedges[-1], yedges[0], yedges[-1]),
+		cmap = trunc_cmap('Oranges', (0.0, 0.7)),
+		# interpolation = 'bilinear',
+	)
+
 
 
 
@@ -307,7 +357,8 @@ def _plot_foodPos(
 		params : Path, 
 		fmt : str = 'x', 
 		label : str = None, 
-		maxdist_disc : bool = True,
+		maxdist_disc : bool = False,
+		concentration : bool = True,
 	):
 	with open(params, 'r') as fin:
 		params_data : dict = json.load(fin)
@@ -315,6 +366,9 @@ def _plot_foodPos(
 			if "DISABLED" not in params_data["ChemoReceptors"]:
 				foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
 				foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
+
+				if concentration:
+					_plot_concentration(ax, params_data)
 		
 				ax.plot(foodpos_x, foodpos_y, fmt, label = label)
 
@@ -328,7 +382,7 @@ def _plot_foodPos(
 						))
 					else:
 						KeyError('couldnt find "max_distance"')
-			
+
 				return (foodpos_x, foodpos_y)
 
 
@@ -442,8 +496,6 @@ def _draw_setup(
 		# pad bounds
 		bounds = pad_BoundingBox(bounds, pad_frac)
 	
-	print('test',bounds)
-
 	# set up figure things
 	# ==============================
 
@@ -608,6 +660,7 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 			only_final : bool = False,
+			legend : bool = True,
 		):
 
 		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
@@ -646,8 +699,11 @@ class Plotters(object):
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
-		ax.set_title( rootdir / Path('**') / Path('') )
-		plt.legend()
+		if legend:
+			ax.set_title( rootdir / Path('**') / Path('') )
+			plt.legend()
+		else:
+			ax.set_title('')
 
 		if show:
 			plt.show()
@@ -670,6 +726,7 @@ class Plotters(object):
 			show : bool = True,
 			max_gen : int = 5,
 			gen_n_step : int = 1,
+			legend : bool = True,
 		):
 		"""plot end head position scatterplot per generation
 		
@@ -740,7 +797,8 @@ class Plotters(object):
 
 			ax.plot(head_data_x, head_data_y, 'o', label = f'generation {n_gen}')
 
-		plt.legend()
+		if legend:
+			plt.legend()
 
 		if show:
 			plt.show()

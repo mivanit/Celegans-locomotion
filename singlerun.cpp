@@ -142,7 +142,8 @@ int main (int argc, const char* argv[])
         params["ChemoReceptors"]["foodPos"]["y"].get<double>()
     )
     
-
+    // CRIT: if no collision file is specified, the program crashes here
+    // TODO: collision files should eventually be loaded from new json format
     // set collision objects
     overwrite_json_from_cmd<std::string>(simulation_params, cmd, "coll");
     std::vector<CollisionObject> collObjs = load_objects(simulation_params["coll"].get<std::string>());

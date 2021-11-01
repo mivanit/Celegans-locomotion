@@ -392,7 +392,7 @@
 		"coll": "input/coll_objs.tsv",
 		"duration": 50.0,
 		"output": "data/run/NULL/",
-		"seed": 0,
+		"seed": 1631207313,
 		"src-params": "input/params/chemo_v16.json"
 	}
 }
