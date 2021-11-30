@@ -57,3 +57,13 @@ try $$e^{-x}$$ as a loss func
  
 # 2021-05-27 13:38
 connection keys can't be seamlessly turned into NamedTuples because `from` is a python keyword. So, at some point I should go in and change the 'from'/'to' to something else, and then the python code can be cleaned up a bit and made type checkable
+
+
+
+# 2021-11-29
+color gradient for plots: things to change in pos_multi
+
+- add extra parameter to `pos_multi` which will determine how the read parameter sets are sorted- split the read-plot loop in two (for x_dir in lst_dirs ..)
+- first time we loop, read all the data
+- after first loop, sort the data by the given parameter and create a corresponding colormap using something like `colors = cm.plasma(np.linspace(0,1,n_tracks))`
+- loop over the sorted data again, and use the colormap to determine both the food color and track color
