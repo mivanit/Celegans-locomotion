@@ -603,7 +603,10 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 			only_final : bool = False,
+			sort_param : Optional[str] = None,
 		):
+
+		# this whole chunk is for looking in a folder for worm trajectories
 		if not isinstance(rootdir, Path):
 			rootdir = Path(rootdir)
 
@@ -622,6 +625,9 @@ class Plotters(object):
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 
+
+		# this draws the food position and the collision objects
+		# you may need to add to this block an argument for `_draw_setup` *not* to draw the food position or gradient
 		fig,ax,data_default,bounds = _draw_setup(
 			rootdir = default_dir,
 			bodydat = bodydat,
@@ -631,12 +637,19 @@ class Plotters(object):
 			figsize_scalar = figsize_scalar,
 			pad_frac = figsize_scalar,
 		)
-
+		
+		# loop over all the datasets
 		for x_dir in lst_dirs:
 			
+			# find paths to the `body.dat` and `params.json` in the folder `x_dir`
 			x_bodydat : str = joinPath(x_dir, bodydat)
 			x_params : str = joinPath(x_dir, params)
-						
+
+			# TODO: read the parameters from `x_param` and then access the value at `sort_param`
+			#  you might need to use a function called `access_nested_dict` (cant remember exact name)
+			#  you'll need to call that function, passing the params and the key `sort_param` to it
+			
+			# reads the body data, and then take only the head position
 			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
 			
 			head_data : NDArray[Any, CoordsRotArr] = data[-1,idx]
@@ -646,10 +659,16 @@ class Plotters(object):
 			print(x_bodydat)
 			print(head_data.shape, head_data.dtype)
 
+
 			if only_final:
+				# plot the final position only
 				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
 			else:
+				# plot the track of the head position
 				ax.plot(head_data['x'], head_data['y'], label = x_dir)
+				# TODO: this line will have an extra parameter that looks like
+				# `color = colormap[index]`
+``
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
