@@ -20,8 +20,16 @@
 ## reading existing runs
  - [ ] error checking in validating params
 
-
-
+# Yash To-Do 2021-11-17
+  - [ ] neuron states - check with Michael on this
+  - [ ] heat map, look at with algorithm - Michael did  
+  - [ ] eliminate shootoff after hitting wall (by time and by checking coll objs tsv file)
+  - [ ] plot foodPos y-value and x-value sweep_params but w/ 10 runs and blue X's for each one
+  
+# Yash To-Do 2021-10-21
+  - [X] remove legend in sweep_params plots. Check plt.legend in pos_multi
+  - [X] move foodPos up and down, manipulating y-coordinate
+  - [X] move foodPos x-value, but closer to default value x=.005 like .0055. Use sweep_params
 
 
 # OLD

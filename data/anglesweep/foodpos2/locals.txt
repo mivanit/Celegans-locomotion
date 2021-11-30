@@ -1,0 +1,1 @@
+{'rootdir': 'data/anglesweep/foodpos2/', 'param_key': 'simulation.angle', 'param_range': (-3.14, 3.14, 'lin', 40), 'params': 'input/params.json', 'multi_food': False, 'ASK_CONTINUE': True, 'kwargs': {}}

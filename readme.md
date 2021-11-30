@@ -67,9 +67,15 @@ Whenever I can get automatic generation of documentation for the C++ code to wor
 - create a directory `data/randomruns` (call it whatever you like)
 - run the command `./sim.exe --params input/params.json --output data/randomruns/run_n --rand`, replacing `run_n` with whichever run you are doing
   - you can also do `./sim.exe --params input/params.json --output data/randomruns/run_n --seed <N>` if you want to specify a seed by changing `<N>` to a number
-- to plot a single run, do `python pyutil/plot/pos.py pos data/randomruns/run_n`
+- to plot a single run, do `python pyutil/plot/pos.py pos data/randomruns/run_n --time_window=(0,100)`
 - to plot multiple runs, do `python pyutil/plot/pos.py pos_multi --rootdir=data/randomruns/run_n`
   - this is currently broken -- look for the "TODO" in the code and see if you can fix it
+
+- anglesweep, do `python multi_run.py sweep_param --rootdir=data/anglesweep/foodpos2/ --param_key='simulation.angle' --param_range=-3.14,3.14,lin,40 --params=input/params.json`
+- to plot multiple runs for anglesweep, do `python pyutil/plot/pos.py pos_multi --rootdir=data/anglesweep/foodpos2/`
+- anglesweep, do `python multi_run.py sweep_param --rootdir=data/anglesweep/foodpos5/ --param_key='ChemoReceptors.foodPos.y' --param_range=-0.005,0.005,lin,39 --params=input/params.json`
+- to plot multiple runs for anglesweep, do `python pyutil/plot/pos.py pos_multi --rootdir=data/anglesweep/foodpos5/`
+
 
 <!-- requirements:
 

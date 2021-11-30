@@ -1,0 +1,1 @@
+{'rootdir': 'data/anglesweep/varyseed1/', 'param_key': 'simulation.seed', 'param_range': (0, 39, 'lin', 40), 'params': 'input/params.json', 'multi_food': False, 'ASK_CONTINUE': True, 'kwargs': {}}

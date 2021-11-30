@@ -1,0 +1,58 @@
+> loading configs:
+  > params json from:  	data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/in-params.json
+  > read command line args
+  >> set rand seed to 0
+  >> set duration to 80.000000
+  >> set angle to 0.500000
+  >> set foodPos to 0.005053, 0.000000
+  >> collision tsv from:	input/objs_empty.tsv
+> creating output dir: data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/
+  > copying collision objects to:	data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/coll_objs.tsv
+    >> elements in CollObjs vec: 1
+  > copying params json to:      	data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/params.json
+> finished init body constants
+> creating worm object:
+  > muscles
+  > Head NS
+    > circuit init
+      >>  size: 7, max_CHEM: 8, max_ELE: 2
+    > loading neurons
+    > adding synapses
+  > VentralCord NS
+    > circuit init
+      >>  size: 36, max_CHEM: 4, max_ELE: 5, unit_size: 6
+    > initializing 6 units
+  > updating neuron indecies
+  > Stretch Receptors
+  > Chemo Receptors enabled
+    > placing food at 0.005053, 0.000000
+  > NMJ params
+  > NMJ gain (?)
+  > Worm object ctor done!
+> running evaluation:
+  > opening output files in data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/
+  > initializing curvature measurement
+  > initializing worm state
+    > circuit state
+    > body state
+      >> angle: 0.500000, collision obj count: 1
+    > muscle state
+  > fitness calc init
+  > starting time loop:
+
+    >>  time:	0.000000	/	80.000000    >>  time:	1.000000	/	80.000000    >>  time:	2.000000	/	80.000000    >>  time:	3.010000	/	80.000000    >>  time:	4.010000	/	80.000000    >>  time:	5.010000	/	80.000000    >>  time:	6.010000	/	80.000000    >>  time:	7.010000	/	80.000000    >>  time:	8.010000	/	80.000000    >>  time:	9.010000	/	80.000000    >>  time:	10.010000	/	80.000000    >>  time:	11.010000	/	80.000000    >>  time:	12.010000	/	80.000000    >>  time:	13.010000	/	80.000000    >>  time:	14.010000	/	80.000000    >>  time:	15.010000	/	80.000000    >>  time:	16.010000	/	80.000000    >>  time:	17.010000	/	80.000000    >>  time:	18.000000	/	80.000000    >>  time:	19.000000	/	80.000000    >>  time:	20.000000	/	80.000000    >>  time:	21.000000	/	80.000000    >>  time:	22.000000	/	80.000000    >>  time:	23.000000	/	80.000000    >>  time:	24.000000	/	80.000000    >>  time:	25.000000	/	80.000000    >>  time:	26.000000	/	80.000000    >>  time:	27.000000	/	80.000000    >>  time:	28.000000	/	80.000000    >>  time:	29.000000	/	80.000000    >>  time:	30.000000	/	80.000000    >>  time:	31.000000	/	80.000000    >>  time:	32.000000	/	80.000000    >>  time:	33.000000	/	80.000000    >>  time:	34.000000	/	80.000000    >>  time:	35.000000	/	80.000000    >>  time:	36.000000	/	80.000000    >>  time:	37.000000	/	80.000000    >>  time:	38.000000	/	80.000000    >>  time:	39.000000	/	80.000000    >>  time:	40.000000	/	80.000000    >>  time:	41.000000	/	80.000000    >>  time:	42.000000	/	80.000000    >>  time:	43.000000	/	80.000000    >>  time:	44.010000	/	80.000000    >>  time:	45.010000	/	80.000000    >>  time:	46.010000	/	80.000000    >>  time:	47.010000	/	80.000000    >>  time:	48.010000	/	80.000000    >>  time:	49.010000	/	80.000000    >>  time:	50.010000	/	80.000000    >>  time:	51.010000	/	80.000000    >>  time:	52.010000	/	80.000000    >>  time:	53.010000	/	80.000000    >>  time:	54.010000	/	80.000000    >>  time:	55.010000	/	80.000000    >>  time:	56.010000	/	80.000000    >>  time:	57.010000	/	80.000000    >>  time:	58.010000	/	80.000000    >>  time:	59.010000	/	80.000000    >>  time:	60.010000	/	80.000000NaN postion!
+NaN postion!
+NaN postion!
+NaN postion!
+NaN postion!
+NaN postion!
+NaN postion!
+NaN postion!
+    >>  time:	61.010000	/	80.000000    >>  time:	62.010000	/	80.000000    >>  time:	63.010000	/	80.000000    >>  time:	64.010000	/	80.000000    >>  time:	65.010000	/	80.000000    >>  time:	66.010000	/	80.000000    >>  time:	67.010000	/	80.000000    >>  time:	68.010000	/	80.000000    >>  time:	69.010000	/	80.000000    >>  time:	70.010000	/	80.000000    >>  time:	71.010000	/	80.000000    >>  time:	72.010000	/	80.000000    >>  time:	73.000000	/	80.000000    >>  time:	74.000000	/	80.000000    >>  time:	75.000000	/	80.000000    >>  time:	76.000000	/	80.000000    >>  time:	77.000000	/	80.000000    >>  time:	78.000000	/	80.000000    >>  time:	79.000000	/	80.000000
+
+  > finished time loop!
+  > closing files, saving to data/anglesweep/foodpos6/ChemoReceptors.foodPos.x_0.0050526/
+
+
+    > fitnesses:
+bodyorientation: nan	movementorientation: nan	anglediff: nan	distancetravelled: nan	> finished!

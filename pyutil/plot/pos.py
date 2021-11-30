@@ -18,6 +18,7 @@ from nptyping import NDArray,StructuredType # type: ignore
 
 import matplotlib # type: ignore 
 import matplotlib.pyplot as plt # type: ignore
+import matplotlib.colors as mcolors # type: ignore
 import matplotlib.animation as animation # type: ignore
 from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
@@ -34,9 +35,9 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 	))
 
 from pyutil.util import (
-	Path,joinPath,unixPath,
-	CoordsArr,CoordsRotArr,
-	get_last_dir_name,pdbg,
+	Path,joinPath,unixPath, get_last_dir_name,
+	get_dirs_containing_file, deco_str_to_path_kwargs,
+	CoordsArr,CoordsRotArr, pdbg, VecXY,
 )
 
 from pyutil.read_runs import read_body_data
@@ -298,6 +299,55 @@ def _plot_collobjs(ax : Axes, collobjs : List[CollisionObject]):
 
 	ax.add_collection(pc)
 
+def trunc_cmap(
+		cmap_name : str, 
+		bounds : Tuple[float,float], 
+		n_bins : int = 100,
+		flip : bool = False,
+	) -> mcolors.LinearSegmentedColormap:
+	cmap = plt.get_cmap(cmap_name)
+	flip_int : int = -1 if flip else None
+	new_cmap : mcolors.LinearSegmentedColormap = mcolors.LinearSegmentedColormap.from_list(
+		f'trunc({cmap.name},{bounds[0]:.2f},{bounds[1]:.2f})',
+		cmap(np.linspace(bounds[0], bounds[1], n_bins)[::flip_int]),
+	)
+	return new_cmap
+
+def _plot_concentration(ax : Axes, params : dict, n_bins : int = 500):
+	# conservatively get grid bounds based on distance from start position
+	foodPos : Dict[str,float] = params['ChemoReceptors']['foodPos']
+	cr_radius : float = 1.1 * max(
+		foodPos['x'],
+		foodPos['y'],
+	)
+
+	# get the grid bounds
+	xedges : NDArray[n_bins, float] = np.linspace(
+		- cr_radius + foodPos['x'], cr_radius + foodPos['x'],
+		n_bins, endpoint = True,
+	)
+	yedges : NDArray[n_bins, float] = np.linspace(
+		- cr_radius + foodPos['y'], cr_radius + foodPos['y'], 
+		n_bins, endpoint = True,
+	)
+
+	# get the grid
+	X, Y = np.meshgrid(xedges, yedges)
+
+	# get the grid values
+	# (unscaled) concentration at a point is exp(dist(food,pt))
+	Z = - np.exp(np.sqrt((X-foodPos['x'])**2 + (Y-foodPos['y'])**2))
+	Z = - np.float_power(np.abs(Z) - 1, 0.1)
+	print(f'{np.max(Z)=} {np.min(Z)=}')
+
+	# plot the grid	
+	ax.imshow(
+		Z,
+		extent = (xedges[0], xedges[-1], yedges[0], yedges[-1]),
+		cmap = trunc_cmap('Oranges', (0.0, 0.7)),
+		# interpolation = 'bilinear',
+	)
+
 
 
 
@@ -307,7 +357,8 @@ def _plot_foodPos(
 		params : Path, 
 		fmt : str = 'x', 
 		label : str = None, 
-		maxdist_disc : bool = True,
+		maxdist_disc : bool = False,
+		concentration : bool = True,
 	):
 	with open(params, 'r') as fin:
 		params_data : dict = json.load(fin)
@@ -315,6 +366,9 @@ def _plot_foodPos(
 			if "DISABLED" not in params_data["ChemoReceptors"]:
 				foodpos_x : float = float(params_data["ChemoReceptors"]["foodPos"]["x"])
 				foodpos_y : float = float(params_data["ChemoReceptors"]["foodPos"]["y"])
+
+				if concentration:
+					_plot_concentration(ax, params_data)
 		
 				ax.plot(foodpos_x, foodpos_y, fmt, label = label)
 
@@ -328,7 +382,7 @@ def _plot_foodPos(
 						))
 					else:
 						KeyError('couldnt find "max_distance"')
-			
+
 				return (foodpos_x, foodpos_y)
 
 
@@ -442,8 +496,6 @@ def _draw_setup(
 		# pad bounds
 		bounds = pad_BoundingBox(bounds, pad_frac)
 	
-	print('test',bounds)
-
 	# set up figure things
 	# ==============================
 
@@ -497,9 +549,11 @@ class Plotters(object):
 	##     ## ######## ##     ## ########
 	"""
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos(
 			# args passed down to `_draw_setup()`
 			rootdir : Path,
+			*args,
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
 			params : Optional[Path] = 'params.json',
@@ -528,11 +582,13 @@ class Plotters(object):
 
 		if show:
 			plt.show()
-		
+	
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_foodmulti(
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
 			bodydat : Path = 'body.dat',
 			collobjs : Path = 'coll_objs.tsv',
@@ -588,6 +644,7 @@ class Plotters(object):
 			plt.show()
 	
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_multi(
 			# search in this directory
 			rootdir : Path,
@@ -603,22 +660,11 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 			only_final : bool = False,
+			legend : bool = True,
 		):
-		if not isinstance(rootdir, Path):
-			rootdir = Path(rootdir)
 
-		pdbg(rootdir)
-		pdbg(bodydat)
-		pdbg(rootdir / '**' / bodydat)
-		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
-		lst_dirs : List[Path] = [ 
-			unixPath(os.path.dirname(p)) + '/'
-			for p in lst_bodydat
-		]
+		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
 
-		pdbg(lst_dirs)
-		if not lst_dirs:
-			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
 		print(f'> using as default: {default_dir}')
 
@@ -653,22 +699,25 @@ class Plotters(object):
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
-		ax.set_title(rootdir / '**' / '')
-		plt.legend()
+		if legend:
+			ax.set_title( rootdir / Path('**') / Path('') )
+			plt.legend()
+		else:
+			ax.set_title('')
 
 		if show:
 			plt.show()
-
 	
 	@staticmethod
+	@deco_str_to_path_kwargs(['rootdir', 'bodydat', 'collobjs', 'params'], do_posargs = True)
 	def pos_gener(
-			*args,
 			# search in this directory
 			rootdir : Path,
+			*args,
 			# args passed down to `_draw_setup()`
-			bodydat : Path = 'body.dat',
-			collobjs : Path = 'coll_objs.tsv',
-			params : Optional[Path] = 'params.json',
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : Optional[float] = None,
 			pad_frac : Optional[float] = None,
@@ -677,14 +726,40 @@ class Plotters(object):
 			show : bool = True,
 			max_gen : int = 5,
 			gen_n_step : int = 1,
+			legend : bool = True,
 		):
+		"""plot end head position scatterplot per generation
+		
+		### Parameters:
+		 - `rootdir : Path`   
+		   expected to contain `g<n>/` subdirectories, where `n` is the generation number
+		 - `bodydat : Path`   
+		   (defaults to `'body.dat'`)
+		 - `collobjs : Path`   
+		   (defaults to `'coll_objs.tsv'`)
+		 - `params : Optional[Path]`   
+		   (defaults to `'params.json'`)
+		 - `time_window : Tuple[OptInt,OptInt]`   
+		   (defaults to `(None,None)`)
+		 - `figsize_scalar : Optional[float]`   
+		   (defaults to `None`)
+		 - `pad_frac : Optional[float]`   
+		   (defaults to `None`)
+		 - `idx : int`   
+		   segment index (I think..)
+		   (defaults to `0`)
+		 - `show : bool`   
+		   (defaults to `True`)
+		 - `max_gen : int`   
+		   (defaults to `5`)
+		 - `gen_n_step : int`   
+		    step for which generations to plot -- will plot from `range(0,max_gen+1,gen_n_step)`
+		   (defaults to `1`)
+		"""
 
-		# setup
-		lst_bodydat : List[Path] = glob.glob(joinPath(rootdir,bodydat), recursive = True)
-		lst_dirs : List[Path] = [ 
-			joinPath(os.path.dirname(p),'') 
-			for p in lst_bodydat
-		]
+		# OPTIMIZE: this can be made to take advantage of caching functionality built in `gene.scrape_extracted_cache()`
+
+		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
 
 		default_dir : Path = lst_dirs[0]
 
@@ -722,7 +797,8 @@ class Plotters(object):
 
 			ax.plot(head_data_x, head_data_y, 'o', label = f'generation {n_gen}')
 
-		plt.legend()
+		if legend:
+			plt.legend()
 
 		if show:
 			plt.show()
@@ -737,13 +813,15 @@ class Plotters(object):
 	##     ## ##    ## #### ##     ##
 	"""
 
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params', 'output'], do_posargs = True)
 	@staticmethod
 	def anim(
-			rootdir : Path = 'data/run/',
-			bodydat : Path = 'body.dat',
-			collobjs : Path = 'coll_objs.tsv',
-			params : Optional[Path] = 'params.json',
-			output : Path = 'worm.mp4',
+			rootdir : Path,
+			*args,
+			bodydat : Path = Path('body.dat'),
+			collobjs : Path = Path('coll_objs.tsv'),
+			params : Optional[Path] = Path('params.json'),
+			output : Path = Path('worm.mp4'),
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : float = 6.0,
 			fps : int = 30, bitrate : int = 1800,
@@ -752,7 +830,7 @@ class Plotters(object):
 		https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
 		credit to the above for info on how to use FuncAnimation
 		"""
-		output = rootdir + output
+		output = rootdir / output
 		# idk what this does tbh
 		matplotlib.use("Agg")
 		
@@ -851,6 +929,6 @@ class Plotters(object):
 
 if __name__ == '__main__':
 	import fire # type: ignore
+	# Make Python Fire not use a pager when it prints a help text
+	fire.core.Display = lambda lines, out: print(*lines, file=out)
 	fire.Fire(Plotters)
-
-

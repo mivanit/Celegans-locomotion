@@ -1,0 +1,1 @@
+{'rootdir': 'data/anglesweep/foodpos5/', 'param_key': 'ChemoReceptors.foodPos.y', 'param_range': (-0.005, 0.005, 'lin', 40), 'params': 'input/params.json', 'multi_food': False, 'ASK_CONTINUE': True, 'kwargs': {}}
