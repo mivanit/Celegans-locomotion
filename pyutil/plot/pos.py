@@ -19,6 +19,7 @@ from nptyping import NDArray,StructuredType # type: ignore
 import matplotlib # type: ignore 
 import matplotlib.pyplot as plt # type: ignore
 import matplotlib.colors as mcolors # type: ignore
+from matplotlib import cm # type: ignore
 import matplotlib.animation as animation # type: ignore
 from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
@@ -35,7 +36,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 	))
 
 from pyutil.util import (
-	Path,joinPath,unixPath, get_last_dir_name,
+	Path,joinPath, keylist_access_nested_dict_val,unixPath, get_last_dir_name,
 	get_dirs_containing_file, deco_str_to_path_kwargs,
 	CoordsArr,CoordsRotArr, pdbg, VecXY,
 )
@@ -660,15 +661,41 @@ class Plotters(object):
 			idx : int = 0,
 			show : bool = True,
 			only_final : bool = False,
-			legend : bool = True,
+			legend : bool = False,
+			sort_param : Union[tuple,str] = 'ChemoReceptors.foodPos.y',
 		):
 
-		lst_dirs : List[Path] = get_dirs_containing_file(rootdir, bodydat)
+		# split up path to parameter by dot
+		sort_param_tup : Tuple[str,...] = (
+			tuple(sort_param.split('.'))
+			if isinstance(sort_param, str)
+			else tuple(sort_param)
+		)
+		sort_param_sdot : str = '.'.join(sort_param_tup)
 
+		# this whole chunk is for looking in a folder for worm trajectories
+		if not isinstance(rootdir, Path):
+			rootdir = Path(rootdir)
+
+		pdbg(rootdir)
+		pdbg(bodydat)
+		pdbg(rootdir / '**' / bodydat)
+		lst_bodydat : List[Path] = glob.glob(rootdir / '**' / bodydat, recursive = True)
+		lst_dirs : List[Path] = [ 
+			unixPath(os.path.dirname(p)) + '/'
+			for p in lst_bodydat
+		]
+
+		pdbg(lst_dirs)
+		if not lst_dirs:
+			raise FileNotFoundError('Could not find any matching files')
 		default_dir : Path = lst_dirs[0]
-		print(f'> using as default: {default_dir}')
+		print(f'> using as default: {default_dir}') #don't understand
 
-		fig,ax,data_default,bounds = _draw_setup(
+
+		# this draws the food position and the collision objects
+		# you may need to add to this block an argument for `_draw_setup` *not* to draw the food position or gradient
+		fig,ax,data_default,bounds = _draw_setup( #don't understand this function
 			rootdir = default_dir,
 			bodydat = bodydat,
 			collobjs = collobjs,
@@ -677,25 +704,62 @@ class Plotters(object):
 			figsize_scalar = figsize_scalar,
 			pad_frac = figsize_scalar,
 		)
+		
+		data_assemble : List[Tuple[Any, NDArray]] = []
 
+		# loop over all the datasets
 		for x_dir in lst_dirs:
 			
+			# find paths to the `body.dat` and `params.json` in the folder `x_dir`
 			x_bodydat : str = joinPath(x_dir, bodydat)
 			x_params : str = joinPath(x_dir, params)
-						
-			data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
+
+			# TODO: read the parameters from `x_param` and then access the value at `sort_param`
+			#  you might need to use a function called `access_nested_dict` (cant remember exact name)
+			#  you'll need to call that function, passing the params and the key `sort_param` to it
+			# questions. 1) is x_params a file 2) what was the second loop 3) 
+			#open x_params as text file but load text stream .json with open filename r as f. data= json.load.f
+		
+			# load the file into a dictionary
+			with open(x_params, "r") as f:
+				x_params_data : dict = json.load(f)
+
+			# sort_param_tup is for example tuple `("Chemoreceptor", "foodPos", "x")`
+			# sort_param_val is for example the x-value food position of the worm in x_params_data
+			sort_param_val = keylist_access_nested_dict_val(x_params_data, sort_param_tup)
+				
+			# reads the body data, and then take only the head position
+			x_data : NDArray[(int,int), CoordsRotArr] = read_body_data(x_bodydat)
 			
-			head_data : NDArray[Any, CoordsRotArr] = data[-1,idx]
+			x_head_data : NDArray[Any, CoordsRotArr] = x_data[-1,idx]
 			if not only_final:
-				head_data = data[:,idx]
+				x_head_data = x_data[:,idx]
 
-			print(x_bodydat)
-			print(head_data.shape, head_data.dtype)
+			# print(x_bodydat)
+			# print(head_data.shape, head_data.dtype)
 
-			if only_final:
+			# add to the list, each element is a tuple, which contains a key and a dataset 
+			data_assemble.append(tuple(sort_param_val, x_head_data))
+
+		# sort the tup sort function by something. the way you sort things is you pass a key function. 
+		
+		# sort by the first value in the tuple
+		data_assemble.sort(key=lambda x: x[0])
+		# cm.plasma inputs an array of numbers and returns an array of colors
+		colors = cm.plasma(np.linspace(0, 1, len(data_assemble)))
+
+		# idx gives the index of data_assemble list value
+		for (x_val, x_dat), idx in enumerate(data_assemble):
+			""" if only_final:
+				# plot the final position only
 				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
-			else:
-				ax.plot(head_data['x'], head_data['y'], label = x_dir)
+			else: """
+			# get x value and y value of worm's head data x_dat and plot
+			ax.plot(x_dat['x'], x_dat['y'], color = colors[idx])
+			
+			# TODO: this line will have an extra parameter that looks like
+			# `color = colormap[index]`
+
 			# tup_foodpos = _plot_foodPos(ax, x_params, label = x_dir)
 			# print(tup_foodpos)
 
