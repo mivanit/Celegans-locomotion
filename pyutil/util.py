@@ -322,6 +322,12 @@ def keylist_access_nested_dict(
 
 	return (fin_dict,fin_key)
 
+def keylist_access_nested_dict_val(
+		d : Dict[str,Any], 
+		keys : List[str],
+	) -> Any:
+	dx, sx = keylist_access_nested_dict(d, keys)
+	return dx[sx]
 
 def split_dict_arrs(in_dict : Dict[float,float]):
 	return zip(*sorted(in_dict.items()))
