@@ -717,8 +717,6 @@ class Plotters(object):
 			# TODO: read the parameters from `x_param` and then access the value at `sort_param`
 			#  you might need to use a function called `access_nested_dict` (cant remember exact name)
 			#  you'll need to call that function, passing the params and the key `sort_param` to it
-			# questions. 1) is x_params a file 2) what was the second loop 3) 
-			#open x_params as text file but load text stream .json with open filename r as f. data= json.load.f
 		
 			# load the file into a dictionary
 			with open(x_params, "r") as f:
@@ -738,9 +736,11 @@ class Plotters(object):
 			# print(x_bodydat)
 			# print(head_data.shape, head_data.dtype)
 
-			# add to the list, each element is a tuple, which contains a key and a dataset 
-			data_assemble.append(tuple(sort_param_val, x_head_data))
+			sortvalue_head_tuple : Tuple[Any, NDArray] = (sort_param_val, x_head_data)
+			data_assemble.append((sortvalue_head_tuple))
 
+			# add to the list, each element is a tuple, which contains a key and a dataset 
+			# data_assemble.append(tuple(sort_param_val, x_head_data))
 		# sort the tup sort function by something. the way you sort things is you pass a key function. 
 		
 		# sort by the first value in the tuple
@@ -749,12 +749,12 @@ class Plotters(object):
 		colors = cm.plasma(np.linspace(0, 1, len(data_assemble)))
 
 		# idx gives the index of data_assemble list value
-		for (x_val, x_dat), idx in enumerate(data_assemble):
+		for idx, (x_val, x_dat) in enumerate(data_assemble):
 			""" if only_final:
 				# plot the final position only
 				ax.plot(head_data['x'], head_data['y'], 'o', label = x_dir)
 			else: """
-			# get x value and y value of worm's head data x_dat and plot
+			# get x value and y value of worm's head data x_dat and plot. Structured array
 			ax.plot(x_dat['x'], x_dat['y'], color = colors[idx])
 			
 			# TODO: this line will have an extra parameter that looks like
