@@ -1,5 +1,5 @@
 from __future__ import annotations
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 import os
 import sys
@@ -331,7 +331,7 @@ def strList_to_dict(
 		in_data : Union[dict,tuple,str], 
 		keys_list : List[str], 
 		delim : str = ',',
-		type_map : Dict[str,Callable] = dict(),
+		type_map : Optional[DefaultDict[str,Callable]] = None,
 	) -> Dict[str,Any]:
 	if isinstance(in_data, dict):
 		return in_data
@@ -352,10 +352,10 @@ def strList_to_dict(
 		}
 
 		# map types
-		for key,func in type_map.items():
-			if key in out_dict:
-				out_dict[key] = func(out_dict[key])
-		
+		if type_map is not None:
+			for key,val in out_dict.items():
+				out_dict[key] = type_map[key](val)
+			
 		return out_dict
 
 def dict_to_filename(

@@ -33,7 +33,7 @@ from pyutil.params import (
 )
 """
 
-CACHE_FILE : Path = "extracted_cache"
+CACHE_FNAME : Path = "extracted_cache"
 EXTRACTED_FILENAME : Path = "extracted.txt"
 
 def scrape_extracted_old(
@@ -99,6 +99,7 @@ def extractedKeys_to_GRI(data : Dict[str, float]) -> Dict[GeneRunID,float]:
 
 def scrape_extracted_cache(
 		rootdir : Path,
+		cache_fname : Path = CACHE_FNAME,
 		cast_func : Callable[[str], Any] = float,
 		comment_str : str = '#',
 		n_top : Optional[int] = None,
@@ -106,7 +107,8 @@ def scrape_extracted_cache(
 		format : Literal['json','msgpack'] = 'json',
 	) -> Dict[GeneRunID, float]:
 
-	cache_file : Path = joinPath(rootdir, CACHE_FILE)
+	cache_file : Path = joinPath(rootdir, cache_fname)
+
 	# UGLY: this bit
 	cache_load : Callable[[],Dict[str,Any]] = lambda : raise_(NotImplementedError('check `scrape_extracted_cache()`'))
 	cache_save : Callable[[Dict[str,float]],None] = lambda x : raise_(NotImplementedError('check `scrape_extracted_cache()`'))
@@ -209,6 +211,54 @@ def generational_histogram(
 	):
 	# OPTIMIZE: only scrape the ones with gen > min_gen
 	data : Dict[GeneRunID, float] = scrape_extracted_cache(rootdir)
+
+	# first make bins based on all data
+	bins,bin_centers = get_bins(data, n_bins)
+
+	# sort by generation
+	data_sorted : DefaultDict[int, List[float]] = sort_by_generation(data)
+
+	# plot each generation
+	gen_count : int = max(data_sorted.keys())
+	colors = cm.plasma(np.linspace(0,1,gen_count-min_gen)) # type: ignore
+
+	for gen_k in range(min_gen,gen_count):
+		lst_v : List[float] = data_sorted[gen_k]
+		
+		hist,_ = np.histogram(lst_v, bins)
+		plt.plot(
+			bin_centers, hist,
+			'-',
+			label = f"gen_{gen_k}", 
+			color = colors[gen_k-min_gen],
+		)
+	
+	plt.legend()
+	
+	if show:
+		plt.show()
+
+
+# TODO: better name for this function
+def generational_histogram_fromsums(
+		bigcache : Dict[str,Any],
+		run_prefix_key : str,
+		fitness_key : str = 'extract_food_dist_inv', 
+		n_bins : int = 20,
+		min_gen : int = 0,
+		show : bool = True,
+	):
+
+	# filter by `run_prefix_key`
+	data : Dict[GeneRunID, float] = {
+		( GeneRunID.from_str(
+			k.removeprefix('data/geno_sweep/old_sweep/')
+			.removeprefix(run_prefix_key)
+			.lstrip('/')
+		) ) : v['fitness'][fitness_key]
+		for k,v in bigcache.items()
+		if run_prefix_key in k
+	}
 
 	# first make bins based on all data
 	bins,bin_centers = get_bins(data, n_bins)

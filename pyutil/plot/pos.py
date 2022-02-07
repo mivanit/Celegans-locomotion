@@ -4,6 +4,7 @@ plots the position of a worm and environment through time
 contains plotters for showing head position of a single or multiple worms, the worm body at a point in time, or an animation showing the movement of the worm
 """
 
+from collections import defaultdict
 import os
 import sys
 from typing import *
@@ -20,6 +21,8 @@ import matplotlib # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 import matplotlib.colors as mcolors # type: ignore
 import matplotlib.animation as animation # type: ignore
+# CRIT: make this read from local vars
+plt.rcParams['animation.ffmpeg_path'] = 'F:/packages/ffmpeg-4.3.2-2021-02-02-essentials_build/bin/ffmpeg.exe'
 from matplotlib.patches import Patch,Circle,Rectangle,Wedge # type: ignore
 from matplotlib.collections import PatchCollection # type: ignore
 
@@ -37,7 +40,7 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import (
 	Path,joinPath,unixPath, get_last_dir_name,
 	get_dirs_containing_file, deco_str_to_path_kwargs,
-	CoordsArr,CoordsRotArr, pdbg, VecXY,
+	CoordsArr,CoordsRotArr, pdbg, VecXY, strList_to_dict,
 )
 
 from pyutil.read_runs import read_body_data
@@ -316,7 +319,7 @@ def trunc_cmap(
 def _plot_concentration(ax : Axes, params : dict, n_bins : int = 500):
 	# conservatively get grid bounds based on distance from start position
 	foodPos : Dict[str,float] = params['ChemoReceptors']['foodPos']
-	cr_radius : float = 1.1 * max(
+	cr_radius : float = 1.5 * max(
 		foodPos['x'],
 		foodPos['y'],
 	)
@@ -469,6 +472,8 @@ def _draw_setup(
 	data : NDArray[(int,int), CoordsRotArr] = read_body_data(bodydat)
 	print(f'> raw data stats: shape = {data.shape}, \t dtype = {data.dtype}')
 	# trim
+	if isinstance(time_window, str):
+		time_window = (int(t) for t in time_window.split(','))
 	data = data[ time_window[0] : time_window[1] ]
 
 	# read collision objects
@@ -506,9 +511,13 @@ def _draw_setup(
 	print(f'> figsize:\t{figsize}')
 	fig, ax = plt.subplots(1, 1, figsize = figsize)
 
+	ax.set_xlim(bounds['bound_min_x'], bounds['bound_max_x'])
+	ax.set_ylim(bounds['bound_min_y'], bounds['bound_max_y'])
+
 	# fix the scaling
 	ax.axis('equal')
-	plt.title(rootdir)
+	# plt.title(rootdir)
+
 
 	# plot preliminaries
 	# ==============================
@@ -813,8 +822,8 @@ class Plotters(object):
 	##     ## ##    ## #### ##     ##
 	"""
 
-	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params', 'output'], do_posargs = True)
 	@staticmethod
+	@deco_str_to_path_kwargs(keywords = ['rootdir', 'bodydat', 'collobjs', 'params', 'output'], do_posargs = True)
 	def anim(
 			rootdir : Path,
 			*args,
@@ -825,6 +834,7 @@ class Plotters(object):
 			time_window : Tuple[OptInt,OptInt] = (None,None),
 			figsize_scalar : float = 6.0,
 			fps : int = 30, bitrate : int = 1800,
+			bounds : Union[str,BoundingBox, None] = None 
 		):
 		"""
 		https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
@@ -833,6 +843,17 @@ class Plotters(object):
 		output = rootdir / output
 		# idk what this does tbh
 		matplotlib.use("Agg")
+
+		if isinstance(bounds, (str, tuple)):
+			bounds = strList_to_dict(
+				in_data = bounds,
+				keys_list = [
+					'bound_min_x', 'bound_max_x',
+					'bound_min_y', 'bound_max_y',
+				], 
+				delim = ',',
+				type_map = defaultdict(lambda : float),
+			)
 		
 		fig,ax,data,bounds = _draw_setup(
 			rootdir = rootdir,
@@ -842,6 +863,7 @@ class Plotters(object):
 			time_window = time_window,
 			figsize_scalar = figsize_scalar,
 			pad_frac = figsize_scalar,
+			bounds = bounds,
 		)
 
 		data_D, data_V = body_data_split_DV(data)
@@ -859,6 +881,8 @@ class Plotters(object):
 			plt.title(f'frame   {i}')
 			line_D.set_data(data_D[i]['x'], data_D[i]['y'])
 			line_V.set_data(data_V[i]['x'], data_V[i]['y'])
+			ax.set_xlim(bounds['bound_min_x'], bounds['bound_max_x'])
+			ax.set_ylim(bounds['bound_min_y'], bounds['bound_max_y'])
 
 			return line_D,line_V
 		
@@ -905,7 +929,19 @@ class Plotters(object):
 			i_frame : int = 0,
 			figsize_scalar : float = 10.0,
 			show : bool = True,
+			bounds : Union[str, BoundingBox, None] = None,
 		):
+
+		if isinstance(bounds, (str, tuple)):
+			bounds = strList_to_dict(
+				in_data = bounds,
+				keys_list = [
+					'bound_min_x', 'bound_max_x',
+					'bound_min_y', 'bound_max_y',
+				], 
+				delim = ',',
+				type_map = defaultdict(lambda : float),
+			)
 		
 		fig,ax,data,bounds = _draw_setup(
 			rootdir = rootdir,
@@ -915,6 +951,7 @@ class Plotters(object):
 			time_window = (i_frame, i_frame+1),
 			figsize_scalar = figsize_scalar,
 			pad_frac = figsize_scalar,
+			bounds = bounds,
 		)
 
 		data_D, data_V = body_data_split_DV(data)

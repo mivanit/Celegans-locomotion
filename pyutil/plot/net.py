@@ -1,4 +1,6 @@
 from typing import *
+import os
+import sys
 import json
 
 import matplotlib.pyplot as plt # type: ignore
@@ -14,17 +16,31 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 from pyutil.util import Path,joinPath
 
 
-DEFAULT_POS : Dict[str,Tuple[float,float]] = {
+DEFAULT_POS_OLD : Dict[str,Tuple[float,float]] = {
 	'SMDD' : (-2.0, 4.0),
 	'SMDV' : (2.0, 4.0),
 	'RMDD' : (-2.0, 0.0),
 	'RMDV' : (2.0, 0.0),
 	'AWA' : (0.0, 12.0),
 	'RIM' : (0.0, 8.0),
+	'AIY' : (0.0, 8.0),
 	'RIA' : (0.0, 8.0),
 	'RIA_Loop' : (0.0, 8.0),
 	'RIA_nrD' : (-1.0, 6.0),
 	'RIA_nrV' : (1.0, 6.0),
+}
+
+DEFAULT_POS : Dict[str,Tuple[float,float]] = {
+	'AWA' : (0.0, 0.0),
+	'AIY' : (2.0, 0.0),
+	'RIA' : (4.0, 0.0),
+	'SMDD' : (6.0, -2.0),
+	'SMDV' : (6.0, 2.0),
+	'RMDD' : (8.0, -1.5),
+	'RMDV' : (8.0, 1.5),
+	# 'RIA_Loop' : (0.0, 8.0),
+	# 'RIA_nrD' : (-1.0, 6.0),
+	# 'RIA_nrV' : (1.0, 6.0),
 }
 
 def plot_net(
@@ -97,14 +113,14 @@ def plot_net(
 	if show_weights:
 		nx.draw_networkx_edge_labels(
 			G, pos,
-			edge_labels = weights_byType['chem'],
+			edge_labels = { k : f'{v:.4}' for k,v in weights_byType['chem'].items() },
 		)
 		nx.draw_networkx_edge_labels(
 			G, pos,
-			edge_labels = weights_byType['ele'],
+			edge_labels = { k : f'{v:.4}' for k,v in weights_byType['ele'].items() },
 		)
 
-	plt.title(params)
+	# plt.title(params)
 	plt.show()
 
 
