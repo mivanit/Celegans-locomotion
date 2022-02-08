@@ -7,6 +7,14 @@ Code heavily modified by Michael Ivanitskiy [@mivanit](https://github.com/mivani
 
 Code about to be modified by Yash Mehta. First commit. Second commit.
 
+We assume that the user has the following installed:
+- a bash or other `sh` compatible terminal
+- git, for version control
+- make, for building the C++ code
+- a C++ compiler, for compiling the C++ code
+- python 3.8 or newer
+- python packages listed in `requirements.txt`
+
 # Building
 Build with `make` (calls `make sim`)
 

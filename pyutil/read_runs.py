@@ -8,7 +8,7 @@ import json
 import pickle
 import gzip
 
-from pydbg import dbg # type: ignore
+# from pydbg import dbg # type: ignore
 
 import numpy as np # type: ignore
 from nptyping import NDArray # type: ignore
@@ -101,7 +101,13 @@ def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
 	- `NDArray[(Any, Any), CoordsRotArr]` 
 	"""
 	# read in
-	data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+	# TODO: better handling of incorrect column numbers. maybe the problem is with `np.genfromtxt`
+	try:
+		data_raw : NDArray = np.genfromtxt(filename, delimiter = ' ', dtype = None)
+	except ValueError as e:
+		print(f'failed to read {filename}')
+		print(e)
+		data_raw = np.zeros((100,10))
 
 	# trim first variable (time)
 	data_raw = data_raw[:,1:]
