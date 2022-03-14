@@ -586,7 +586,7 @@ class Plotters(object):
 
 		if show:
 			plt.show()
-	
+
 	@staticmethod
 	def pos_multi(
 			# search in this directory
@@ -827,7 +827,7 @@ class Plotters(object):
 			i_frame : int = 0,
 			figsize_scalar : float = 10.0,
 			show : bool = True,
-		):
+		) -> object:
 		
 		fig,ax,data,bounds = _draw_setup(
 			rootdir = rootdir,
@@ -848,6 +848,59 @@ class Plotters(object):
 		if show:
 			plt.show()
 
+	@staticmethod
+	def pos_multisegment(
+			# args passed down to `_draw_setup()`
+			rootdir: Path,
+			bodydat: Path = 'body.dat',
+			collobjs: Path = 'coll_objs.tsv',
+			params: Optional[Path] = 'params.json',
+			time_window: Tuple[OptInt, OptInt] = [None, None],
+			figsize_scalar: Optional[float] = 10.0,
+			pad_frac: Optional[float] = None,
+			# args specific to this plotter
+			idx: List = [0],
+			show: bool = True,
+	):
+
+		fig,ax,data,bounds = _draw_setup(
+			rootdir = rootdir,
+			bodydat = bodydat,
+			collobjs = collobjs,
+			params = params,
+			time_window = time_window,
+			figsize_scalar = figsize_scalar,
+			pad_frac = figsize_scalar,
+		)
+
+		if max(idx) >= max(data.shape):
+			raise TypeError(f'The segment does not exist. The max frame is {data.shape}')
+
+		if time_window[-1] is None and max(idx) != 0:
+			time_window[-1] = max(idx)
+
+		head_data : NDArray[data.shape[0], CoordsRotArr] = data[:max(idx), 0]
+
+
+		# prepend directory to paths
+		bodydat = os.path.join(rootdir, bodydat)
+		data: NDArray[(int, int), CoordsRotArr] = read_body_data(bodydat)
+		print(f'> raw data stats: shape = {data.shape}, \t dtype = {data.dtype}')
+
+		for i_frame in idx:
+			# trim
+			data_local = data[i_frame: i_frame+1]
+			data_D, data_V = body_data_split_DV(data_local)
+
+			line_D, = ax.plot(data_D[0]['x'], data_D[0]['y'], 'r-')
+			line_C, = ax.plot(data_local[0]['x'], data_local[0]['y'], 'k-')
+			line_V, = ax.plot(data_V[0]['x'], data_V[0]['y'], 'b-')
+
+
+		ax.plot(head_data['x'], head_data['y'])
+
+		if show:
+			plt.show()
 
 if __name__ == '__main__':
 	import fire # type: ignore
