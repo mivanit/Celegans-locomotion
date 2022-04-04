@@ -1,5 +1,6 @@
 from typing import *
 import json
+import sys, os
 
 import matplotlib.pyplot as plt # type: ignore
 import networkx as nx # type: ignore
@@ -28,11 +29,11 @@ DEFAULT_POS : Dict[str,Tuple[float,float]] = {
 }
 
 def plot_net(
-		params : str,
+		params : str = "input/params.json",
 		nrvsys : Union[str,List[str]] = ["Head", "VentralCord"],
 		strict_fname : bool = False,
 		show_weights : bool = True,
-		spring_layout : bool = False,
+		spring_layout : bool = True,
 	):
 	if params.endswith('/') or (strict_fname and not params.endswith('params.json')):
 		params = joinPath(params, 'params.json')

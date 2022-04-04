@@ -71,7 +71,6 @@
 		"cfloat": "cpp",
 		"random": "cpp"
 	},
-	"python.pythonPath": "C:\\Program Files\\Python39\\python.exe",
 	"python.autoComplete.extraPaths": [
 		"F:\\projects\\Izq_locomotion"
 	],
