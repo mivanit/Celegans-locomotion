@@ -1,7 +1,7 @@
 import sys
 import os
 from PyQt5.QtWidgets import *
-from PyQt5 import QtWidgets,QtGui
+from PyQt5 import QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from software.GUI.window import Ui_MainWindow
@@ -28,9 +28,10 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
     def open_file(self):
         dir_ = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', 'D:/Celegans-locomotion/data/',
-                                                          QtWidgets.QFileDialog.ShowDirsOnly)
+                                                          QtWidgets.QFileDialog.ShowDirsOnly) #TODO: return multiple dir
+        if dir_ != "":
         # fileName, fileType = QtWidgets.QFileDialog.getOpenFileName(self, "选取文件", ,"All Files(*);;Text Files(*.txt)")
-        MYSIGNAL.Signal_OneParameter.emit(dir_)
+            MYSIGNAL.Signal_OneParameter.emit(dir_)
         return dir_
 
 
