@@ -107,7 +107,7 @@
    </property>
    <widget class="QMenu" name="menufile">
     <property name="title">
-     <string>file</string>
+     <string>load</string>
     </property>
     <property name="toolTipsVisible">
      <bool>true</bool>
@@ -116,7 +116,7 @@
    </widget>
    <widget class="QMenu" name="menucreat">
     <property name="title">
-     <string>creat</string>
+     <string>create</string>
     </property>
    </widget>
    <addaction name="menufile"/>

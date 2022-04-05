@@ -14,17 +14,20 @@ class MplCanvas(FigureCanvasQTAgg):
         self.fig = plt.Figure()
         super(MplCanvas, self).__init__(self.fig)
         self.axes = self.fig.add_axes([0.05, 0.05, 0.9, 0.9])
+        self.memo = {}
 
     def plot(self, line_list: LineSet):
         if line_list.list == []:
             print("No avaliable data to plot")  # TODO: jumping window
         else:
+            print("search finish, number is", len(line_list.list))
             self._initialize_canvas(line_list)
             for line in line_list.list:
                 if line.visible:
-                    self.axes.plot(line.data['x'][:, 0], line.data['y'][:, 0], color=tuple(line.color))
+                    self.axes.plot(line.data['x'][:, 0], line.data['y'][:, 0],
+                                   color=(line.color[0]/255, line.color[1]/255, line.color[2]/255))
                     print("plot successfully", line.folder_dir)
-                    print(self.axes.lines)
+                    # print(self.axes.lines)
 
     def _initialize_canvas(self, line_list: LineSet, line_id=0):
         self.axes.cla()

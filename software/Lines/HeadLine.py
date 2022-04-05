@@ -12,7 +12,7 @@ class HeadLine:
         self.collobjs = None
         self.params = None
         self.visible = True
-        self.color = [random.random(), random.random(), random.random()]
+        self.color = [int(random.random()*255) for i in range(3)]
         self._initialize_collobjs()
         self._initialize_para()
 

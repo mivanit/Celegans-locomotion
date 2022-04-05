@@ -1,8 +1,10 @@
 import os
 from typing import List
+
+
 from software.Lines.HeadLine import HeadLine
 from software.Utils.FILE_DEFAULT_NAME import BODY_FILE_NAME
-
+from software.Signal.Signal import MYSIGNAL
 
 class LineSet:
     def __init__(self):
@@ -16,4 +18,5 @@ class LineSet:
                 self.list.append(HeadLine(start_dir))
             if os.path.isdir(temp_path):
                 self.find_lines(temp_path)
-        print("search finish, number is", len(self.list))
+
+

@@ -31,7 +31,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
                                                           QtWidgets.QFileDialog.ShowDirsOnly) #TODO: return multiple dir
         if dir_ != "":
         # fileName, fileType = QtWidgets.QFileDialog.getOpenFileName(self, "选取文件", ,"All Files(*);;Text Files(*.txt)")
-            MYSIGNAL.Signal_OneParameter.emit(dir_)
+            MYSIGNAL.Open_Folder.emit(dir_)
         return dir_
 
 

@@ -7,7 +7,7 @@ import glob
 import json
 import pickle
 import gzip
-
+import pandas as pd
 from pydbg import dbg # type: ignore
 
 import numpy as np # type: ignore
@@ -33,9 +33,9 @@ if not (TYPE_CHECKING or (__name__ == __EXPECTED_PATH__)):
 		'../' * __EXPECTED_PATH__.count('.'),
 	))
 
-from pyutil.util import *
-from pyutil.params import load_params,ModParamsHashable
-from pyutil.collision_object import read_collobjs_tsv
+from software.Utils.util import Path, joinPath, unixPath, read_file, CoordsRotArr, recfunctions
+from software.Utils.params import load_params,ModParamsHashable
+from software.Lines.collision_object import read_collobjs_tsv
 
 
 RunComponent = Literal[

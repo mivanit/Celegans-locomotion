@@ -10,13 +10,23 @@ class Software:
     def __init__(self):
         self.GUI = MainForm()
         self.lines = LineSet()
-        MYSIGNAL.Signal_OneParameter.connect(self.refresh)
+        MYSIGNAL.Open_Folder.connect(self._refresh)
+        MYSIGNAL.Visibility_Change.connect(self._change_visibility)
+        MYSIGNAL.Color_Change.connect(self._change_color)
         self.GUI.show()
 
-    def refresh(self, folder_dir):
+    def _refresh(self, folder_dir:str):
         self.lines.find_lines(folder_dir)
         self.GUI.refresh(self.lines)
 
+    def _change_visibility(self, idx: int, flag: bool):
+        self.lines.list[idx].visible = flag
+        self.GUI.sc.plot(self.lines)
+
+    def _change_color(self, idx: int, red: int, green: int, blue: int):
+        print(red, green, blue)
+        self.lines.list[idx].color = [red, green, blue]
+        self.GUI.sc.plot(self.lines)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
