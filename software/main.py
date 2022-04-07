@@ -1,6 +1,3 @@
-import sys
-from PyQt5.QtWidgets import QApplication
-
 from software.GUI.GUI import MainForm
 from software.Lines.LineSet import LineSet
 from software.Signal.Signal import MYSIGNAL
@@ -15,7 +12,7 @@ class Software:
         MYSIGNAL.Color_Change.connect(self._change_color)
         self.GUI.show()
 
-    def _refresh(self, folder_dir:str):
+    def _refresh(self, folder_dir: str):
         self.lines.find_lines(folder_dir)
         self.GUI.refresh(self.lines)
 
@@ -28,7 +25,11 @@ class Software:
         self.lines.list[idx].color = [red, green, blue]
         self.GUI.sc.plot(self.lines)
 
+
 if __name__ == '__main__':
+    import sys
+    from PyQt5.QtWidgets import QApplication
+
     app = QApplication(sys.argv)
     ex = Software()
     sys.exit(app.exec_())

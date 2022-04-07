@@ -6,8 +6,9 @@ import PyQt5.QtCore as PQC
 class CustSignal(PQC.QObject):
     # 无参数的信号
     Open_Folder = PQC.pyqtSignal(str)
-    Color_Change = PQC.pyqtSignal([int, int, int, int]) # the first num for idx, the rest three for rgb
+    Color_Change = PQC.pyqtSignal([int, int, int, int])  # the first num for idx, the rest three for rgb
     Visibility_Change = PQC.pyqtSignal([int, bool])
+    Open_Manger = PQC.pyqtSignal(str)
     # 带一个参数(整数)的信号
     Signal_OneParameter = PQC.pyqtSignal(str)
     # 带一个参数(整数或者字符串)的重载版本的信号

@@ -10,15 +10,18 @@ def listUiFile():
             list.append(filename)
     return list
 
+
 def transPyFile(filename):
     return os.path.splitext(filename)[0] + '.py'
+
 
 def runMain():
     list = listUiFile()
     for uifile in list:
         pyfile = transPyFile(uifile)
-        cmd = 'pyuic5 -o {pyfile} {uifile}'.format(pyfile=pyfile,uifile=uifile)
+        cmd = 'pyuic5 -o {pyfile} {uifile}'.format(pyfile=pyfile, uifile=uifile)
         os.system(cmd)
+
 
 if __name__ == "__main__":
     runMain()

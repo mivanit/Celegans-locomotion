@@ -31,8 +31,8 @@ class LineTable(QTableWidget):
             new_color.setFlags(Qt.ItemIsEnabled)
             new_color.setBackground(QColor(line.color[0], line.color[1], line.color[2]))
             self.setItem(idx, 1, new_color)
-            new_item = QTableWidgetItem(line.folder_dir[23:])
-            # new_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            new_item = QTableWidgetItem(line.folder_dir)
+            new_item.setFlags(Qt.ItemIsEnabled)
             new_item.setTextAlignment(Qt.AlignRight)
             self.setItem(idx, 2, new_item)
             self.setRowHeight(idx, 25)
@@ -43,7 +43,7 @@ class LineTable(QTableWidget):
             if col.isValid():
                 self.item(row, 1).setBackground(col.toRgb())
         if col == 2:
-            pass
+            MYSIGNAL.Open_Manger.emit(self.item(row, 2).text())
 
     def update_info(self, row, col):
         if col == 0:
