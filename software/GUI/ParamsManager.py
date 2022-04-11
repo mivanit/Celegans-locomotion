@@ -3,6 +3,7 @@ import json
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QGroupBox, QDialog, QPushButton
 
 from software.GUI.ParamEditor import ParamEditor
+from software.GUI.Launcher import Launcher
 from software.Signal.Signal import MYSIGNAL
 from software.Utils.FILE_DEFAULT_NAME import PARAMS_FILE_NAME
 
@@ -28,7 +29,7 @@ class ParamsManager(QDialog):
                 with open(params_dir, 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
             else:
-                with open("software/input/params.json", 'r', encoding='utf-8') as fin:
+                with open("input/params.json", 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
                 with open(params_dir, 'a+') as fout:
                     json.dump(self.params, fout)
@@ -116,6 +117,20 @@ class ParamsManager(QDialog):
             with open(self.params_dir, 'w') as fout:
                 json.dump(self.params, fout, indent=4)
         self.close()
+
+
+class CreatorParamsManager(ParamsManager):
+    def __init__(self, params_dir, parent=None, nodes=None, params=None, window_size=(800, 650), param_per_row=4):
+        super(CreatorParamsManager, self).__init__(params_dir, parent, nodes, params, window_size, param_per_row)
+
+    def _update_params(self):
+        if not self.nodes:
+            with open(self.params_dir, 'w') as fout:
+                json.dump(self.params, fout, indent=4)
+            print(self.params_dir[:-12], len(PARAMS_FILE_NAME))
+            self.lancher = Launcher(rootdir=self.params_dir[:-12], parent=self)
+            self.lancher.show()
+
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import os, json, subprocess
 from typing import List, Dict, Tuple, Union
-from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QGroupBox, QDialog, QPushButton
+from PyQt5.QtWidgets import QFormLayout, QLineEdit, QLabel, QGroupBox, QDialog, QPushButton
 
 
 from software.Utils.util import mkdir, dump_state, genCmd_singlerun
@@ -12,23 +12,47 @@ class Launcher(QDialog):
         super(Launcher, self).__init__()
         self.rootdir = rootdir
         self.parent = parent
-        dump_state(locals(), rootdir)
+        MYSIGNAL.Create_line.connect(self.show)
+        self.resize(200, 100)
+        self.setWindowTitle("create")
+        self.setLayout(QFormLayout())
+        self.lineEdit = QLineEdit()
+        self.layout().addRow(QLabel("duration(s)"), self.lineEdit)
+        self.ok_button = QPushButton("Apply")
+        self.cancel_button = QPushButton("Cancel")
+        self.layout().addRow(self.ok_button)
+        self.layout().addRow(self.cancel_button)
+        self.ok_button.clicked.connect(self._update_params)
+        self.cancel_button.clicked.connect(self.close)
+
+
+    def _update_params(self):
+        dump_state(locals(), self.rootdir)
         cmd: str = genCmd_singlerun(
-            output=rootdir+"/",
-            params=rootdir+"/"+PARAMS_FILE_NAME
+            output=self.rootdir+"/",
+            params=self.rootdir+"/"+PARAMS_FILE_NAME,
+            duration=float(self.lineEdit.text())
         )
         print(cmd)
         # run the process, write stderr and stdout to the log file
-        with open(rootdir + '/log.txt', 'w') as f_log:
+        with open(self.rootdir + '/log.txt', 'w') as f_log:
             p = subprocess.Popen(
                 cmd,
                 stderr=subprocess.STDOUT,
                 stdout=f_log,
             )
+        self.parent.close()
+        self.close()
 
 
 if __name__ == '__main__':
-    Launcher(os.getcwd()+"/test/")
+    import sys
+    from PyQt5.QtWidgets import QApplication
 
+    app = QApplication(sys.argv)
+    main = Launcher("")
+    # main.show()
+    MYSIGNAL.Create_line.emit()
+    sys.exit(app.exec_())
 
 

@@ -10,6 +10,7 @@ class CustSignal(PQC.QObject):
     Visibility_Change = PQC.pyqtSignal([int, bool])
     Open_Manger = PQC.pyqtSignal(str)
     Change_param = PQC.pyqtSignal(list)
+    Create_line = PQC.pyqtSignal()
 
     def __init__(self, parent=None):
         super(CustSignal, self).__init__(parent)

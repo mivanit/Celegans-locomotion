@@ -1,18 +1,16 @@
 import os
 
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QDialog
 from PyQt5 import QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from software.GUI.window import Ui_MainWindow
 from software.GUI.MplCanvas import MplCanvas
 from software.GUI.LineTable import LineTable
-from software.GUI.ParamsManager import ParamsManager
+from software.GUI.ParamsManager import ParamsManager, CreatorParamsManager
 from software.GUI.MultiDirSelector import MultiDirSelector
-from software.GUI.Launcher import Launcher
 from software.Signal.Signal import MYSIGNAL
 from software.Utils.FILE_DEFAULT_NAME import PARAMS_FILE_NAME
-from software.Utils.util import mkdir, dump_state, genCmd_singlerun
 
 
 class MainForm(QMainWindow, Ui_MainWindow):
@@ -33,6 +31,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.widget_2.setLayout(layout2)
         MYSIGNAL.Open_Manger.connect(self.open_manager)
 
+
     def load_file(self):
         dir_list = MultiDirSelector('D:/Celegans-locomotion/data/').list
         if dir_list:
@@ -43,8 +42,8 @@ class MainForm(QMainWindow, Ui_MainWindow):
         dir_ = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', 'D:/Celegans-locomotion/data/',
                                                           QtWidgets.QFileDialog.ShowDirsOnly)
         if dir_ != "":
-            self.open_manager(dir_)
-            Launcher(dir_)
+            params_manager = CreatorParamsManager(params_dir=dir_ + "/" + PARAMS_FILE_NAME, parent=self)
+            params_manager.show()
             MYSIGNAL.Open_Folder.emit(dir_)
 
     def open_manager(self, params_dir: str):
