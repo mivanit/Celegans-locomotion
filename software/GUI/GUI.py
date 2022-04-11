@@ -9,8 +9,10 @@ from software.GUI.MplCanvas import MplCanvas
 from software.GUI.LineTable import LineTable
 from software.GUI.ParamsManager import ParamsManager
 from software.GUI.MultiDirSelector import MultiDirSelector
+from software.GUI.Launcher import Launcher
 from software.Signal.Signal import MYSIGNAL
 from software.Utils.FILE_DEFAULT_NAME import PARAMS_FILE_NAME
+from software.Utils.util import mkdir, dump_state, genCmd_singlerun
 
 
 class MainForm(QMainWindow, Ui_MainWindow):
@@ -41,7 +43,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
         dir_ = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', 'D:/Celegans-locomotion/data/',
                                                           QtWidgets.QFileDialog.ShowDirsOnly)
         if dir_ != "":
-            self.open_new_manager("input")
+            self.open_manager(dir_)
+            Launcher(dir_)
+            MYSIGNAL.Open_Folder.emit(dir_)
 
     def open_manager(self, params_dir: str):
         params_manager = ParamsManager(params_dir=params_dir + "/" + PARAMS_FILE_NAME, parent=self)

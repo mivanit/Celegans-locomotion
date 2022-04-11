@@ -425,7 +425,7 @@ def genCmd_singlerun(
 	"""
 
 	cmd : str = _command_assembler(**{
-		SCRIPTNAME_KEY : "./sim.exe",
+		SCRIPTNAME_KEY : "../sim.exe",
 		**locals(),
 	}) 
 

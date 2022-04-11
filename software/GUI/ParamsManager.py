@@ -1,9 +1,10 @@
 import os
 import json
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QGroupBox, QDialog, QPushButton, QScrollArea, QWidget
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QGroupBox, QDialog, QPushButton
 
 from software.GUI.ParamEditor import ParamEditor
+from software.Signal.Signal import MYSIGNAL
+from software.Utils.FILE_DEFAULT_NAME import PARAMS_FILE_NAME
 
 
 class ParamsManager(QDialog):
@@ -22,8 +23,15 @@ class ParamsManager(QDialog):
                 title = title + "_" + str(i)
 
         if params is None:
-            with open(params_dir, 'r') as fin:
-                self.params: dict = json.load(fin)
+            MYSIGNAL.Change_param.connect(self._change_one_param)
+            if os.path.exists(params_dir):
+                with open(params_dir, 'r', encoding='utf-8') as fin:
+                    self.params: dict = json.load(fin)
+            else:
+                with open("software/input/params.json", 'r', encoding='utf-8') as fin:
+                    self.params: dict = json.load(fin)
+                with open(params_dir, 'a+') as fout:
+                    json.dump(self.params, fout)
         else:
             self.params = params
 
@@ -84,14 +92,29 @@ class ParamsManager(QDialog):
             layout_line = QHBoxLayout()
             for param_name, value in group_params[idx].items():
                 layout_line.addWidget(QLabel(str(param_name)))
-                layout_line.addWidget(ParamEditor(obj_dir=self.params_dir,
-                                                  nodes=self.nodes + [idx, param_name],
-                                                  value=value))
+                editor = ParamEditor(obj_dir=self.params_dir,
+                                     nodes=self.nodes + [idx, param_name],
+                                     value=value)
+                if isinstance(value, str):
+                    editor.setEnabled(False)
+                layout_line.addWidget(editor)
             layout.addRow(layout_line)
         return layout
 
-    def _update_params(self):
+    def _change_one_param(self, nodes: list):
+        if len(nodes) == 2:
+            self.params[nodes[0]] = nodes[1]
+        elif len(nodes) == 3:
+            self.params[nodes[0]][nodes[1]] = nodes[2]
+        elif len(nodes) == 4:
+            self.params[nodes[0]][nodes[1]][nodes[2]] = nodes[3]
+        elif len(nodes) == 5:
+            self.params[nodes[0]][nodes[1]][nodes[2]][nodes[3]] = nodes[4]
 
+    def _update_params(self):
+        if not self.nodes:
+            with open(self.params_dir, 'w') as fout:
+                json.dump(self.params, fout, indent=4)
         self.close()
 
 
@@ -100,6 +123,7 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
-    main = ParamsManager("../input/params.json")
+    main = ParamsManager("")
     main.show()
+    # os.remove("")
     sys.exit(app.exec_())

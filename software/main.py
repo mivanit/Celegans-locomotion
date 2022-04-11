@@ -21,7 +21,6 @@ class Software:
         self.GUI.sc.plot(self.lines)
 
     def _change_color(self, idx: int, red: int, green: int, blue: int):
-        print(red, green, blue)
         self.lines.list[idx].color = [red, green, blue]
         self.GUI.sc.plot(self.lines)
 
