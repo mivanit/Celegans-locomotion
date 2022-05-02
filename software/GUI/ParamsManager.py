@@ -1,19 +1,18 @@
-import os
-import json
+import os, json, subprocess
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QGroupBox, QDialog, QPushButton
 
-from software.GUI.ParamEditor import ParamEditor
-from software.GUI.Launcher import Launcher
+from software.GUI.ParamEditor import ParamEditor_read, ParamEditor_change
 from software.Signal.Signal import MYSIGNAL
 from software.Utils.FILE_DEFAULT_NAME import PARAMS_FILE_NAME
-
+from software.Utils.util import mkdir, dump_state, genCmd_singlerun
 
 class ParamsManager(QDialog):
-    def __init__(self, params_dir, parent=None, nodes=None, params=None, window_size=(800, 650), param_per_row=4):
+    def __init__(self, params_dir, parent=None, nodes=None, params=None, window_size=(800, 500), param_per_row=4, editor=ParamEditor_read):
         super(ParamsManager, self).__init__()
         self.params_dir = params_dir
         self.parent = parent
         self.param_per_row = param_per_row
+        self.editor = editor
         if nodes is None:
             self.nodes = []
             title = self.params_dir
@@ -51,12 +50,7 @@ class ParamsManager(QDialog):
             for group_name, group_params in self.params.items():
                 self.layout().addWidget(self._build_group(group_name, group_params))
 
-        self.ok_button = QPushButton("Apply")
-        self.cancel_button = QPushButton("Cancel")
-        self.layout().addWidget(self.ok_button)
-        self.layout().addWidget(self.cancel_button)
-        self.ok_button.clicked.connect(self._update_params)
-        self.cancel_button.clicked.connect(self.close)
+
 
     def _build_group(self, group_name, group_params):
         group = QGroupBox(str(group_name), self)
@@ -74,11 +68,12 @@ class ParamsManager(QDialog):
                                                            parent=self,
                                                            nodes=local_node,
                                                            params=value,
-                                                           window_size=(500, 200)))
+                                                           window_size=(500, 200),
+                                                           editor=self.editor))
                 expand_button.clicked.connect(self.sub_manager_list[-1].show)
                 layout_line.addWidget(expand_button)
             else:
-                layout_line.addWidget(ParamEditor(obj_dir=self.params_dir,
+                layout_line.addWidget(self.editor(obj_dir=self.params_dir,
                                                   nodes=local_node,
                                                   value=value))
             if idx % self.param_per_row == self.param_per_row - 1 or idx == len(group_params) - 1:
@@ -93,7 +88,7 @@ class ParamsManager(QDialog):
             layout_line = QHBoxLayout()
             for param_name, value in group_params[idx].items():
                 layout_line.addWidget(QLabel(str(param_name)))
-                editor = ParamEditor(obj_dir=self.params_dir,
+                editor = self.editor(obj_dir=self.params_dir,
                                      nodes=self.nodes + [idx, param_name],
                                      value=value)
                 if isinstance(value, str):
@@ -120,25 +115,44 @@ class ParamsManager(QDialog):
 
 
 class CreatorParamsManager(ParamsManager):
-    def __init__(self, params_dir, parent=None, nodes=None, params=None, window_size=(800, 650), param_per_row=4):
-        super(CreatorParamsManager, self).__init__(params_dir, parent, nodes, params, window_size, param_per_row)
+    def __init__(self, params_dir, parent=None, nodes=None, params=None, window_size=(800, 650), param_per_row=4, ):
+        super(CreatorParamsManager, self).__init__(params_dir, parent, nodes, params, window_size, param_per_row, ParamEditor_change)
+        self.ok_button = QPushButton("Apply")
+        self.cancel_button = QPushButton("Cancel")
+        self.layout().addWidget(self.ok_button)
+        self.layout().addWidget(self.cancel_button)
+        self.ok_button.clicked.connect(self._update_params)
+        self.cancel_button.clicked.connect(self.close)
 
     def _update_params(self):
         if not self.nodes:
             with open(self.params_dir, 'w') as fout:
                 json.dump(self.params, fout, indent=4)
-            print(self.params_dir[:-12], len(PARAMS_FILE_NAME))
-            self.lancher = Launcher(rootdir=self.params_dir[:-12], parent=self)
-            self.lancher.show()
+            root_dir = self.params_dir[:-len(PARAMS_FILE_NAME)-1]
+            dump_state(locals(), root_dir)
+            cmd: str = genCmd_singlerun(
+                output=root_dir + "/",
+                params=root_dir + "/" + PARAMS_FILE_NAME,
+            )
+            print(cmd)
+            # run the process, write stderr and stdout to the log file
+            with open(root_dir + '/log.txt', 'w') as f_log:
+                p = subprocess.Popen(
+                    cmd,
+                    stderr=subprocess.STDOUT,
+                    stdout=f_log,
+                )
+            self.close()
 
 
 
 if __name__ == '__main__':
     import sys
     from PyQt5.QtWidgets import QApplication
-
+    print(os.getcwd())
     app = QApplication(sys.argv)
     main = ParamsManager("")
     main.show()
     # os.remove("")
+    print(os.getcwd())
     sys.exit(app.exec_())
