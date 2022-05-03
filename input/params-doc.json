@@ -1,0 +1,67 @@
+// structure of the documentation:
+// each item contains the key "doc-short"
+// some items may contain the keys "doc-long" or "subitems"
+// - "doc-short" is the text that should be displayed upon hovering
+// - "doc-long" is the text that should be displayed when the item is opened
+// - "subitems" is the list or dictionary of child items
+{
+	"ChemoReceptors": {
+		"subitems" : {
+			"alpha": 4.0,
+			"beta": 15.0,
+			"foodPos": {
+				"doc-short" : "food position",
+				"doc-long" : "food position $x$ and $y$ coordinates"
+			},
+			"gamma": 2.0,
+			"kappa": 244.00503969854154,
+			"lambda": -54032.94745512404,
+			"neuron": "AWA"
+		},
+		"doc-short" : "parameters controlling chemosensation",
+		"doc-long" : "$$I_{chem} = F(t) - S(t) \\qquad \\frac{dF}{dt} = \\alpha C(x,y) - \\beta F \\qquad \\frac{dS}{dt} \\gamma (F - S) $$"
+	},
+	"Head": {
+		"connections": [
+			
+		],
+		"neurons": {
+			
+		}
+	},
+	"NMJ": {
+		"DB": 1.0,
+		"DD": -0.00105857,
+		"RMDD": 1.0,
+		"RMDV": 1.0,
+		"SMDD": 0.000371977,
+		"SMDV": 0.000371977,
+		"VBA": 1.0,
+		"VBP": 1.0,
+		"VDA": -0.00105857,
+		"VDP": -0.00105857
+	},
+	"StretchReceptors": {
+		"Head_gain": -120.535,
+		"VC_gain": -165.138
+	},
+	"VentralCord": {
+		"connections": [
+			
+		],
+		"connections_fwd": [
+			
+		],
+		"neurons": {
+			
+		}
+	},
+	"simulation": {
+		"angle": 0.5,
+		"coll": "input/objs_empty.tsv",
+		"duration": 20.0,
+		"output": "data/run/NULL/",
+		"seed": 0,
+		"src-params": "input/params/chemo_v16.json"
+	}
+}
