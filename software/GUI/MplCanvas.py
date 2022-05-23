@@ -28,6 +28,7 @@ class MplCanvas(FigureCanvasQTAgg):
                                    color=(line.color[0]/255, line.color[1]/255, line.color[2]/255))
                     print("plot successfully", line.folder_dir)
                     # print(self.axes.lines)
+            self.fig.canvas.draw()
 
     def _initialize_canvas(self, line_list: LineSet, line_id=0):
         self.axes.cla()

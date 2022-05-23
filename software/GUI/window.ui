@@ -20,58 +20,6 @@
    <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QGroupBox" name="groupBox">
-    <property name="geometry">
-     <rect>
-      <x>850</x>
-      <y>0</y>
-      <width>261</width>
-      <height>131</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>GroupBox</string>
-    </property>
-    <widget class="QCheckBox" name="checkBox">
-     <property name="geometry">
-      <rect>
-       <x>30</x>
-       <y>30</y>
-       <width>91</width>
-       <height>19</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>left</string>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="checkBox_2">
-     <property name="geometry">
-      <rect>
-       <x>30</x>
-       <y>60</y>
-       <width>91</width>
-       <height>19</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>none</string>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="checkBox_3">
-     <property name="geometry">
-      <rect>
-       <x>30</x>
-       <y>90</y>
-       <width>91</width>
-       <height>19</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>right</string>
-     </property>
-    </widget>
-   </widget>
    <widget class="QWidget" name="widget" native="true">
     <property name="geometry">
      <rect>
@@ -85,10 +33,10 @@
    <widget class="QWidget" name="widget_2" native="true">
     <property name="geometry">
      <rect>
-      <x>859</x>
-      <y>189</y>
+      <x>850</x>
+      <y>0</y>
       <width>361</width>
-      <height>611</height>
+      <height>801</height>
      </rect>
     </property>
    </widget>

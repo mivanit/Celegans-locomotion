@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtWidgets import QMainWindow, QDialog
+from PyQt5.QtWidgets import QMainWindow, QSizePolicy
 from PyQt5 import QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
@@ -21,14 +21,18 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.actioncreate.triggered.connect(self.create_file)
         self.sc = MplCanvas()
         self.table = LineTable()
+        self.table.setMaximumSize(320, 1000)
         toolbar = NavigationToolbar(self.sc, self)
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(toolbar)
-        layout.addWidget(self.sc)
-        self.widget.setLayout(layout)
+        layout1 = QtWidgets.QVBoxLayout()
+        layout1.addWidget(toolbar)
+        layout1.addWidget(self.sc)
         layout2 = QtWidgets.QVBoxLayout()
         layout2.addWidget(self.table)
-        self.widget_2.setLayout(layout2)
+        layout = QtWidgets.QGridLayout()
+        layout.addLayout(layout1, 0, 0)
+        layout.addLayout(layout2, 0, 1)
+        self.centralwidget.setLayout(layout)
+        self.centralwidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         MYSIGNAL.Open_Manger.connect(self.open_manager)
 
 
@@ -52,6 +56,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
     def refresh(self, lines):
         self.sc.plot(lines)  # TODO: delete or add
+
         self.table.refresh(lines)
 
 
