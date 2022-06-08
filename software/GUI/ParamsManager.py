@@ -28,7 +28,7 @@ class ParamsManager(QDialog):
                 with open(params_dir, 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
             else:
-                with open("input/params.json", 'r', encoding='utf-8') as fin:
+                with open("D:/Celegans-locomotion/software/input/params.json", 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
                 with open(params_dir, 'a+') as fout:
                     json.dump(self.params, fout)
@@ -61,7 +61,10 @@ class ParamsManager(QDialog):
                 layout_line = QHBoxLayout()
                 # layout_line.addStretch(2)
             layout_line.addWidget(QLabel(str(param_name)))
-            local_node = self.nodes + [group_name, param_name]
+            if group_name == "":
+                local_node = self.nodes + [param_name]
+            else:
+                local_node = self.nodes + [group_name, param_name]
             if isinstance(value, dict) or isinstance(value, list):
                 expand_button = QPushButton("...")
                 self.sub_manager_list.append(ParamsManager(params_dir=self.params_dir,
@@ -98,6 +101,7 @@ class ParamsManager(QDialog):
         return layout
 
     def _change_one_param(self, nodes: list):
+        print(nodes)
         if len(nodes) == 2:
             self.params[nodes[0]] = nodes[1]
         elif len(nodes) == 3:
@@ -142,7 +146,9 @@ class CreatorParamsManager(ParamsManager):
                     stderr=subprocess.STDOUT,
                     stdout=f_log,
                 )
+            MYSIGNAL.Open_Folder.emit(root_dir)
             self.close()
+
 
 
 

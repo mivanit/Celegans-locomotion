@@ -48,7 +48,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         if dir_ != "":
             params_manager = CreatorParamsManager(params_dir=dir_ + "/" + PARAMS_FILE_NAME, parent=self)
             params_manager.show()
-            MYSIGNAL.Open_Folder.emit(dir_)
 
     def open_manager(self, params_dir: str):
         params_manager = ParamsManager(params_dir=params_dir + "/" + PARAMS_FILE_NAME, parent=self)
@@ -56,7 +55,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
     def refresh(self, lines):
         self.sc.plot(lines)  # TODO: delete or add
-
         self.table.refresh(lines)
 
 

@@ -264,30 +264,31 @@ class Launchers(object):
             rootdir: Path = 'data/run/',
             params: Path = 'input/params.json',
             conn_range=(-1, 1),
-            conn_step=3,
+            conn_step=11,
             special_scaling_map: Optional[Dict[str, float]] = None,
             **kwargs,
     ):
+        rate = 0.5
         with open(params, 'r') as load_f:
             load_dict = json.load(load_f)
         for conn in load_dict["Head"]["connections"]:
             Launchers.sweep_conn_weight(rootdir=rootdir,
                                         conn_key="Head," + conn['from'] + "," + conn['to'] + ",chem",
-                                        conn_range=str(conn['weight'] + conn_range[0]) + "," + str(
-                                            conn['weight'] + conn_range[1]) + ",lin," + str(conn_step),
+                                        conn_range=str(conn['weight']*(1-rate)) + "," + str(
+                                            conn['weight']*(1+rate)) + ",lin," + str(conn_step),
                                         params=params,
                                         special_scaling_map=special_scaling_map,
                                         ASK_CONTINUE=False,
                                         **kwargs, )
-        for conn in load_dict["VentralCord"]["connections"]:
-            Launchers.sweep_conn_weight(rootdir=rootdir,
-                                        conn_key="VentralCord," + conn['from'] + "," + conn['to'] + ",chem",
-                                        conn_range=str(conn['weight'] + conn_range[0]) + "," + str(
-                                            conn['weight'] + conn_range[1]) + ",lin," + str(conn_step),
-                                        params=params,
-                                        special_scaling_map=special_scaling_map,
-                                        ASK_CONTINUE=False,
-                                        **kwargs, )
+        # for conn in load_dict["VentralCord"]["connections"]:
+        #     Launchers.sweep_conn_weight(rootdir=rootdir,
+        #                                 conn_key="VentralCord," + conn['from'] + "," + conn['to'] + ",chem",
+        #                                 conn_range=str(conn['weight'] + conn_range[0]) + "," + str(
+        #                                     conn['weight'] + conn_range[1]) + ",lin," + str(conn_step),
+        #                                 params=params,
+        #                                 special_scaling_map=special_scaling_map,
+        #                                 ASK_CONTINUE=False,
+        #                                 **kwargs, )
 
     @staticmethod
     def sweep_hardcoded_turning_RMDx(
