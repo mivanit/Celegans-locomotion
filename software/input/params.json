@@ -3,7 +3,7 @@
 		"alpha": 4.0,
 		"beta": 15.0,
 		"foodPos": {
-			"x": 0.005,
+			"x": 0.000,
 			"y": 0.000
 		},
 		"gamma": 2.0,
@@ -388,7 +388,7 @@
 		}
 	},
 	"simulation": {
-		"angle": 0.5,
+		"angle": 1.57,
 		"coll": "input/objs_empty.tsv",
 		"duration": 50.0,
 		"output": "data/run/NULL/",
