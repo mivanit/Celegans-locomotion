@@ -30,8 +30,8 @@ class Launchers(object):
     @staticmethod
     def multi_food_run(
             rootdir: Path = 'data/run/',
-            foodPos: Union[None, str, Tuple[float, float]] = (-0.003, 0.005),
-            angle: Optional[float] = 1.57,
+            foodPos: Union[None, str, Tuple[float, float]] = (-0.01, 0.005),
+            angle: Optional[float] = 1.437,
             **kwargs,
     ):
         """runs multiple trials of the simulation with food on left, right, and absent
@@ -137,6 +137,78 @@ class Launchers(object):
                 print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{str(p.args)}')
             else:
                 print(f'  >>  process complete: {name}')
+
+    @staticmethod
+    def sweep_food_pos(rootdir: Path = 'data/run/',
+            foodPos_start: Union[None, Tuple[float, float]] = (-0.003, 0.01),
+            foodPos_end: Union[None, Tuple[float, float]] = (-0.003, -0.005),
+            foodPos_step:int=15,
+            params: Path = 'input/params.json',
+            angle: Optional[float] = 1.437,
+            **kwargs,):
+        rate = ((foodPos_end[0]-foodPos_start[0])/foodPos_step, (foodPos_end[1]-foodPos_start[1])/foodPos_step)
+        with open(params, 'r') as fin_json:
+            params_data: dict = json.load(fin_json)
+        for i in range(foodPos_step+1):
+            local_food_pos = (rate[0]*i+foodPos_start[0],rate[1]*i+foodPos_start[1])
+            food_x = float(rate[0]*i+foodPos_start[0])
+            food_y = float(rate[1]*i+foodPos_start[1])
+
+            # take absolute value for left/right to match
+            food_x = abs(food_x)
+
+            # make sure we dont pass the food pos further down
+            if 'foodPos' in kwargs:
+                raise KeyError(f'"foodPos" still specified? this should be inacessible')
+
+            # create output dir
+            mkdir(rootdir)
+
+            # save state
+            dump_state(locals(), rootdir)
+
+            # set up the different runs
+            dct_runs: List[str, str] = [f'{-food_x:0.5f},{food_y:0.5f}', f'{food_x:0.5f},{food_y:0.5f}']
+
+            # dictionary of running processes
+            dct_procs: dict = dict()
+
+            # start each process
+            for foodPos in dct_runs:
+                # make the output dir
+                out_path: str = joinPath(rootdir, foodPos+'/')
+
+                mkdir(out_path)
+
+                # set up the command by passing kwargs down
+                cmd: List[str] = genCmd_singlerun(
+                    output=out_path,
+                    foodPos=foodPos,
+                    angle=angle,
+                    **kwargs,
+                ).split(' ')
+
+                print(cmd)
+
+                # run the process, write stderr and stdout to the log file
+                with open(out_path + 'log.txt', 'w') as f_log:
+                    p = subprocess.Popen(
+                        cmd,
+                        stderr=subprocess.STDOUT,
+                        stdout=f_log,
+                    )
+
+                # store process in dict for later
+                dct_procs[foodPos+'/'] = p
+
+            # wait for all of them to finish
+            for name, p in dct_procs.items():
+                p.wait()
+
+                if p.returncode:
+                    print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{str(p.args)}')
+                else:
+                    print(f'  >>  process complete: {name}')
 
     @staticmethod
     def sweep_conn_weight(
@@ -260,10 +332,104 @@ class Launchers(object):
             count += 1
 
     @staticmethod
+    def sweep_conn_pairs(
+            rootdir: Path = 'data/run/',
+            # TODO: check for existence of neuron parameters in json
+            conn_step=11,
+            rate=0.5,
+            params: Path = 'input/params.json',
+            special_scaling_map: Optional[Dict[str, float]] = None,
+            ASK_CONTINUE: bool = True,
+            **kwargs,
+    ):
+
+        # create output dir
+        mkdir(rootdir)
+
+        # save state
+        dump_state(locals(), rootdir)
+
+        # open base json
+        with open(params, 'r') as fin_json:
+            params_data_sample: dict = json.load(fin_json)
+        side_len = int((conn_step - 1) / 2)
+        # run for each value of connection strength
+        for i, j in [(20,21)]: #[(10, 11), (3, 4), (5, 6), (8, 9)]:
+            for wgt in range(1*side_len, 3*side_len+1):
+                # make dir
+                conn_RMDD = params_data_sample["Head"]["connections"][i]
+                conn_RMDV = params_data_sample["Head"]["connections"][j]
+                outpath: str = f"{rootdir}{conn_RMDD['from']}{conn_RMDV['from']}-{conn_RMDD['to']}{conn_RMDV['to']}_{wgt/side_len*rate}/"
+                outpath_params: str = joinPath(outpath, 'in-params.json')
+                mkdir(outpath)
+
+
+                # set the new weight
+                params_data = deepcopy(params_data_sample)
+                params_data["Head"]["connections"][i]['weight'] *= (1 + wgt /side_len * rate)
+                params_data["Head"]["connections"][j]['weight'] *= (1 + wgt /side_len * rate)
+
+                # save modified params
+                with open(outpath_params, 'w') as fout:
+                    json.dump(params_data, fout, indent='\t')
+
+                # run
+                Launchers.multi_food_run(
+                    rootdir=outpath,
+                    params=outpath_params,
+                    **kwargs
+                )
+
+    @staticmethod
+    def sweep_conn(
+            rootdir: Path = 'data/run/',
+            # TODO: check for existence of neuron parameters in json
+            conn_step=6,
+            rate=0.1,
+            params: Path = 'input/params.json',
+            special_scaling_map: Optional[Dict[str, float]] = None,
+            ASK_CONTINUE: bool = True,
+            **kwargs,
+    ):
+
+        # create output dir
+        mkdir(rootdir)
+
+        # save state
+        dump_state(locals(), rootdir)
+
+        # open base json
+        with open(params, 'r') as fin_json:
+            params_data_sample: dict = json.load(fin_json)
+        side_len = int((conn_step - 1) / 2)
+        # run for each value of connection strength
+        for i in [0]:  # [(10, 11), (3, 4), (5, 6), (8, 9)]:
+            for wgt in range(7):
+                # make dir
+                conn = params_data_sample["Head"]["connections"][i]
+                outpath: str = f"{rootdir}{conn['from']}-{conn['to']}_{wgt * rate}:.1f_{conn['weight']*(1 + wgt * rate):.4f}/"
+                outpath_params: str = joinPath(outpath, 'in-params.json')
+                mkdir(outpath)
+
+                # set the new weight
+                params_data = deepcopy(params_data_sample)
+                params_data["Head"]["connections"][i]['weight'] *= (1 + wgt * rate)
+
+                # save modified params
+                with open(outpath_params, 'w') as fout:
+                    json.dump(params_data, fout, indent='\t')
+
+                # run
+                Launchers.sweep_food_pos(
+                    rootdir=outpath,
+                    params=outpath_params,
+                    **kwargs
+                )
+
+    @staticmethod
     def sweep_all_conn_weight(
             rootdir: Path = 'data/run/',
             params: Path = 'input/params.json',
-            conn_range=(-1, 1),
             conn_step=11,
             special_scaling_map: Optional[Dict[str, float]] = None,
             **kwargs,
@@ -271,11 +437,12 @@ class Launchers(object):
         rate = 0.5
         with open(params, 'r') as load_f:
             load_dict = json.load(load_f)
+        print(load_dict["simulation"], params)
         for conn in load_dict["Head"]["connections"]:
             Launchers.sweep_conn_weight(rootdir=rootdir,
                                         conn_key="Head," + conn['from'] + "," + conn['to'] + ",chem",
-                                        conn_range=str(conn['weight']*(1-rate)) + "," + str(
-                                            conn['weight']*(1+rate)) + ",lin," + str(conn_step),
+                                        conn_range=str(conn['weight'] * (1 - rate)) + "," + str(
+                                            conn['weight'] * (1 + rate)) + ",lin," + str(conn_step),
                                         params=params,
                                         special_scaling_map=special_scaling_map,
                                         ASK_CONTINUE=False,
