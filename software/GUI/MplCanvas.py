@@ -1,5 +1,7 @@
 from typing import List
 from math import degrees
+
+import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib import pyplot as plt
 from matplotlib.patches import Patch, Circle, Rectangle, Wedge  # type: ignore
@@ -26,8 +28,12 @@ class MplCanvas(FigureCanvasQTAgg):
                 if line.visible:
                     self.axes.plot(line.data['x'][:, 0], line.data['y'][:, 0],
                                    color=(line.color[0]/255, line.color[1]/255, line.color[2]/255))
-                    print("plot successfully", line.folder_dir)
+                    foodpos_x: float = float(line.params["ChemoReceptors"]["foodPos"]["x"])
+                    foodpos_y: float = float(line.params["ChemoReceptors"]["foodPos"]["y"])
+                    self.axes.plot(foodpos_x, foodpos_y, 'x',color=(line.color[0]/255, line.color[1]/255, line.color[2]/255))
+                    print("plot successfully", line.folder_dir, np.shape(line.data['x'][:, 0]))
                     # print(self.axes.lines)
+            self.axes.set_aspect('equal')
             self.fig.canvas.draw()
 
     def _initialize_canvas(self, line_list: LineSet, line_id=0):
@@ -73,6 +79,7 @@ class MplCanvas(FigureCanvasQTAgg):
                 foodpos_x: float = float(line_list.list[line_id].params["ChemoReceptors"]["foodPos"]["x"])
                 foodpos_y: float = float(line_list.list[line_id].params["ChemoReceptors"]["foodPos"]["y"])
                 self.axes.plot(foodpos_x, foodpos_y, fmt, label=label)
+                # self.axes.plot(-foodpos_x, foodpos_y, fmt, label=label)
                 if maxdist_disc:
                     if "max_distance" in line_list.list[line_id].params["ChemoReceptors"]:
                         self.axes.add_patch(Circle(

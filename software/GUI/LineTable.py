@@ -18,13 +18,19 @@ class LineTable(QTableWidget):
         self.setColumnWidth(2, 250)
         self.cellDoubleClicked.connect(self.change_details)
         self.cellChanged.connect(self.update_info)
+        self.index_end = 0
 
     def refresh(self, line_list: LineSet):
         self.setRowCount(len(line_list.list))
-        for idx, line in enumerate(line_list.list):
+        idx = 0
+        for idx in range(self.index_end, len(line_list.list)):
+            line = line_list.list[idx]
             chkBoxItem = QTableWidgetItem()
             chkBoxItem.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-            chkBoxItem.setCheckState(Qt.Checked)
+            if line.visible:
+                chkBoxItem.setCheckState(Qt.Checked)
+            else:
+                chkBoxItem.setCheckState(Qt.Unchecked)
             # chkBoxItem.checkState()
             self.setItem(idx, 0, chkBoxItem)
             new_color = QTableWidgetItem()
@@ -36,6 +42,7 @@ class LineTable(QTableWidget):
             new_item.setTextAlignment(Qt.AlignRight)
             self.setItem(idx, 2, new_item)
             self.setRowHeight(idx, 25)
+        self.index_end = idx
 
     def change_details(self, row, col):
         if col == 1:

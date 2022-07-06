@@ -137,6 +137,7 @@ class CreatorParamsManager(ParamsManager):
             cmd: str = genCmd_singlerun(
                 output=root_dir + "/",
                 params=root_dir + "/" + PARAMS_FILE_NAME,
+                coll='D:/Celegans-locomotion/software/input/coll_objs.tsv',
             )
             print(cmd)
             # run the process, write stderr and stdout to the log file
@@ -146,7 +147,7 @@ class CreatorParamsManager(ParamsManager):
                     stderr=subprocess.STDOUT,
                     stdout=f_log,
                 )
-            MYSIGNAL.Open_Folder.emit(root_dir)
+            # MYSIGNAL.Open_Folder.emit(root_dir)
             self.close()
 
 
