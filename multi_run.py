@@ -1,5 +1,5 @@
 """runs `sim` with food on left, right, and no food"""
-
+import math
 import os
 from typing import *
 import subprocess
@@ -140,17 +140,15 @@ class Launchers(object):
 
     @staticmethod
     def sweep_food_pos(rootdir: Path = 'data/run/',
-            foodPos_start: Union[None, Tuple[float, float]] = (-0.003, 0.01),
-            foodPos_end: Union[None, Tuple[float, float]] = (-0.003, -0.005),
-            foodPos_step:int=15,
+            foodPos_start: Union[None, Tuple[float, float]] = (0.003, 0.003),
+            foodPos_end: Union[None, Tuple[float, float]] = (0.006, 0.003),
+            foodPos_step:int=3,
             params: Path = 'input/params.json',
-            angle: Optional[float] = 1.437,
+            #angle: Optional[float] = 1.437,
             **kwargs,):
         rate = ((foodPos_end[0]-foodPos_start[0])/foodPos_step, (foodPos_end[1]-foodPos_start[1])/foodPos_step)
-        with open(params, 'r') as fin_json:
-            params_data: dict = json.load(fin_json)
         for i in range(foodPos_step+1):
-            local_food_pos = (rate[0]*i+foodPos_start[0],rate[1]*i+foodPos_start[1])
+            local_food_pos = (rate[0]*i+foodPos_start[0], rate[1]*i+foodPos_start[1])
             food_x = float(rate[0]*i+foodPos_start[0])
             food_y = float(rate[1]*i+foodPos_start[1])
 
@@ -183,8 +181,10 @@ class Launchers(object):
                 # set up the command by passing kwargs down
                 cmd: List[str] = genCmd_singlerun(
                     output=out_path,
+                    params=params,
                     foodPos=foodPos,
-                    angle=angle,
+                    #angle=angle,
+                    duration=100.0,
                     **kwargs,
                 ).split(' ')
 
@@ -336,7 +336,7 @@ class Launchers(object):
             rootdir: Path = 'data/run/',
             # TODO: check for existence of neuron parameters in json
             conn_step=11,
-            rate=0.5,
+            rate=0.1,
             params: Path = 'input/params.json',
             special_scaling_map: Optional[Dict[str, float]] = None,
             ASK_CONTINUE: bool = True,
@@ -354,27 +354,27 @@ class Launchers(object):
             params_data_sample: dict = json.load(fin_json)
         side_len = int((conn_step - 1) / 2)
         # run for each value of connection strength
-        for i, j in [(20,21)]: #[(10, 11), (3, 4), (5, 6), (8, 9)]:
-            for wgt in range(1*side_len, 3*side_len+1):
+        for i, j in [(5, 6),(10,11)]: #[(10, 11), (3, 4), (5, 6), (8, 9)]:
+            for wgt in range(5, 15):
                 # make dir
                 conn_RMDD = params_data_sample["Head"]["connections"][i]
                 conn_RMDV = params_data_sample["Head"]["connections"][j]
-                outpath: str = f"{rootdir}{conn_RMDD['from']}{conn_RMDV['from']}-{conn_RMDD['to']}{conn_RMDV['to']}_{wgt/side_len*rate}/"
+                outpath: str = f"{rootdir}{conn_RMDD['from']}{conn_RMDV['from']}-{conn_RMDD['to']}{conn_RMDV['to']}_{1 + wgt * rate:.1f}_{conn_RMDV['weight']*(1 + wgt * rate):.4f}/"
                 outpath_params: str = joinPath(outpath, 'in-params.json')
                 mkdir(outpath)
 
 
                 # set the new weight
                 params_data = deepcopy(params_data_sample)
-                params_data["Head"]["connections"][i]['weight'] *= (1 + wgt /side_len * rate)
-                params_data["Head"]["connections"][j]['weight'] *= (1 + wgt /side_len * rate)
+                params_data["Head"]["connections"][i]['weight'] *= (1 + wgt * rate)
+                params_data["Head"]["connections"][j]['weight'] *= (1 + wgt * rate)
 
                 # save modified params
                 with open(outpath_params, 'w') as fout:
                     json.dump(params_data, fout, indent='\t')
 
                 # run
-                Launchers.multi_food_run(
+                Launchers.sweep_food_pos(
                     rootdir=outpath,
                     params=outpath_params,
                     **kwargs
@@ -403,11 +403,11 @@ class Launchers(object):
             params_data_sample: dict = json.load(fin_json)
         side_len = int((conn_step - 1) / 2)
         # run for each value of connection strength
-        for i in [0]:  # [(10, 11), (3, 4), (5, 6), (8, 9)]:
-            for wgt in range(7):
+        for i in [2]:  # [(10, 11), (3, 4), (5, 6), (8, 9)]:
+            for wgt in range(-6,1):
                 # make dir
                 conn = params_data_sample["Head"]["connections"][i]
-                outpath: str = f"{rootdir}{conn['from']}-{conn['to']}_{wgt * rate}:.1f_{conn['weight']*(1 + wgt * rate):.4f}/"
+                outpath: str = f"{rootdir}{conn['from']}-{conn['to']}_{1 + wgt * rate:.1f}_{conn['weight']*(1 + wgt * rate):.4f}/"
                 outpath_params: str = joinPath(outpath, 'in-params.json')
                 mkdir(outpath)
 
@@ -425,6 +425,69 @@ class Launchers(object):
                     params=outpath_params,
                     **kwargs
                 )
+
+    @staticmethod
+    def sweep_angle(
+            rootdir: Path = 'data/run/',
+            # TODO: check for existence of neuron parameters in json
+            conn_step=6,
+            rate=0.1,
+            params: Path = 'input/params.json',
+            special_scaling_map: Optional[Dict[str, float]] = None,
+            ASK_CONTINUE: bool = True,
+            **kwargs,
+    ):
+
+        # create output dir
+        mkdir(rootdir)
+
+        # save state
+        dump_state(locals(), rootdir)
+
+        # open base json
+        with open(params, 'r') as fin_json:
+            params_data_sample: dict = json.load(fin_json)
+        side_len = int((conn_step - 1) / 2)
+        # run for each value of connection strength
+        ini_angle = 1.437
+        for wgt in range(-120, 121, 20):
+            # make dir
+            local_angle = ini_angle + wgt / 180 * math.pi
+            conn = params_data_sample
+            outpath: str = f"{rootdir}angle{wgt}_{local_angle:.4f}/"
+            outpath_params: str = joinPath(outpath, 'in-params.json')
+            mkdir(outpath)
+
+            # set the new weight
+
+            params_data = deepcopy(params_data_sample)
+            params_data["simulation"]["angle"] = local_angle
+            params_data['Head']['connections'][0]['weight'] *= 3
+
+            # save modified params
+            with open(outpath_params, 'w') as fout:
+                json.dump(params_data, fout, indent='\t')
+
+            # cmd: List[str] = genCmd_singlerun(
+            #     output=outpath,
+            #     params=outpath_params,
+            #     foodPos='0,0',
+            #     duration=50.0,
+            #     **kwargs,
+            # ).split(' ')
+            # print(cmd)
+            # with open(outpath + 'log.txt', 'w') as f_log:
+            #     p = subprocess.Popen(
+            #         cmd,
+            #         stderr=subprocess.STDOUT,
+            #         stdout=f_log,
+            #     )
+            # run
+            Launchers.sweep_food_pos(
+                rootdir=outpath,
+                params=outpath_params,
+                **kwargs
+            )
 
     @staticmethod
     def sweep_all_conn_weight(
