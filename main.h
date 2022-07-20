@@ -43,7 +43,7 @@
 using namespace std;
 
 
-FitnessCalc EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<CollisionObject> & collObjs, string output_dir)
+FitnessCalc EvaluationFunction(Worm w, RandomState &rs, double angle, std::vector<CollisionObject> & collObjs, string output_dir, double t_food_start)
 {
 
     // open the files
@@ -111,7 +111,12 @@ FitnessCalc EvaluationFunction(Worm w, RandomState &rs, double angle, std::vecto
     PRINT_DEBUG("  > starting time loop:\n\n")
     for (double t = 0.0; t <= DURATION; t += STEPSIZE) 
     {
-        #ifdef UTIL_H_DEBUG 
+        if (t > t_food_start)
+        {
+            w.chemo_re.enabled = true;
+        }
+
+        #ifdef UTIL_H_DEBUG
             // if on an integer step
             if ( (t - (int) t < STEPSIZE))
             {

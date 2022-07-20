@@ -1,7 +1,8 @@
 #define COLLIDE
 
 #define ENABLE_CTOR_JSON 1
-
+#include <iostream>
+using namespace std;
 #ifdef _WIN32
     #include <direct.h>
     #define MKDIR _mkdir
@@ -177,7 +178,8 @@ int main (int argc, const char* argv[])
         rs,
         params["simulation"]["angle"].get<double>(),
         collObjs,
-        params["simulation"]["output"].get<std::string>()
+        params["simulation"]["output"].get<std::string>(),
+        params["simulation"]["t_food_start"].get<double>()
     );
     
     PRINT_DEBUG("> finished!\n")
@@ -276,6 +278,12 @@ inline void set_foodPos(json & params, cxxopts::ParseResult & cmd)
 
                     params["ChemoReceptors"]["foodPos"]["x"] = foodpos_x;
                     params["ChemoReceptors"]["foodPos"]["y"] = foodpos_y;
+
+                    if (params["simulation"]["t_food_start"] > 0)
+                    {
+                        params["ChemoReceptors"]["DISABLED"] = true;
+
+                    }
                 }
             }
         }
