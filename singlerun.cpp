@@ -279,11 +279,6 @@ inline void set_foodPos(json & params, cxxopts::ParseResult & cmd)
                     params["ChemoReceptors"]["foodPos"]["x"] = foodpos_x;
                     params["ChemoReceptors"]["foodPos"]["y"] = foodpos_y;
 
-                    if (params["simulation"]["t_food_start"] > 0)
-                    {
-                        params["ChemoReceptors"]["DISABLED"] = true;
-
-                    }
                 }
             }
         }

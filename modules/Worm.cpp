@@ -246,6 +246,11 @@ Worm::Worm(json & params)
                 // optional minimum concentration
                 (params_CR.find("max_distance") != params_CR.end()) ? params_CR["max_distance"].get<double>() : std::numeric_limits<double>::infinity()
             );
+            if (params["simulation"]["t_food_start"] > 0)
+                    {
+                        chemo_re.enabled = false;
+
+                    }
         }
     }
 
