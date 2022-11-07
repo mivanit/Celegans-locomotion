@@ -2,15 +2,18 @@
 
 #define ENABLE_CTOR_JSON 1
 #include <iostream>
+#include <sys/stat.h>
 using namespace std;
-#ifdef _WIN32
+/*#ifdef _WIN32
     #include <direct.h>
+    // #include <unistd.h>
     #define MKDIR _mkdir
 #elif defined __linux__
     #include <sys/stat.h>
     #define MKDIR(path) \
         mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 #endif
+#endif*/
 
 #include "modules/packages/cxxopts.hpp"
 #include "modules/util.h"
@@ -194,7 +197,7 @@ inline void copy_config_files(
     std::vector<CollisionObject> & collObjs
 ){
     PRINTF_DEBUG("> creating output dir: %s\n", output_dir.c_str())
-    MKDIR(output_dir.c_str());
+    mkdir(output_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     std::string outpath_collobjs = output_dir + "coll_objs.tsv";
     std::string outpath_params = output_dir + "params.json";

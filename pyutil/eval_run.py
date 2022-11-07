@@ -300,7 +300,7 @@ def extract_food_angle_align(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
-	) -> NDArray[Any,float]:
+	):
 	"""extract mean alignment towards food position
 	
 	### Parameters:
@@ -367,7 +367,7 @@ def extract_gradient_deriv(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
-	) -> NDArray[Any,float]:
+	):
 	"""compute the change in food concentration at every timestep for head position
 	
 	### Parameters:
@@ -390,7 +390,7 @@ def extract_combined_grad_angle(
 		datadir : Path,
 		params : ParamsDict,
 		ret_nan : bool = False,
-	) -> NDArray[Any,float]:
+	):
 	# TODO
 	raise NotImplementedError(f'{extract_combined_grad_angle=}')
 

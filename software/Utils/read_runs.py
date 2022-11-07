@@ -86,7 +86,7 @@ ENABLE_RUNCOMPONENTS : Dict[str, List[RunComponent]] = {
 # BodyData = NDArray[(Any, Any), CoordsRotArr]
 # BodyData = Annotated[NDArray[(Any, Any), CoordsRotArr], ShapeAnnotation(('timestep', 'segment')) ]
 
-def read_body_data(filename : Path) -> NDArray[(Any, Any), CoordsRotArr]:
+def read_body_data(filename : Path):
 	"""reads given tsv file into a numpy array
 	
 	array is a 2-D structured array of type `CoordsRotArr`

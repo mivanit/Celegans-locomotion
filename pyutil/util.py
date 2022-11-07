@@ -358,16 +358,23 @@ def _make_cmd_arg(arg : str, val : Optional[Any]) -> str:
 		return f"--{arg} {val}"
 	
 
-
+# TODO: change line ~370 where str concatenation should be a list of arguments 
 def _command_assembler(**kwargs) -> str:
+
 	output : List[str] = [ kwargs[SCRIPTNAME_KEY] ]
 
 	for key,val in kwargs.items():
 		if key != SCRIPTNAME_KEY:
 			if val is not None:
-				output.append(_make_cmd_arg(key, val))
+				#output.append(_make_cmd_arg(key, val))
+				output.append('--'+key)
+				output.append(val)
 
-	str_output : str = " ".join(output)
+	# debug point: checking what the output args are
+	print("-------------------")
+	print(output)
+
+	str_output : str = ' '.join(str(x) for x in output)
 	
 	for d in COMMAND_DANGERS:
 		if d in str_output:
@@ -428,7 +435,8 @@ def genCmd_singlerun(
 		SCRIPTNAME_KEY : "./sim.exe",
 		**locals(),
 	}) 
-
+	# print("---------------------------")
+	# print(type(cmd))
 	return cmd
 	# return cmd + f' > {output}log.txt'
 

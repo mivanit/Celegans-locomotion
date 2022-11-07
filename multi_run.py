@@ -28,6 +28,17 @@ SPACE_GENERATOR_MAPPING: Dict[str, Callable] = {
 
 class Launchers(object):
     @staticmethod
+    def circle_run(
+            rootdir: Path = 'data/run/',
+            foodPos: Union[None, str, Tuple[float, float]] = (-0.01, 0.005),
+            angle: Optional[float] = 1.437,
+            **kwargs,
+    ): 
+        # might be useful to label each folder with the angle 
+        print("")
+        # separate functionality: dict(folder name, food position) for different runs, generating food positions
+    
+    @staticmethod
     def multi_food_run(
             rootdir: Path = 'data/run/',
             foodPos: Union[None, str, Tuple[float, float]] = (-0.01, 0.005),

@@ -1,0 +1,33 @@
+libc++abi: terminating with uncaught exception of type nlohmann::detail::type_error: [json.exception.type_error.302] type must be number, but is null
+> loading configs:
+  > params json from:  	/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/params.json
+  > read command line args
+  >> set rand seed to 0
+  >> set duration to 30.000000
+  >> set angle to 1.437000
+  >> set foodPos to 0.004000, 0.004000
+  >> collision tsv from:	/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/software/input/coll_objs.tsv
+> creating output dir: /Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/
+  > copying collision objects to:	/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/coll_objs.tsv
+    >> elements in CollObjs vec: 4
+  > copying params json to:      	/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/params.json
+> finished init body constants
+> creating worm object:
+  > muscles
+  > Head NS
+    > circuit init
+      >>  size: 7, max_CHEM: 8, max_ELE: 2
+    > loading neurons
+    > adding synapses
+  > VentralCord NS
+    > circuit init
+      >>  size: 36, max_CHEM: 4, max_ELE: 5, unit_size: 6
+    > initializing 6 units
+  > updating neuron indecies
+  > Stretch Receptors
+  > Chemo Receptors enabled
+    > placing food at 0.004000, 0.004000
+  > NMJ params
+  > NMJ gain (?)
+  > Worm object ctor done!
+> running evaluation:

@@ -17,7 +17,7 @@
 				"from": "AWA",
 				"to": "AIY",
 				"type": "chem",
-				"weight": -18.300635881587867
+				"weight": -18.300635881587866
 			},
 			{
 				"from": "AIY",
@@ -389,10 +389,10 @@
 	},
 	"simulation": {
 		"angle": 1.437,
-		"coll": "input/objs_empty.tsv",
+		"coll": "/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/software/input/coll_objs.tsv",
 		"duration": 30.0,
-		"output": "data/run/NULL/",
+		"output": "/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/",
 		"seed": 0,
-		"src-params": "input/params/chemo_v16.json"
+		"src-params": "/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/params.json"
 	}
 }

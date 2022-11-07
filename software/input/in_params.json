@@ -390,7 +390,7 @@
 	"simulation": {
 		"angle": 1.437,
 		"coll": "input/objs_empty.tsv",
-		"duration": 300.0,
+		"duration": 30.0,
 		"output": "data/run/NULL/",
 		"seed": 0,
 		"src-params": "input/params/chemo_v16.json"

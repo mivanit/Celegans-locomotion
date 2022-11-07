@@ -28,7 +28,7 @@ class ParamsManager(QDialog):
                 with open(params_dir, 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
             else:
-                with open("D:/Celegans-locomotion/software/input/params.json", 'r', encoding='utf-8') as fin:
+                with open("/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/software/input/params.json", 'r', encoding='utf-8') as fin:
                     self.params: dict = json.load(fin)
                 with open(params_dir, 'a+') as fout:
                     json.dump(self.params, fout)
@@ -137,7 +137,8 @@ class CreatorParamsManager(ParamsManager):
             cmd: str = genCmd_singlerun(
                 output=root_dir + "/",
                 params=root_dir + "/" + PARAMS_FILE_NAME,
-                coll='D:/Celegans-locomotion/software/input/coll_objs.tsv',
+                # hard coded path
+                coll='/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/software/input/coll_objs.tsv',
             )
             print(cmd)
             # run the process, write stderr and stdout to the log file

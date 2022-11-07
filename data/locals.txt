@@ -1,0 +1,1 @@
+{'self': <software.GUI.ParamsManager.CreatorParamsManager object at 0x7fc3b052fe50>, 'fout': <_io.TextIOWrapper name='/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data/params.json' mode='w' encoding='UTF-8'>, 'root_dir': '/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/data'}

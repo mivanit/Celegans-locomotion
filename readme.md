@@ -5,8 +5,6 @@ A tool for simulating both the electrophysiology and mechanical body of a _C. El
 
 Code heavily modified by Michael Ivanitskiy [@mivanit](https://github.com/mivanit)
 
-Code about to be modified by Yash Mehta. First commit. Second commit.
-
 # Building
 Build with `make` (calls `make sim`)
 

@@ -360,12 +360,18 @@ def _make_cmd_arg(arg : str, val : Optional[Any]) -> str:
 
 
 def _command_assembler(**kwargs) -> str:
+
 	output : List[str] = [ kwargs[SCRIPTNAME_KEY] ]
 
 	for key,val in kwargs.items():
 		if key != SCRIPTNAME_KEY:
 			if val is not None:
-				output.append(_make_cmd_arg(key, val))
+				#output.append(_make_cmd_arg(key, val))
+				output.append('--'+key)
+				output.append(val)
+
+	#print("-------------------")
+	#print(output)
 
 	str_output : str = " ".join(output)
 	
@@ -376,7 +382,8 @@ def _command_assembler(**kwargs) -> str:
 			if bln_cont != 'y':
 				exit(0)
 
-	return str_output
+	return output
+
 
 
 def genCmd_singlerun(
@@ -425,7 +432,7 @@ def genCmd_singlerun(
 	"""
 
 	cmd : str = _command_assembler(**{
-		SCRIPTNAME_KEY : "./sim.exe",
+		SCRIPTNAME_KEY : "/Users/haoyudu/Documents/GitHub/celegans-locomotion-zihan/sim.exe",
 		**locals(),
 	}) 
 
