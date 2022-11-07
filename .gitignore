@@ -30,3 +30,4 @@ docs/pyutil/**
 __pycache__/**
 **/__pycache__/**
 pyutil/__pycache__
+.DS_Store
