@@ -28,15 +28,100 @@ SPACE_GENERATOR_MAPPING: Dict[str, Callable] = {
 
 class Launchers(object):
     @staticmethod
-    def circle_run(
+    def food_circle_run(
             rootdir: Path = 'data/run/',
-            foodPos: Union[None, str, Tuple[float, float]] = (-0.01, 0.005),
-            angle: Optional[float] = 1.437,
+            step: int=8,
+            food_radius: float=0.003,
+            params: Path = 'input/params.json',
             **kwargs,
-    ): 
-        # might be useful to label each folder with the angle 
-        print("")
-        # separate functionality: dict(folder name, food position) for different runs, generating food positions
+    ):
+        """runs multiple trials of the simulation with food in a circle position
+
+        runs each of the following:
+        ```python
+        dct_runs : Dict[str,str] = {
+            'food_x/' : f'{-food_x},{food_y}',
+            'food_y/' : f'{food_x},{food_y}',
+        }
+        ```
+        with `food_x`, `food_y` converted from polar coordinates r = `food_radius` and theta = pi / (2 * `step`)
+
+        ### Parameters:
+         - `rootdir : Path`
+           output path, will create folders for each food position inside this directory
+           (defaults to `'data/run/'`)
+
+        ### Raises:
+         - `KeyError` : shouldn't ever be raised -- state *should* be inacessible
+        """
+    
+        # TODO: Label each folder with angle instead of coordinates
+        # TODO: separate functionality for position generation and simulation
+        # TODO: comprehensive error catching
+
+        # creates array of {step} angles  
+        angle = np.linspace(0, 2 * np.pi, step)
+
+        # generates the x,y coordinates given angle
+        food_x = food_radius * np.cos(angle)
+        food_y = food_radius * np.sin(angle)
+
+        for i in range(step):
+            # current_angle = str(angle[i])
+            print(step)
+
+            # make sure we dont pass the food pos further down
+            if 'foodPos' in kwargs:
+                raise KeyError(f'"foodPos" still specified? this should be inacessible')
+
+            # create output dir
+            mkdir(rootdir)
+
+            # save state
+            dump_state(locals(), rootdir)
+
+            # set up the different runs
+            dct_runs: List[str, str] = [f'{-food_x[i]:0.5f},{food_y[i]:0.5f}', f'{food_x[i]:0.5f},{food_y[i]:0.5f}']
+
+            # dictionary of running processes
+            dct_procs: dict = dict()
+
+            # start each process
+            for foodPos in dct_runs:
+                # make the output dir
+                out_path: str = joinPath(rootdir, foodPos+'/')
+
+                mkdir(out_path)
+
+                # set up the command by passing kwargs down
+                cmd: List[str] = genCmd_singlerun(
+                    output=out_path,
+                    params=params,
+                    foodPos=foodPos,
+                    duration=100.0,
+                    **kwargs,
+                ).split(' ')
+
+                print(cmd)
+
+                # run the process, write stderr and stdout to the log file
+                with open(out_path + 'log.txt', 'w') as f_log:
+                    p = subprocess.Popen(
+                        cmd,
+                        stderr=subprocess.STDOUT,
+                        stdout=f_log,
+                    )
+
+                # store process in dict for later
+                dct_procs[foodPos+'/'] = p
+
+            # wait for all of them to finish
+            for name, p in dct_procs.items():
+                p.wait()
+                if p.returncode:
+                    print(f'  >>  ERROR: process terminated with exit code 1, check log.txt for:\n\t{str(p.args)}')
+                else:
+                    print(f'  >>  process complete: {name}')
     
     @staticmethod
     def multi_food_run(
@@ -178,6 +263,7 @@ class Launchers(object):
 
             # set up the different runs
             dct_runs: List[str, str] = [f'{-food_x:0.5f},{food_y:0.5f}', f'{food_x:0.5f},{food_y:0.5f}']
+            # print(f'running: {dct_runs}')
 
             # dictionary of running processes
             dct_procs: dict = dict()
@@ -199,7 +285,7 @@ class Launchers(object):
                     **kwargs,
                 ).split(' ')
 
-                print(cmd)
+                # print(cmd)
 
                 # run the process, write stderr and stdout to the log file
                 with open(out_path + 'log.txt', 'w') as f_log:
