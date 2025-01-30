@@ -4,6 +4,6 @@ mypy==0.910
 mypy_extensions==0.4.3
 networkx==2.5.1
 nptyping==1.4.2
-numpy==1.21.0
+numpy==1.22.0
 pandas==1.2.5
 pydbg==0.3.0
